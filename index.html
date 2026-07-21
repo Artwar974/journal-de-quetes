@@ -22,11 +22,18 @@
     --inset:#d8c48c;
     --mono:"Courier New",ui-monospace,monospace;
     --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+    /* Relief & texture */
+    --engrave:0 1px 0 rgba(255,251,235,.55);
+    --bevel-hi:rgba(255,250,230,.5);
+    --bevel-lo:rgba(74,47,18,.18);
+    --drop:rgba(58,42,18,.32);
+    --noise:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='90'%20height='90'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.9'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20values='0%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200.08%200'/%3E%3C/filter%3E%3Crect%20width='90'%20height='90'%20filter='url(%23n)'/%3E%3C/svg%3E");
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{height:100%}
   body{
     background:
+      var(--noise),
       radial-gradient(120% 80% at 50% -10%, #e7d3a0 0%, var(--bg) 62%),
       var(--bg);
     color:var(--ink); font-family:var(--sans);
@@ -37,16 +44,27 @@
   }
   .app{width:100%;max-width:460px;display:flex;flex-direction:column;gap:12px;min-height:calc(100dvh + 4px)}
 
-  /* Cadre "boîte de dialogue" RPG */
+  /* Cadre "boîte de dialogue" RPG : parchemin biseauté + rivets de fer */
   .box{
-    background:var(--panel);
+    background:
+      var(--noise),
+      linear-gradient(160deg, rgba(255,250,225,.5) 0%, rgba(255,250,225,0) 26%, rgba(0,0,0,0) 74%, rgba(58,38,12,.10) 100%),
+      var(--panel);
     border:3px solid var(--border-hi);
-    box-shadow:0 4px 14px rgba(50,32,12,.28);
+    box-shadow:
+      inset 0 1px 0 var(--bevel-hi), inset 1px 0 0 var(--bevel-hi),
+      inset 0 -2px 0 var(--bevel-lo), inset -1px 0 0 var(--bevel-lo),
+      0 3px 0 var(--drop), 0 9px 18px rgba(50,32,12,.26);
     position:relative;
   }
   .box::before{
     content:""; position:absolute; inset:0;
-    border:1px solid rgba(120,80,20,.22); pointer-events:none;
+    border:1px solid rgba(120,80,20,.25); pointer-events:none;
+    background:
+      radial-gradient(circle, var(--border-hi) 0 1.6px, rgba(0,0,0,0) 2.4px) no-repeat 3px 3px / 6px 6px,
+      radial-gradient(circle, var(--border-hi) 0 1.6px, rgba(0,0,0,0) 2.4px) no-repeat calc(100% - 3px) 3px / 6px 6px,
+      radial-gradient(circle, var(--border-hi) 0 1.6px, rgba(0,0,0,0) 2.4px) no-repeat 3px calc(100% - 3px) / 6px 6px,
+      radial-gradient(circle, var(--border-hi) 0 1.6px, rgba(0,0,0,0) 2.4px) no-repeat calc(100% - 3px) calc(100% - 3px) / 6px 6px;
   }
 
   .pix{font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:1px}
@@ -79,6 +97,7 @@
   .xpbar{
     height:16px;background:var(--inset);border:2px solid var(--border);
     position:relative;overflow:hidden;
+    box-shadow:inset 0 2px 4px rgba(30,18,6,.35), 0 1px 0 var(--bevel-hi);
   }
   .xpfill{
     height:100%;width:0%;
@@ -91,32 +110,15 @@
     color:var(--flame2);display:flex;align-items:center;gap:4px
   }
 
-  /* ======= Onglets ======= */
-  .tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
-  .tab{
-    background:var(--bg2);border:2px solid var(--border);
-    color:var(--ink-dim);font-family:var(--mono);font-weight:700;
-    font-size:8px;letter-spacing:0;text-transform:uppercase;
-    padding:7px 1px 5px;cursor:pointer;display:flex;flex-direction:column;
-    align-items:center;gap:3px;line-height:1;transition:.08s;
-  }
-  .tab .ic{font-size:15px}
-  .tab .cnt{
-    font-size:8px;background:var(--inset);border:1px solid var(--border);
-    padding:1px 3px;color:var(--ink-dim);min-width:14px;
-  }
-  .tab .cnt:empty{display:none}
-  .tab:hover{color:var(--ink);transform:translateY(-1px)}
-  .tab.on{
-    background:var(--panel-hi);border-color:var(--gold);color:var(--gold);
-    box-shadow:0 3px 0 var(--gold-deep);
-  }
-  .tab.on .cnt{border-color:var(--gold);color:var(--gold)}
-
   /* ======= Liste de quêtes ======= */
   .list-head{display:flex;justify-content:space-between;align-items:center;padding:2px 2px}
   .list-title{font-family:var(--mono);font-weight:700;text-transform:uppercase;
-    letter-spacing:1px;font-size:12px;color:var(--ink)}
+    letter-spacing:1px;font-size:12px;color:var(--ink);
+    display:flex;align-items:center;gap:8px}
+  .list-title::after{content:"";flex:1;height:2px;min-width:14px;
+    background:linear-gradient(90deg,var(--border) 0 55%,rgba(0,0,0,0));
+    box-shadow:0 1px 0 var(--bevel-hi)}
+  .list-title:empty{display:none}
   .list-sub{font-size:11px;color:var(--ink-dim)}
   .quests{display:flex;flex-direction:column;gap:9px}
 
@@ -127,7 +129,9 @@
   @keyframes pop{from{transform:scale(.97);opacity:.4}to{transform:scale(1);opacity:1}}
   .q-ic{
     flex:0 0 auto;width:38px;height:38px;display:grid;place-items:center;
-    font-size:20px;background:var(--inset);border:2px solid var(--border);
+    font-size:20px;border:2px solid var(--border);
+    background:linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,0) 40%), var(--inset);
+    box-shadow:inset 0 2px 3px rgba(58,38,12,.22), 0 1px 0 var(--bevel-hi);
   }
   .q-body{flex:1;min-width:0}
   .q-title{font-weight:600;font-size:15px;line-height:1.2;margin-bottom:3px}
@@ -172,10 +176,21 @@
     backdrop-filter:blur(1px);
   }
   .overlay.on{display:flex}
-  .modal{width:100%;max-width:400px;max-height:88vh;overflow-y:auto;background:var(--panel);padding:16px;
-    border:3px solid var(--border-hi);box-shadow:0 14px 40px rgba(0,0,0,.45)}
+  .modal{width:100%;max-width:400px;max-height:88vh;overflow-y:auto;padding:16px;
+    background:
+      var(--noise),
+      linear-gradient(160deg, rgba(255,250,225,.5) 0%, rgba(255,250,225,0) 26%, rgba(0,0,0,0) 74%, rgba(58,38,12,.10) 100%),
+      var(--panel);
+    border:3px solid var(--border-hi);
+    box-shadow:
+      inset 0 1px 0 var(--bevel-hi), inset 0 -2px 0 var(--bevel-lo),
+      0 0 0 1px rgba(120,80,20,.25) inset,
+      0 6px 0 rgba(0,0,0,.22), 0 18px 44px rgba(0,0,0,.5)}
   .modal h2{font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;
-    font-size:15px;margin-bottom:4px;color:var(--gold)}
+    font-size:15px;margin-bottom:6px;color:var(--gold);
+    padding-bottom:6px;border-bottom:2px solid var(--border);
+    display:flex;align-items:center;gap:8px}
+  .modal h2::after{content:"❖";flex:0 0 auto;margin-left:auto;font-size:10px;color:var(--border);text-shadow:none}
   .modal p.hint{font-size:12px;color:var(--ink-dim);margin-bottom:14px}
   .field{margin-bottom:9px}
   .field label{display:block;font-family:var(--mono);font-size:10px;text-transform:uppercase;
@@ -206,8 +221,6 @@
   .star.on{transform:scale(1.12)}
   .rate-label{text-align:center;font-size:12px;color:var(--ink-dim);min-height:16px;margin-bottom:12px}
 
-  /* FAB ajouter */
-  .add-bar{position:sticky;bottom:0;padding-top:4px}
   #confetti{position:fixed;inset:0;pointer-events:none;z-index:50;display:none}
   .foot{text-align:center;font-size:10px;color:var(--ink-dim);font-family:var(--mono);
     letter-spacing:1px;padding:4px 0 2px;opacity:.7}
@@ -221,7 +234,9 @@
   #avatar.fr-royal{border-color:var(--plum);box-shadow:0 0 0 2px #6a3a9a,0 0 0 4px var(--gold-deep)}
 
   /* ======= Agenda / calendrier ======= */
-  .cal{border:2px solid var(--border);background:var(--bg2);padding:8px}
+  .cal{border:2px solid var(--border);padding:8px;
+    background:var(--noise), var(--bg2);
+    box-shadow:inset 0 2px 6px rgba(58,38,12,.16), 0 2px 0 var(--drop)}
   .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
   .cal-title{font-family:var(--mono);font-weight:700;text-transform:uppercase;
     letter-spacing:1px;font-size:13px;color:var(--gold)}
@@ -238,12 +253,6 @@
   .cal-cell.has{background:#f0c184;color:#4a2f12}
   .cal-dots{position:absolute;bottom:2px;left:3px;display:flex;gap:2px}
   .cal-dots i{width:4px;height:4px;background:var(--blue)}
-  .hour-row{display:flex;gap:8px;border-bottom:1px solid var(--border);padding:6px 0;cursor:pointer}
-  .hour-row:hover .hadd{color:var(--gold)}
-  .hour-lbl{font-family:var(--mono);font-size:11px;color:var(--ink-dim);width:34px;flex:0 0 auto;padding-top:2px}
-  .hour-slot{flex:1;font-size:13px}
-  .hadd{color:var(--ink-dim);font-size:11px;font-family:var(--mono)}
-  .hev{background:var(--panel-hi);border:1px solid var(--blue);padding:3px 6px;margin-bottom:3px;font-size:12px}
   /* Routine de la semaine */
   .wk-day{display:flex;gap:8px;border:2px solid var(--border);background:var(--bg2);margin-bottom:6px;padding:7px 9px}
   .wk-day.today{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold-deep)}
@@ -284,7 +293,9 @@
   .subtab.on{background:var(--panel-hi);border-color:var(--gold);color:var(--gold);box-shadow:0 3px 0 var(--gold-deep)}
 
   /* Achievements */
-  .quest.sc-achiev{border-color:var(--plum);box-shadow:0 0 0 3px var(--shadow),0 0 10px rgba(197,139,255,.25),5px 5px 0 3px var(--shadow)}
+  .quest.sc-achiev{border-color:var(--plum);
+    box-shadow:inset 0 1px 0 var(--bevel-hi), inset 0 -2px 0 var(--bevel-lo),
+      0 3px 0 var(--drop), 0 9px 18px rgba(50,32,12,.26), 0 0 12px rgba(197,139,255,.35)}
   .badge-shelf{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .badge{background:var(--bg2);border:2px solid var(--gold);padding:10px 6px;text-align:center;cursor:pointer;
     box-shadow:0 0 8px rgba(255,208,86,.2)}
@@ -310,13 +321,16 @@
   /* ======= HUD fixe + aura d'avatar ======= */
   .hud{position:fixed;top:0;left:0;right:0;margin:0 auto;
     width:100%;max-width:460px;z-index:35;border-top-width:0;
-    padding-top:calc(12px + env(safe-area-inset-top,0px))}
+    padding-top:calc(12px + env(safe-area-inset-top,0px));
+    box-shadow:
+      inset 0 -2px 0 var(--bevel-lo), inset 0 1px 0 var(--bevel-hi),
+      0 3px 0 rgba(58,42,18,.30), 0 10px 22px rgba(40,26,10,.38)}
   #avatar{position:relative;z-index:1}
   .streak-badge{z-index:2}
   .avatar-aura{position:absolute;top:50%;left:50%;width:42px;height:42px;
     transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;opacity:0;
     filter:blur(9px);z-index:0;
-    background:radial-gradient(circle, #fff64a 0%, #ffcf00 26%, #ff7c10 56%, #dd2410 84%, transparent 96%);
+    background:radial-gradient(circle, #fff64a 0%, var(--aura-c1,#ffcf00) 26%, var(--aura-c2,#ff7c10) 56%, #dd2410 84%, transparent 96%);
     animation:auraPulse 2.4s ease-in-out infinite;transition:opacity .6s,width .6s,height .6s}
   @keyframes auraPulse{0%,100%{transform:translate(-50%,-50%) scale(.9)}50%{transform:translate(-50%,-50%) scale(1.06)}}
 
@@ -346,8 +360,12 @@
   .dock{position:fixed;left:0;right:0;bottom:0;pointer-events:none;z-index:30}
   .botnav{pointer-events:auto;width:100%;max-width:460px;margin:0 auto;
     display:grid;grid-template-columns:repeat(5,1fr);
-    background:var(--panel);border-top:2px solid var(--border-hi);
-    box-shadow:0 -4px 16px rgba(40,26,10,.28)}
+    background:
+      var(--noise),
+      linear-gradient(180deg, var(--panel-hi), var(--panel) 55%),
+      var(--panel);
+    border-top:3px solid var(--border-hi);
+    box-shadow:inset 0 1px 0 var(--bevel-hi), 0 -3px 0 rgba(58,42,18,.18), 0 -8px 20px rgba(40,26,10,.34)}
   .navitem{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:3px;height:calc(56px + env(safe-area-inset-bottom,0px));padding:0 2px;
     padding-bottom:calc(env(safe-area-inset-bottom,0px) * .55);cursor:pointer;background:none;border:none;
@@ -362,9 +380,11 @@
     border:1px solid var(--shadow);line-height:1}
   .navitem .badge-n:empty{display:none}
   .fab{pointer-events:auto;position:absolute;right:16px;bottom:calc(72px + env(safe-area-inset-bottom,0px));width:56px;height:56px;
-    font-size:26px;background:var(--gold-deep);color:#3a2600;border:3px solid var(--gold);
-    box-shadow:3px 3px 0 var(--shadow);cursor:pointer;font-family:var(--mono);font-weight:700;
-    display:grid;place-items:center;transition:.06s}
+    font-size:26px;color:#3a2600;border:3px solid var(--gold);
+    background:radial-gradient(circle at 32% 28%, rgba(255,240,190,.85) 0%, rgba(255,240,190,0) 46%), var(--gold-deep);
+    box-shadow:3px 3px 0 var(--shadow), 0 8px 16px rgba(40,26,10,.35), inset 0 -3px 0 rgba(0,0,0,.22);
+    cursor:pointer;font-family:var(--mono);font-weight:700;
+    display:grid;place-items:center;transition:.06s;text-shadow:0 1px 0 rgba(255,240,190,.5)}
   .fab:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
   .fab:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
   .fab.hidden{display:none}
@@ -442,6 +462,23 @@
   .sw.on{background:var(--green-deep);border-color:var(--green)}
   .sw.on i{left:22px;background:#fff8e8}
 
+  /* ======= Relief global : gravure des titres + biseaux des contrôles ======= */
+  .list-title,.cal-title,.shop-cat,.lvl,.victory-t,.stat-n,.day-lbl,.p-title{text-shadow:var(--engrave)}
+  .btn,.subtab,.qseg button,.seg button,.wd-pill,.icon-pick,.coins-btn,.medal-btn{
+    background-image:linear-gradient(180deg, rgba(255,250,225,.30), rgba(255,250,225,0) 42%, rgba(0,0,0,0) 60%, rgba(40,24,8,.12));
+  }
+  .stat,.shop-item,.badge,.wk-day{
+    background-image:var(--noise), linear-gradient(180deg, rgba(255,250,225,.22), rgba(255,250,225,0) 34%);
+    box-shadow:0 2px 0 var(--drop), inset 0 1px 0 var(--bevel-hi);
+  }
+  .badge{box-shadow:0 2px 0 var(--drop), inset 0 1px 0 var(--bevel-hi), 0 0 8px rgba(255,208,86,.25)}
+  .subtab.on,.qseg button.on,.seg button.on{
+    background-image:linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,0) 45%, rgba(255,250,225,.14));
+  }
+  .cal-cell{box-shadow:inset 0 1px 2px rgba(58,38,12,.14)}
+  .cal-cell.today{box-shadow:inset 0 0 0 1px var(--gold-deep), inset 0 1px 2px rgba(58,38,12,.14)}
+  .chip{box-shadow:0 1px 0 var(--drop)}
+
   /* ======= Thème sombre (nuit) ======= */
   body.theme-dark{
     --bg:#171009; --bg2:#241a10;
@@ -453,8 +490,22 @@
     --flame:#e88a3a; --flame2:#f0a840;
     --red:#e0604a; --blue:#6aa8d0; --plum:#cc86ac;
     --shadow:#000000; --inset:#120d07;
-    background:radial-gradient(120% 80% at 50% -10%, #2a2015 0%, #120d07 62%) fixed, #120d07;
+    --engrave:0 1px 0 rgba(0,0,0,.75);
+    --bevel-hi:rgba(255,222,150,.10);
+    --bevel-lo:rgba(0,0,0,.5);
+    --drop:rgba(0,0,0,.5);
+    --noise:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='90'%20height='90'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.9'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20values='0%200%200%200%201%200%200%200%200%201%200%200%200%200%201%200%200%200%200.05%200'/%3E%3C/filter%3E%3Crect%20width='90'%20height='90'%20filter='url(%23n)'/%3E%3C/svg%3E");
+    background:var(--noise), radial-gradient(120% 80% at 50% -10%, #2a2015 0%, #120d07 62%) fixed, #120d07;
   }
+  body.theme-dark .box,body.theme-dark .modal{
+    background:
+      var(--noise),
+      linear-gradient(160deg, rgba(255,222,150,.07) 0%, rgba(255,222,150,0) 26%, rgba(0,0,0,0) 74%, rgba(0,0,0,.28) 100%),
+      var(--panel);
+  }
+  body.theme-dark .victory{background:#332818;box-shadow:inset 0 0 0 2px var(--gold-deep)}
+  body.theme-dark .victory-rays{background:conic-gradient(from 0deg, transparent 0 14deg, rgba(232,182,74,.10) 14deg 28deg)}
+  body.theme-dark .cal-cell.has{background:#6a4e22;color:#f8e8c0}
 
   @media (prefers-reduced-motion:reduce){
     *{animation-duration:.001s!important;transition-duration:.001s!important}
@@ -867,6 +918,7 @@ function updateFab(){
 function updateMedal(){
   const m=document.getElementById("medalBtn"); if(!m)return;
   m.classList.toggle("on", cur==="achievement");
+  const b=document.getElementById("medalBadge"); if(b)b.textContent=countFor("achievement")||"";
 }
 function fabAction(){
   if(cur==="evenement")openEventForm();
@@ -912,18 +964,6 @@ function renderList(){
   if(cur==="secondaire"){renderDayView("secondaire");return;}
   renderDayView("principale");
 }
-function emptyMsg(id){
-  const map={
-    principale:["🎉","Toutes tes quêtes principales sont faites. Repose-toi, héros."],
-    secondaire:["✨","Aucune quête secondaire. Ajoute une passion !"],
-    evenement:["📅","Aucun événement à venir."],
-    abandonnee:["💤","Rien d'abandonné. Belle discipline !"],
-    reussie:["🏆","Aucune quête réussie aujourd'hui… pour l'instant."],
-  };
-  const[a,b]=map[id];
-  return `<div class="empty"><span class="big">${a}</span>${b}</div>`;
-}
-
 function card(it){
   const d=document.createElement("div");d.className="box quest";
   const t=TYPES[it.type]||TYPES.secondaire;
@@ -1727,82 +1767,39 @@ function toast(msg){
 /* ================= Écran d'accueil : le camp ================= */
 function campTier(){const s=S.streak; return s>=8?4:s>=5?3:s>=3?2:s>=1?1:0;}
 function campRichLabel(t){return ["Un camp encore modeste…","Un petit tas de pièces s'accumule","Ton coffre au trésor s'est rempli !","Un camp prospère, digne d'un héros","Une fortune légendaire t'entoure ✨"][t];}
-function campAvatar(R,ax,ay){
-  const skin=(COLORS[S.cosmetics.color]||COLORS.bleu).hex, dark="#0c0a17", hair="#6f66a8";
-  R(ax,ay-16,12,3,hair);R(ax,ay-13,12,9,skin);R(ax,ay-16,12,1,"#4a4276");
-  R(ax+3,ay-9,2,2,dark);R(ax+8,ay-9,2,2,dark);
-  R(ax+4,ay-5,4,1,dark);
-  R(ax+1,ay-4,10,5,"#4a4276");R(ax+1,ay-4,10,1,"#5b52a0");
-  R(ax+9,ay,6,2,"#4a4276");        // jambes vers le feu
-  R(ax+9,ay-3,4,2,skin);           // bras tendu
-}
-function campRiches(R,rx,gy,tier,t){
-  const gold="#ffd24d",gold2="#e8a92e",brown="#6a4326",brown2="#8a5a34",dark="#0c0a17";
-  if(tier>=1){R(rx,gy-3,10,3,gold);R(rx+2,gy-6,6,3,gold2);R(rx+3,gy-8,3,2,gold);}
-  if(tier>=2){const bx=rx+13;R(bx,gy-11,20,11,brown);R(bx,gy-11,20,3,brown2);R(bx,gy-6,20,1,"#4a2f1c");R(bx+8,gy-8,4,5,gold2);
-    if(t%120<60){R(bx+4,gy-9,1,1,gold);R(bx+14,gy-9,1,1,gold);}}
-  if(tier>=3){R(rx-6,gy-4,6,4,gold);R(rx+36,gy-4,7,4,gold);R(rx+37,gy-7,4,3,gold2);
-    R(rx+32,gy-30,2,22,brown2);R(rx+34,gy-30,10,7,"#c53a4a");}
-  if(tier>=4){for(let i=0;i<11;i++)R(rx-4+i*3,gy-3-(i%4),3,3,i%2?gold:gold2);
-    R(rx+48,gy-9,3,9,"#9aa2c0");R(rx+42,gy-18,15,10,"#8f98b8");R(rx+42,gy-18,15,3,"#a7b0d0");
-    R(rx+45,gy-15,4,3,dark);R(rx+52,gy-15,4,3,dark);R(rx+47,gy-21,4,3,"#c53a4a");}
-}
-function drawCamp(cv,t){
-  const x=cv.getContext("2d");const W=cv.width,H=cv.height;
-  const R=(a,b,w,h,c)=>{x.fillStyle=c;x.fillRect(a|0,b|0,Math.max(1,w|0),Math.max(1,h|0));};
-  const hour=new Date().getHours();
-  const night=hour<6||hour>=20, dusk=(hour>=18&&hour<20)||(hour>=6&&hour<8);
-  const gy=206;
-  // ciel
-  let s1,s2;
-  if(night){s1="#12122e";s2="#2f2b57";} else if(dusk){s1="#33265c";s2="#f0925a";} else {s1="#4f9fdd";s2="#cfe9f7";}
-  const g=x.createLinearGradient(0,0,0,gy);g.addColorStop(0,s1);g.addColorStop(1,s2);x.fillStyle=g;x.fillRect(0,0,W,gy);
-  // étoiles
-  if(night){for(let i=0;i<44;i++){const sx=(i*37)%W,sy=(i*53)%(gy-40);if((t+i*13)%120<80)R(sx,sy,1,1,"#fdfdf0");}}
-  // astre
-  if(night){R(W-40,26,18,18,"#dedcc4");R(W-37,23,13,13,"#f2f0dc");R(W-32,29,5,5,"#dedcc4");}
-  else{R(W-42,22,20,20,dusk?"#ffcf6a":"#ffe27a");R(W-39,19,15,15,"#fff2a0");}
-  // nuages
-  if(!night){const cl=(cxp,cyp,col)=>{R(cxp,cyp,20,5,col);R(cxp+4,cyp-4,13,5,col);R(cxp-4,cyp+3,28,4,col);};
-    const col=dusk?"#e8b78a":"#eef6fc"; cl(20+((t/7)%(W+40))-20,42,col); cl(80+((t/10)%(W+40))-20,26,col);}
-  // oiseau
-  if(!night){const bx=(20+t/4)%(W+10)-5, by=56+Math.round(Math.sin(t/18)*3);
-    R(bx,by,1,1,"#333");R(bx+1,by-1,1,1,"#333");R(bx+2,by,1,1,"#333");R(bx+3,by-1,1,1,"#333");R(bx+4,by,1,1,"#333");}
-  // montagnes + neige
-  const mtn=(cx,ht,half,c)=>{for(let r=0;r<ht;r++){const w=Math.round(2*half*(r/ht));R(cx-w/2,gy-ht+r,w,1,c);}};
-  mtn(30,58,44,"#39496a");mtn(120,64,48,"#39496a");mtn(74,80,58,"#43537a");
-  R(72,gy-78,6,4,"#dfe6f0");R(28,gy-56,5,3,"#dfe6f0");R(118,gy-62,5,3,"#dfe6f0");
-  R(0,gy-12,W,12,"#465a46");
-  // sol + sentier
-  R(0,gy,W,H-gy,"#3f7a3d");R(0,gy,W,4,"#57994f");
-  R(64,gy,20,H-gy,"#6a5a3a");R(64,gy,20,2,"#7a6a48");
-  for(let i=4;i<W;i+=18){R(i,gy-2,1,3,"#57994f");R(i+2,gy-4,1,4,"#57994f");R(i+4,gy-2,1,3,"#57994f");}
-  // arbre
-  const sway=Math.round(Math.sin(t/30)*3);
-  R(22,gy-38,7,38,"#5a3a22");R(22,gy-38,3,38,"#6a4a2c");
-  const tx=25+sway, leaf=night?"#2f5a34":"#3f7a3d", leaf2=night?"#264a2b":"#357034";
-  R(tx-22,gy-58,44,16,leaf2);R(tx-19,gy-66,38,18,leaf);R(tx-14,gy-74,28,14,leaf);R(tx-9,gy-80,18,8,leaf);
-  R(tx-8,gy-60,1,1,"#ffcf4d");R(tx+9,gy-52,1,1,"#ff6a4d");R(tx+3,gy-70,1,1,"#ffcf4d");
-  // tente
-  R(96,gy-20,26,20,night?"#7a3a4a":"#a84a5a");R(96,gy-20,26,3,night?"#8a4a5a":"#c05a6a");
-  R(107,gy-14,4,14,"#3a1c24");R(94,gy-1,30,2,"#4a2f1c");
-  // feu
-  const fx=72;
-  R(fx-12,gy+2,24,4,"#6a6a72");R(fx-12,gy+3,4,3,"#55555c");R(fx+8,gy+3,4,3,"#55555c");
-  R(fx-9,gy-1,18,4,"#5a3a22");R(fx-8,gy-4,16,3,"#4a2f1c");
-  if(night){x.globalAlpha=0.16;R(fx-28,gy-36,56,36,"#ff9a2a");x.globalAlpha=1;}
-  const f=(dx,base)=>{const h=base+Math.round(Math.abs(Math.sin(t/6+dx))*4);
-    for(let k=0;k<h;k++){const c=k<h*0.4?"#ff5d3a":k<h*0.75?"#ff9a2a":"#ffe07a";R(fx+dx*2,gy-6-k,2,1,c);}};
-  f(-2,6);f(-1,9);f(0,11);f(1,9);f(2,6);
-  campAvatar(R,fx-30,gy-2);
-  campRiches(R,fx+16,gy,campTier(),t);
-}
-const CAMP_IMG="";
-let campImg=null, launchOpen=false, campRAF=null;
-function drawAvatarOnCamp(ctx,ox,oy,sc){
+/* Phase de la journée (heure réelle) : jour / crépuscule (aube+soir) / nuit */
+function campPhase(){const h=new Date().getHours(); if(h>=21||h<6)return"night"; if(h<8||h>=18)return"dusk"; return"day";}
+/* Palettes par phase : arrière-plan, plan moyen, premier plan */
+const CAMP_PAL={
+  day:{sky:["#4f8fd0","#79b4e4","#b8dcf2","#e8f2da"],haze:"rgba(232,242,218,.38)",
+    far:"#8ba3c6",near:"#5c6f97",pine:"#3a5a70",
+    hill1:"#57904f",hill2:"#417a48",gr1:"#3f7a48",gr2:"#2a5232",
+    dirt:"#8a7050",dirt2:"#74604a",water:"#4f92c4",water2:"#8fc3e8",
+    trunk:"#5a3a22",leaf:["#2f5a34","#3f7a3d","#4f9048"],
+    tent:"#a84a5a",tent2:"#c05a6a",
+    fl:["#e85a7a","#f0d24a","#a86ad8","#ffffff"],veil:null},
+  dusk:{sky:["#241a4c","#5a3a74","#c76a8e","#f4a86e"],haze:"rgba(244,168,110,.32)",
+    far:"#6a5f96",near:"#494276",pine:"#37315c",
+    hill1:"#4a6a4a",hill2:"#3a5a42",gr1:"#3a6440",gr2:"#26462c",
+    dirt:"#7a6048",dirt2:"#66503c",water:"#5f7fb4",water2:"#c78ba0",
+    trunk:"#4a2f1c",leaf:["#27492c","#335f34","#3f7040"],
+    tent:"#8a3a4a",tent2:"#a04a5a",
+    fl:["#b84a64","#c0a83a","#8a58b0","#d8c8d8"],veil:"rgba(40,20,60,.16)"},
+  night:{sky:["#0b0d24","#171a3c","#2b2856","#43395f"],haze:"rgba(67,57,95,.32)",
+    far:"#3c3f66",near:"#2a2c4e",pine:"#20223e",
+    hill1:"#2b4c34",hill2:"#213e2a",gr1:"#22402a",gr2:"#14281a",
+    dirt:"#5a4838",dirt2:"#4a3a2c",water:"#3a5a8c",water2:"#6a8ac0",
+    trunk:"#3a2416",leaf:["#1c3a22","#264a2b","#2f5a34"],
+    tent:"#6a3040",tent2:"#7c3a4c",
+    fl:["#7a3a50","#8a7c30","#5c3a80","#8a8aa8"],veil:"rgba(8,10,30,.22)"},
+};
+let launchOpen=false, campRAF=null;
+function drawAvatarOnCamp(ctx,ox,oy,sc,t){
   const skin=(COLORS[S.cosmetics.color]||COLORS.bleu).hex, dark="#0c0a17";
-  const P=(px,py,col)=>{ctx.fillStyle=col;ctx.fillRect(ox+px*sc,oy+py*sc,sc,sc);};
-  (MODELDRAW[S.cosmetics.model]||MODELDRAW.heros)(P,skin,dark,"happy",false);
+  const bob=(Math.sin((t||0)/26)>0.55?1:0)*sc;      // respiration
+  const blink=((t||0)%140)<6;                        // clignement
+  const P=(px,py,col)=>{ctx.fillStyle=col;ctx.fillRect(ox+px*sc,oy+py*sc+bob,sc,sc);};
+  (MODELDRAW[S.cosmetics.model]||MODELDRAW.heros)(P,skin,dark,"happy",blink);
   drawAcc(P,dark);
 }
 let campStatic=null, campStaticKey="";
@@ -1825,140 +1822,278 @@ function goldPix(x,cx,cy,w){
   x.fillStyle="#e8a92e";for(let i=0;i<16;i++){const rx=cx-w/2+((i*53)%100)/100*w, ry=cy-((i*29)%50)/100*w;x.fillRect(rx|0,ry|0,2,2);}
   for(let i=0;i<7;i++)x.fillRect((cx-w*0.32+i*w*0.11)|0,(cy-2)|0,3,2);
 }
-function riverSamples(W,H){
-  const hy=H*0.42, pts=[];
-  const bz=(p0,p1,p2,p3,n)=>{for(let i=0;i<=n;i++){const u=i/n,v=1-u;
-    pts.push([v*v*v*p0[0]+3*v*v*u*p1[0]+3*v*u*u*p2[0]+u*u*u*p3[0],
-              v*v*v*p0[1]+3*v*v*u*p1[1]+3*v*u*u*p2[1]+u*u*u*p3[1]]);}};
-  bz([W*0.30,hy],[W*0.25,hy+H*0.05],[W*0.30,hy+H*0.08],[W*0.20,hy+H*0.11],9);
-  bz([W*0.20,hy+H*0.11],[W*0.12,hy+H*0.14],[W*0.08,hy+H*0.15],[-W*0.03,hy+H*0.19],9);
-  return pts;
+/* Rivière en perspective : fine à la source (montagnes), large en approchant du bord */
+function riverPts(W,H){
+  const p=[],n=16;
+  for(let i=0;i<=n;i++){const u=i/n;
+    p.push([W*(0.30-0.37*u*u)+Math.sin(u*5.2)*W*0.035, H*(0.425+0.145*u), 2+u*u*W*0.055]);}
+  return p;
 }
 function gemsPix(x,cx,cy,n){const c=["#ff5d6c","#63d98a","#5aa9ff","#c58bff","#ffd24d"];
   for(let i=0;i<n;i++){const gx=cx+(((i*53)%40)-20), gy=cy+(((i*29)%18)-9);
     x.fillStyle=c[i%5];x.fillRect(gx|0,gy|0,3,3);x.fillStyle="rgba(255,255,255,.8)";x.fillRect(gx|0,gy|0,1,1);}}
-function buildCampStatic(W,H,tier){
+function buildCampStatic(W,H,tier,phase){
   const oc=document.createElement("canvas"); oc.width=W; oc.height=H;
   const x=oc.getContext("2d");
-  const hy=H*0.42, gnd=H*0.58;
-  // CIEL crépuscule
-  let g=x.createLinearGradient(0,0,0,gnd);
-  g.addColorStop(0,"#201640");g.addColorStop(0.38,"#4a3a74");g.addColorStop(0.7,"#b3789e");g.addColorStop(1,"#f0ae7e");
-  x.fillStyle=g;x.fillRect(0,0,W,gnd);
-  for(let i=0;i<80;i++){x.fillStyle=i%6?"rgba(255,255,255,.45)":"rgba(255,255,255,.8)";x.fillRect((i*57.3)%W|0,(i*31.7)%(hy*0.82)|0,1,1);}
-  const mx=W*0.15,my=H*0.09,mr=H*0.033;
-  x.fillStyle="#f4eecb";x.beginPath();x.arc(mx,my,mr,0,7);x.fill();
-  x.fillStyle="#241a44";x.beginPath();x.arc(mx+mr*0.6,my-mr*0.35,mr,0,7);x.fill();
-  // MONTAGNES enneigées
-  const mtn=(cx,base,ht,half,col)=>{ x.fillStyle=col;x.beginPath();x.moveTo(cx-half,base);x.lineTo(cx,base-ht);x.lineTo(cx+half,base);x.closePath();x.fill();
-    x.fillStyle="#e9ecf6";x.beginPath();x.moveTo(cx,base-ht);x.lineTo(cx-half*0.26,base-ht*0.62);x.lineTo(cx-half*0.1,base-ht*0.72);x.lineTo(cx,base-ht*0.56);x.lineTo(cx+half*0.12,base-ht*0.72);x.lineTo(cx+half*0.24,base-ht*0.6);x.closePath();x.fill(); };
-  mtn(W*0.18,hy+H*0.015,H*0.15,W*0.16,"#6d6fa4");mtn(W*0.36,hy+H*0.015,H*0.19,W*0.20,"#5b5d90");mtn(W*0.52,hy+H*0.015,H*0.12,W*0.13,"#6d6fa4");
-  // COLLINES
-  const hill=(yTop,col,cv2)=>{ x.fillStyle=col;x.beginPath();x.moveTo(0,yTop);
-    for(let i=0;i<=W;i+=8)x.lineTo(i,yTop+Math.sin(i/W*3.14*cv2)*H*0.018);
-    x.lineTo(W,H);x.lineTo(0,H);x.closePath();x.fill(); };
-  hill(hy+H*0.005,"#46694f",1.4);hill(hy+H*0.05,"#3c7550",2.3);
-  // RIVIÈRE (source aux montagnes -> sort par le bord gauche)
-  const rp=riverSamples(W,H);
-  const river=(col,lw)=>{x.strokeStyle=col;x.lineWidth=lw;x.lineCap="round";x.lineJoin="round";x.beginPath();x.moveTo(rp[0][0],rp[0][1]);for(let i=1;i<rp.length;i++)x.lineTo(rp[i][0],rp[i][1]);x.stroke();};
-  river("#5f9fce",Math.max(3,W*0.035));river("#8fc3e8",Math.max(2,W*0.022));river("rgba(255,255,255,.35)",Math.max(1,W*0.007));
-  // PREMIER PLAN
-  let gg=x.createLinearGradient(0,gnd-H*0.02,0,H);gg.addColorStop(0,"#3c7a48");gg.addColorStop(1,"#2d5a38");
-  x.fillStyle=gg;x.fillRect(0,gnd-H*0.02,W,H-gnd+H*0.02);
-  x.fillStyle="#7a6242";x.beginPath();x.ellipse(W*0.52,H*0.86,W*0.36,H*0.12,0,0,7);x.fill();
-  x.fillStyle="#8a7050";x.beginPath();x.ellipse(W*0.52,H*0.845,W*0.31,H*0.10,0,0,7);x.fill();
-  for(let i=0;i<12;i++){const a=i/12*6.28;x.fillStyle="#6a6a70";x.fillRect((W*0.52+Math.cos(a)*W*0.30)|0,(H*0.9+Math.sin(a)*H*0.06)|0,2,2);}
-  // TRONC — planté au sol, monte jusqu'à la canopée (pas de nuage flottant)
-  const bx=W*0.81, topY=H*0.30;
-  x.fillStyle="#5a3a22";x.beginPath();x.moveTo(bx-W*0.055,H);x.lineTo(bx-W*0.022,topY);x.lineTo(bx+W*0.022,topY);x.lineTo(bx+W*0.078,H);x.closePath();x.fill();
-  x.fillStyle="#6a4a2c";x.fillRect(bx-W*0.006,topY,W*0.02,H-topY);
-  x.fillStyle="#4a2f1c";x.fillRect(bx-W*0.03,H*0.5,W*0.012,H*0.32);
-  x.strokeStyle="#5a3a22";x.lineWidth=Math.max(3,W*0.022);x.lineCap="round";
-  x.beginPath();x.moveTo(bx,H*0.40);x.lineTo(bx-W*0.13,H*0.30);x.moveTo(bx,H*0.36);x.lineTo(bx+W*0.11,H*0.26);x.stroke();
-  x.fillStyle="#4a2f1c";x.fillRect(bx-W*0.09,H*0.95,W*0.06,H*0.05);x.fillRect(bx+W*0.04,H*0.94,W*0.08,H*0.06);
-  // TABLE À CARTE
-  {const tx=W*0.20,ty=H*0.64;x.fillStyle="#6a4a2c";x.fillRect(tx-W*0.10,ty,W*0.20,H*0.012);
-   x.fillStyle="#e8d9a8";x.fillRect(tx-W*0.08,ty-H*0.024,W*0.16,H*0.024);
-   x.fillStyle="#b89a5a";x.fillRect(tx-W*0.09,ty-H*0.026,W*0.02,H*0.028);x.fillRect(tx+W*0.07,ty-H*0.026,W*0.02,H*0.028);
-   x.strokeStyle="#a88a4a";x.lineWidth=1;x.beginPath();x.moveTo(tx-W*0.04,ty-H*0.016);x.lineTo(tx+W*0.02,ty-H*0.009);x.stroke();
-   x.fillStyle="#5a3a22";x.fillRect(tx-W*0.08,ty+H*0.012,W*0.014,H*0.028);x.fillRect(tx+W*0.066,ty+H*0.012,W*0.014,H*0.028);}
-  // LOG (avatar sur le côté droit du feu)
-  x.fillStyle="#6a4a2c";x.fillRect(W*0.54,H*0.775,W*0.20,H*0.035);x.fillStyle="#5a3a22";x.fillRect(W*0.54,H*0.775,W*0.20,3);
-  x.fillStyle="#7a5a34";x.beginPath();x.arc(W*0.74,H*0.792,H*0.018,0,7);x.fill();x.fillStyle="#5a3a22";x.beginPath();x.arc(W*0.74,H*0.792,H*0.008,0,7);x.fill();
-  // FEU (bûches) — à gauche de l'avatar
-  {const fx=W*0.44,fy=H*0.80;x.fillStyle="#5a3a22";x.fillRect(fx-W*0.06,fy,W*0.12,H*0.018);x.fillStyle="#4a2f1c";x.fillRect(fx-W*0.05,fy-H*0.008,W*0.10,H*0.012);
-   x.fillStyle="#6a6a70";for(let i=0;i<7;i++){const a=i/7*6.28;x.fillRect((fx+Math.cos(a)*W*0.08)|0,(fy+H*0.016+Math.sin(a)*H*0.008)|0,3,2);}}
-  // TRÉSORS (selon la série, de plus en plus riches)
-  if(tier>=1){const sx=W*0.13,sy=H*0.9;x.fillStyle="#5a3a22";x.fillRect(sx-W*0.006,sy,W*0.012,H*0.08);
-    x.fillStyle="#8a6a3c";x.fillRect(sx-W*0.08,sy-H*0.05,W*0.16,H*0.05);x.fillStyle="#a8824a";x.fillRect(sx-W*0.075,sy-H*0.046,W*0.15,H*0.01);
-    x.strokeStyle="#4a2f1c";x.lineWidth=2;x.strokeRect(sx-W*0.08,sy-H*0.05,W*0.16,H*0.05);
-    x.fillStyle="#3a2410";x.font="bold "+Math.round(H*0.03)+"px monospace";x.textAlign="center";x.textBaseline="middle";x.fillText("x2.0",sx,sy-H*0.024);x.textAlign="left";x.textBaseline="alphabetic";}
-  if(tier>=2){chestPix(x,W*0.52,H*0.66,W*0.10,false);goldPix(x,W*0.34,H*0.88,W*0.09);}
-  if(tier>=3){chestPix(x,W*0.11,H*0.80,W*0.12,true);goldPix(x,W*0.17,H*0.85,W*0.09);gemsPix(x,W*0.30,H*0.90,5);goldPix(x,W*0.62,H*0.90,W*0.08);}
-  if(tier>=4){goldPix(x,W*0.90,H*0.76,W*0.16);gemsPix(x,W*0.84,H*0.86,6);gemsPix(x,W*0.50,H*0.93,5);
-    x.fillStyle="#6a4a2c";x.fillRect(W*0.85,H*0.80,W*0.12,H*0.07);x.fillStyle="#5a3a22";x.fillRect(W*0.85,H*0.80,W*0.12,3);
-    const blade=(bxx,byy,tl)=>{x.save();x.translate(bxx,byy);x.rotate(tl);x.fillStyle="#cfd6e2";x.fillRect(-W*0.006,-H*0.10,W*0.012,H*0.10);x.fillStyle="#eef2f8";x.fillRect(-W*0.002,-H*0.10,W*0.004,H*0.10);x.fillStyle="#8a8f9a";x.fillRect(-W*0.022,0,W*0.044,H*0.008);x.fillStyle="#5a3a22";x.fillRect(-W*0.006,H*0.008,W*0.012,H*0.022);x.restore();};
-    blade(W*0.885,H*0.80,-0.18);blade(W*0.91,H*0.795,0.03);blade(W*0.935,H*0.80,0.18);
-    const ax=W*0.78,ay=H*0.50;x.fillStyle="#9aa0b0";x.fillRect(ax-W*0.005,ay+H*0.055,W*0.01,H*0.06);
-    x.fillStyle="#b8bece";x.fillRect(ax-W*0.035,ay,W*0.07,H*0.065);x.fillStyle="#cdd3e0";x.fillRect(ax-W*0.03,ay+2,W*0.026,H*0.055);
-    x.fillStyle="#a8aec0";x.beginPath();x.arc(ax,ay-H*0.004,W*0.028,0,7);x.fill();x.fillStyle="#33384a";x.fillRect(ax-W*0.02,ay-H*0.008,W*0.04,H*0.008);
-    x.fillStyle="#e85a5a";x.fillRect(ax-2,ay-H*0.03,4,H*0.02);}
-  // fleurs
-  for(let i=0;i<W;i+=W*0.055){const fy=H*0.95+((i*13)%20)/20*H*0.03;x.fillStyle=["#e85a7a","#f0d24a","#a86ad8","#fff"][(i*7|0)%4];x.fillRect(i,fy,3,3);x.fillStyle="#3f7a4a";x.fillRect(i+1,fy+3,1,H*0.02);}
-  campStatic=oc; campStaticKey=W+"x"+H+":"+tier;
+  const C=CAMP_PAL[phase]||CAMP_PAL.dusk;
+  const hy=H*0.40;
+  /* ---- ARRIÈRE-PLAN : ciel selon l'heure réelle ---- */
+  const g=x.createLinearGradient(0,0,0,hy+H*0.04);
+  g.addColorStop(0,C.sky[0]);g.addColorStop(0.42,C.sky[1]);g.addColorStop(0.78,C.sky[2]);g.addColorStop(1,C.sky[3]);
+  x.fillStyle=g;x.fillRect(0,0,W,hy+H*0.04);
+  if(phase!=="day"){for(let i=0;i<70;i++){
+    x.fillStyle=i%5?"rgba(255,255,255,.5)":"rgba(255,240,200,.85)";
+    x.fillRect((i*57.3)%W|0,(i*31.7)%(hy*0.85)|0,1,1);}}
+  if(phase==="night"){const mx=W*0.16,my=H*0.10,mr=H*0.030;
+    x.fillStyle="rgba(244,238,203,.12)";x.beginPath();x.arc(mx,my,mr*2.6,0,7);x.fill();
+    x.fillStyle="#f4eecb";x.beginPath();x.arc(mx,my,mr,0,7);x.fill();
+    x.fillStyle=C.sky[1];x.beginPath();x.arc(mx+mr*0.55,my-mr*0.3,mr*0.9,0,7);x.fill();}
+  else if(phase==="day"){const sx=W*0.80,sy=H*0.11,sr=H*0.026;
+    x.fillStyle="rgba(255,240,160,.25)";x.beginPath();x.arc(sx,sy,sr*2.4,0,7);x.fill();
+    x.fillStyle="#ffe27a";x.beginPath();x.arc(sx,sy,sr,0,7);x.fill();
+    x.fillStyle="#fff6c0";x.beginPath();x.arc(sx-sr*0.2,sy-sr*0.2,sr*0.6,0,7);x.fill();}
+  else{const sx=W*0.72,sy=hy-H*0.015,sr=H*0.034;
+    x.fillStyle="rgba(255,180,110,.30)";x.beginPath();x.arc(sx,sy,sr*2.6,0,7);x.fill();
+    x.save();x.beginPath();x.rect(0,0,W,sy+sr*0.4);x.clip();
+    x.fillStyle="#ffcf6a";x.beginPath();x.arc(sx,sy,sr,0,7);x.fill();x.restore();}
+  /* ---- MONTAGNES : chaîne lointaine voilée de brume, puis chaîne proche enneigée ---- */
+  const mtn=(cx,ht,half,col)=>{x.fillStyle=col;x.beginPath();
+    x.moveTo(cx-half,hy);x.lineTo(cx,hy-ht);x.lineTo(cx+half,hy);x.closePath();x.fill();};
+  const snow=(cx,ht,half)=>{x.fillStyle=phase==="night"?"#8a8fb4":"#e9ecf6";x.beginPath();
+    x.moveTo(cx,hy-ht);x.lineTo(cx-half*0.24,hy-ht*0.66);x.lineTo(cx-half*0.09,hy-ht*0.75);
+    x.lineTo(cx,hy-ht*0.60);x.lineTo(cx+half*0.11,hy-ht*0.75);x.lineTo(cx+half*0.22,hy-ht*0.64);x.closePath();x.fill();};
+  mtn(W*0.05,H*0.085,W*0.14,C.far);mtn(W*0.30,H*0.115,W*0.19,C.far);
+  mtn(W*0.56,H*0.09,W*0.15,C.far);mtn(W*0.80,H*0.125,W*0.20,C.far);mtn(W*1.00,H*0.08,W*0.13,C.far);
+  x.fillStyle=C.haze;x.fillRect(0,hy-H*0.13,W,H*0.13);
+  mtn(W*0.16,H*0.185,W*0.20,C.near);snow(W*0.16,H*0.185,W*0.20);
+  mtn(W*0.42,H*0.225,W*0.24,C.near);snow(W*0.42,H*0.225,W*0.24);
+  mtn(W*0.70,H*0.16,W*0.18,C.near);snow(W*0.70,H*0.16,W*0.18);
+  /* rang de sapins : échelle intermédiaire entre montagnes et camp */
+  for(let i=0;i<=14;i++){const px=i/14*W+(i%3)*W*0.012, ph=H*(0.026+((i*7)%5)*0.004), py=hy+H*0.012;
+    x.fillStyle=C.pine;x.beginPath();x.moveTo(px-W*0.020,py);x.lineTo(px,py-ph);x.lineTo(px+W*0.020,py);x.closePath();x.fill();}
+  /* ---- PLAN MOYEN : collines ---- */
+  const hill=(yTop,col,f)=>{x.fillStyle=col;x.beginPath();x.moveTo(0,yTop);
+    for(let i=0;i<=W;i+=8)x.lineTo(i,yTop+Math.sin(i/W*3.14*f)*H*0.016);
+    x.lineTo(W,H);x.lineTo(0,H);x.closePath();x.fill();};
+  hill(hy+H*0.008,C.hill1,1.5);hill(hy+H*0.05,C.hill2,2.4);
+  /* ---- PREMIER PLAN : prairie ---- */
+  const gg=x.createLinearGradient(0,H*0.50,0,H);gg.addColorStop(0,C.gr1);gg.addColorStop(1,C.gr2);
+  x.fillStyle=gg;x.fillRect(0,H*0.52,W,H*0.48);
+  /* ---- RIVIÈRE : née dans les montagnes, s'élargit vers le bord gauche ---- */
+  const rp=riverPts(W,H);
+  const stroke=(col,dw,i0)=>{for(let i=i0||1;i<rp.length;i++){
+    x.strokeStyle=col;x.lineWidth=Math.max(1,rp[i][2]+dw);x.lineCap="round";
+    x.beginPath();x.moveTo(rp[i-1][0],rp[i-1][1]);x.lineTo(rp[i][0],rp[i][1]);x.stroke();}};
+  /* le contour sombre ne démarre qu'après la crête : la source reste ouverte, fondue dans le fond */
+  stroke(C.gr2,3,4);stroke(C.water,0);stroke(C.water2,-Math.max(1,W*0.012));
+  /* touffes d'herbe */
+  for(let i=0;i<46;i++){const gx=(i*73.7)%W, gyy=H*(0.54+((i*37)%40)/100*0.42);
+    x.fillStyle=i%2?C.hill1:C.hill2;x.fillRect(gx|0,gyy|0,1,3);x.fillRect((gx+2)|0,(gyy+1)|0,1,2);}
+  /* ---- CLAIRIÈRE de terre battue ---- */
+  x.fillStyle=C.dirt2;x.beginPath();x.ellipse(W*0.48,H*0.82,W*0.40,H*0.105,0,0,7);x.fill();
+  x.fillStyle=C.dirt;x.beginPath();x.ellipse(W*0.48,H*0.815,W*0.34,H*0.088,0,0,7);x.fill();
+  /* ---- TENTE (plan moyen gauche, ombre portée + face éclairée côté feu) ---- */
+  {const tx=W*0.24,tb=H*0.665,tw=W*0.155,th=H*0.085;
+   x.fillStyle="rgba(0,0,0,.18)";x.beginPath();x.ellipse(tx,tb+H*0.006,tw*1.12,H*0.014,0,0,7);x.fill();
+   x.fillStyle=C.tent;x.beginPath();x.moveTo(tx-tw,tb);x.lineTo(tx,tb-th);x.lineTo(tx+tw,tb);x.closePath();x.fill();
+   x.fillStyle=C.tent2;x.beginPath();x.moveTo(tx-tw,tb);x.lineTo(tx,tb-th);x.lineTo(tx-tw*0.30,tb);x.closePath();x.fill();
+   x.fillStyle="#2a161c";x.beginPath();x.moveTo(tx-tw*0.30,tb);x.lineTo(tx,tb-th*0.72);x.lineTo(tx+tw*0.30,tb);x.closePath();x.fill();
+   x.strokeStyle=C.trunk;x.lineWidth=1;
+   x.beginPath();x.moveTo(tx-tw,tb);x.lineTo(tx-tw*1.22,tb+H*0.012);x.moveTo(tx+tw,tb);x.lineTo(tx+tw*1.22,tb+H*0.012);x.stroke();
+   x.fillStyle="#d8c48c";x.fillRect(tx-1,tb-th-H*0.012,2,H*0.012);}
+  /* ---- RONDIN (siège de l'avatar, centré sous lui) ---- */
+  x.fillStyle="rgba(0,0,0,.20)";x.beginPath();x.ellipse(W*0.60,H*0.825,W*0.105,H*0.012,0,0,7);x.fill();
+  x.fillStyle="#6a4a2c";x.fillRect(W*0.516,H*0.79,W*0.168,H*0.030);
+  x.fillStyle="#5a3a22";x.fillRect(W*0.516,H*0.79,W*0.168,3);
+  x.fillStyle="#7a5a34";x.beginPath();x.arc(W*0.684,H*0.805,H*0.015,0,7);x.fill();
+  x.fillStyle="#5a3a22";x.beginPath();x.arc(W*0.684,H*0.805,H*0.006,0,7);x.fill();
+  /* ---- FOYER : cercle de pierres + bûches (les flammes sont animées) ---- */
+  {const fx=W*0.40,fy=H*0.795;
+   x.fillStyle="#3a3128";x.beginPath();x.ellipse(fx,fy+H*0.010,W*0.085,H*0.020,0,0,7);x.fill();
+   for(let i=0;i<10;i++){const a=i/10*6.283;
+     x.fillStyle=i%2?"#6a6a72":"#55555c";
+     x.fillRect((fx+Math.cos(a)*W*0.085)|0,(fy+H*0.012+Math.sin(a)*H*0.016)|0,4,3);}
+   x.fillStyle="#5a3a22";x.fillRect(fx-W*0.05,fy,W*0.10,H*0.012);
+   x.fillStyle="#4a2f1c";x.fillRect(fx-W*0.036,fy-H*0.006,W*0.072,H*0.010);}
+  /* ---- GRAND ARBRE organique : tronc galbé, racines, base derrière l'avatar ---- */
+  const bx=W*0.80, baseY=H*0.875, topX=W*0.775, topY=H*0.515;
+  x.fillStyle="rgba(0,0,0,.20)";x.beginPath();x.ellipse(bx,baseY+H*0.006,W*0.15,H*0.016,0,0,7);x.fill();
+  x.fillStyle=C.trunk;x.beginPath();
+  x.moveTo(bx-W*0.115,baseY);
+  x.quadraticCurveTo(bx-W*0.045,baseY-H*0.035,bx-W*0.038,baseY-H*0.09);
+  x.bezierCurveTo(bx-W*0.052,H*0.685,bx-W*0.020,H*0.585,topX-W*0.024,topY);
+  x.lineTo(topX+W*0.024,topY);
+  x.bezierCurveTo(bx+W*0.040,H*0.585,bx+W*0.030,H*0.685,bx+W*0.042,baseY-H*0.09);
+  x.quadraticCurveTo(bx+W*0.050,baseY-H*0.035,bx+W*0.125,baseY);
+  x.closePath();x.fill();
+  /* racines apparentes qui agrippent le sol */
+  x.beginPath();x.moveTo(bx-W*0.115,baseY);x.quadraticCurveTo(bx-W*0.145,baseY-H*0.013,bx-W*0.170,baseY);x.lineTo(bx-W*0.115,baseY+H*0.006);x.closePath();x.fill();
+  x.beginPath();x.moveTo(bx+W*0.125,baseY);x.quadraticCurveTo(bx+W*0.150,baseY-H*0.015,bx+W*0.178,baseY);x.lineTo(bx+W*0.125,baseY+H*0.006);x.closePath();x.fill();
+  x.beginPath();x.moveTo(bx-W*0.02,baseY);x.quadraticCurveTo(bx,baseY-H*0.010,bx+W*0.03,baseY+H*0.004);x.lineTo(bx-W*0.02,baseY+H*0.006);x.closePath();x.fill();
+  /* écorce : reflet côté feu + fentes sombres */
+  x.strokeStyle="rgba(255,240,200,.13)";x.lineWidth=Math.max(2,W*0.011);x.lineCap="round";
+  x.beginPath();x.moveTo(bx-W*0.028,baseY-H*0.03);x.bezierCurveTo(bx-W*0.044,H*0.70,bx-W*0.014,H*0.60,topX-W*0.011,topY+H*0.015);x.stroke();
+  x.strokeStyle="rgba(0,0,0,.22)";x.lineWidth=1.5;
+  x.beginPath();x.moveTo(bx+W*0.014,baseY-H*0.035);x.quadraticCurveTo(bx+W*0.022,H*0.725,bx+W*0.010,H*0.655);x.stroke();
+  x.beginPath();x.moveTo(bx-W*0.008,H*0.755);x.quadraticCurveTo(bx-W*0.018,H*0.695,bx-W*0.005,H*0.648);x.stroke();
+  /* branches maîtresses qui portent la canopée (dont une au-dessus de l'avatar) */
+  x.strokeStyle=C.trunk;x.lineCap="round";
+  x.lineWidth=Math.max(4,W*0.026);
+  x.beginPath();x.moveTo(topX,H*0.582);x.quadraticCurveTo(W*0.70,H*0.545,W*0.60,H*0.540);x.stroke();
+  x.lineWidth=Math.max(3,W*0.020);
+  x.beginPath();x.moveTo(topX+W*0.01,H*0.556);x.quadraticCurveTo(W*0.88,H*0.51,W*0.925,H*0.492);x.stroke();
+  x.lineWidth=Math.max(3,W*0.016);
+  x.beginPath();x.moveTo(topX,H*0.532);x.quadraticCurveTo(W*0.79,H*0.494,W*0.755,H*0.476);x.stroke();
+  /* ---- TRÉSOR : un seul tas, à gauche du feu, qui s'étoffe palier après palier ---- */
+  if(tier>=1){ /* ombre commune du tas, elle grandit avec lui */
+    const sw=[0.10,0.13,0.17,0.21][Math.min(3,tier-1)];
+    x.fillStyle="rgba(0,0,0,.18)";x.beginPath();x.ellipse(W*0.19,H*0.892,W*sw,H*0.014,0,0,7);x.fill();}
+  if(tier>=4){ /* fond du tas : grosse butte d'or couronnée + lame plantée */
+    goldPix(x,W*0.185,H*0.812,W*0.17);
+    x.save();x.translate(W*0.265,H*0.800);x.rotate(0.20);
+    x.fillStyle="#cfd6e2";x.fillRect(-W*0.006,-H*0.075,W*0.012,H*0.075);
+    x.fillStyle="#eef2f8";x.fillRect(-W*0.002,-H*0.075,W*0.004,H*0.075);
+    x.fillStyle="#8a8f9a";x.fillRect(-W*0.018,-H*0.002,W*0.036,H*0.006);x.restore();
+    x.fillStyle="#e8a92e";x.beginPath();
+    x.moveTo(W*0.152,H*0.768);x.lineTo(W*0.160,H*0.752);x.lineTo(W*0.171,H*0.764);
+    x.lineTo(W*0.185,H*0.748);x.lineTo(W*0.199,H*0.764);x.lineTo(W*0.210,H*0.752);
+    x.lineTo(W*0.218,H*0.768);x.closePath();x.fill();
+    x.fillStyle="#ffd24d";x.fillRect(W*0.152,H*0.768,W*0.066,H*0.009);
+    x.fillStyle="#ff5d6c";x.fillRect((W*0.181)|0,(H*0.757)|0,3,3);}
+  if(tier>=3){ /* coffre ouvert qui déborde + l'or s'étale devant */
+    chestPix(x,W*0.115,H*0.845,W*0.115,true);
+    goldPix(x,W*0.205,H*0.868,W*0.085);
+    gemsPix(x,W*0.165,H*0.860,5);}
+  if(tier>=2){ /* coffre fermé posé devant le tas */
+    chestPix(x,W*0.262,H*0.862,W*0.10,false);
+    goldPix(x,W*0.145,H*0.888,W*0.07);}
+  if(tier>=1){ /* premières pièces au sol + pancarte du multiplicateur */
+    goldPix(x,W*0.225,H*0.895,W*0.06);
+    gemsPix(x,W*0.19,H*0.893,3);
+    const sx=W*0.065,sy=H*0.90;
+    x.fillStyle="#5a3a22";x.fillRect(sx-W*0.006,sy-H*0.02,W*0.012,H*0.070);
+    x.fillStyle="#8a6a3c";x.fillRect(sx-W*0.062,sy-H*0.060,W*0.124,H*0.040);
+    x.fillStyle="#a8824a";x.fillRect(sx-W*0.058,sy-H*0.056,W*0.116,H*0.008);
+    x.strokeStyle="#4a2f1c";x.lineWidth=2;x.strokeRect(sx-W*0.062,sy-H*0.060,W*0.124,H*0.040);
+    x.fillStyle="#3a2410";x.font="bold "+Math.round(H*0.024)+"px monospace";x.textAlign="center";x.textBaseline="middle";
+    x.fillText("×"+multiplier().toFixed(1),sx,sy-H*0.040);x.textAlign="left";x.textBaseline="alphabetic";}
+  /* ---- Fleurs du bord bas ---- */
+  for(let i=0;i<W;i+=Math.max(8,W*0.055)){const fy2=H*0.955+((i*13)%20)/20*H*0.028;
+    x.fillStyle=C.fl[(i*7|0)%4];x.fillRect(i,fy2,3,3);x.fillStyle=C.hill1;x.fillRect(i+1,fy2+3,1,H*0.016);}
+  /* ---- Voile d'ambiance (crépuscule / nuit) ---- */
+  if(C.veil){x.fillStyle=C.veil;x.fillRect(0,hy-H*0.02,W,H-hy+H*0.02);}
+  campStatic=oc; campStaticKey=W+"x"+H+":"+tier+":"+phase+":"+multiplier().toFixed(1);
 }
-function drawCanopy(x,W,H,t){
-  const bx=W*0.81, sway=Math.sin(t/45)*W*0.012, cx=bx+sway, cy=H*0.16;
+/* Petit arbre près de la rivière — dessiné après les reflets pour rester devant eux */
+function drawLeftTree(x,W,H,t,C){
+  const sway=Math.sin(t/38)*W*0.006;
+  x.fillStyle=C.trunk;x.fillRect(W*0.045,H*0.47,W*0.022,H*0.13);
+  const lb=(dx,dy,r,ci)=>{x.fillStyle=C.leaf[ci];x.beginPath();x.arc(W*0.056+sway+dx,H*0.455+dy,r,0,7);x.fill();};
+  lb(0,0,W*0.075,0);lb(-W*0.045,H*0.02,W*0.05,0);lb(W*0.05,H*0.018,W*0.05,1);lb(0,-H*0.028,W*0.055,1);lb(W*0.012,-H*0.006,W*0.04,2);
+}
+function drawCanopy(x,W,H,t,C){
+  const sway=Math.sin(t/45)*W*0.010, cx=W*0.72+sway, cy=H*0.455;
   const blob=(dx,dy,r,c)=>{x.fillStyle=c;x.beginPath();x.arc(cx+dx,cy+dy,r,0,7);x.fill();};
-  const d="#2f5a34",m="#3f7a3d",l="#4f9048";
-  blob(0,0,W*0.23,d);
-  blob(-W*0.17,H*0.05,W*0.14,d);blob(W*0.16,H*0.05,W*0.15,d);
-  blob(-W*0.03,H*0.13,W*0.15,d);blob(W*0.05,H*0.15,W*0.11,d);      // descend souder au tronc
-  blob(-W*0.07,-H*0.06,W*0.15,m);blob(W*0.10,-H*0.03,W*0.14,m);blob(-W*0.19,0,W*0.10,m);blob(W*0.21,H*0.03,W*0.10,m);
-  blob(-W*0.02,-H*0.03,W*0.11,l);blob(W*0.07,H*0.02,W*0.09,l);blob(-W*0.11,H*0.07,W*0.08,l);
+  const d=C.leaf[0],m=C.leaf[1],l=C.leaf[2];
+  /* masse principale, silhouette irrégulière (échelle -20%) */
+  blob(0,0,W*0.16,d);
+  blob(-W*0.152,H*0.028,W*0.12,d);blob(W*0.128,H*0.022,W*0.104,d);
+  blob(-W*0.264,H*0.050,W*0.084,d);
+  blob(-W*0.048,H*0.072,W*0.104,d);blob(W*0.064,H*0.080,W*0.08,d);  // souder au tronc
+  blob(-W*0.124,H*0.100,W*0.076,d);                                  // branche basse au-dessus de l'avatar
+  /* volumes intermédiaires */
+  blob(-W*0.08,-H*0.040,W*0.104,m);blob(W*0.064,-H*0.028,W*0.096,m);
+  blob(-W*0.208,H*0.010,W*0.08,m);blob(W*0.16,H*0.010,W*0.072,m);
+  blob(-W*0.108,H*0.084,W*0.06,m);
+  /* lumière du haut */
+  blob(-W*0.024,-H*0.014,W*0.072,l);blob(-W*0.136,H*0.014,W*0.06,l);blob(W*0.072,H*0.014,W*0.056,l);
+}
+/* Lumière du feu : flaque au sol + halo dans l'air, plus forts la nuit */
+function drawFireLight(x,W,H,t,phase){
+  const fx=W*0.40,fy=H*0.79;
+  const flick=1+0.10*Math.sin(t/6)+0.06*Math.sin(t/2.7);
+  const amb=phase==="day"?0.08:phase==="dusk"?0.20:0.28;
+  x.save();x.translate(fx,fy+H*0.012);x.scale(1,0.34);
+  let gr=x.createRadialGradient(0,0,2,0,0,W*0.40*flick);
+  gr.addColorStop(0,`rgba(255,170,80,${(amb*1.3).toFixed(3)})`);gr.addColorStop(1,"rgba(255,150,60,0)");
+  x.fillStyle=gr;x.fillRect(-W*0.55,-W*0.55,W*1.1,W*1.1);x.restore();
+  gr=x.createRadialGradient(fx,fy-H*0.02,2,fx,fy-H*0.02,W*0.34*flick);
+  gr.addColorStop(0,`rgba(255,160,70,${amb.toFixed(3)})`);gr.addColorStop(1,"rgba(255,140,50,0)");
+  x.fillStyle=gr;x.fillRect(fx-W*0.45,fy-H*0.02-W*0.45,W*0.9,W*0.9);
 }
 function drawFire(x,W,H,t){
-  const fx=W*0.44,fy=H*0.79, glow=0.30+0.16*Math.sin(t/8);
-  const gr=x.createRadialGradient(fx,fy,2,fx,fy,W*0.17);gr.addColorStop(0,`rgba(255,150,50,${glow})`);gr.addColorStop(1,"rgba(255,150,50,0)");
-  x.fillStyle=gr;x.beginPath();x.arc(fx,fy,W*0.17,0,7);x.fill();
-  const fl=(dx,base)=>{const h=base+Math.abs(Math.sin(t/6+dx*30))*H*0.022;
-    const gg=x.createLinearGradient(0,fy-h,0,fy);gg.addColorStop(0,"#ffe884");gg.addColorStop(0.5,"#ff9a2a");gg.addColorStop(1,"#ff5d2a");
-    x.fillStyle=gg;x.beginPath();x.moveTo(fx+dx-W*0.014,fy);x.quadraticCurveTo(fx+dx,fy-h*0.6,fx+dx,fy-h);x.quadraticCurveTo(fx+dx,fy-h*0.6,fx+dx+W*0.014,fy);x.closePath();x.fill();};
-  fl(-W*0.022,H*0.03);fl(0,H*0.055);fl(W*0.022,H*0.032);
-  x.fillStyle="#fff2b0";x.beginPath();x.arc(fx,fy-H*0.012,W*0.012,0,7);x.fill();
-  for(let i=0;i<7;i++){const prog=((t/38)+i*0.15)%1, ex=fx+Math.sin(prog*6+i*2)*W*0.03, ey=fy-prog*H*0.12;
+  const fx=W*0.40,fy=H*0.793;
+  /* fumée qui monte et dérive */
+  for(let i=0;i<4;i++){const prog=((t/90)+i*0.25)%1;
+    const sx2=fx+Math.sin(prog*5+i*1.7)*W*0.02+prog*W*0.03, sy2=fy-H*0.05-prog*H*0.16;
+    x.globalAlpha=0.16*(1-prog);x.fillStyle="#c9c4bc";
+    const r=Math.max(2,2+prog*W*0.02)|0;x.fillRect((sx2-r/2)|0,sy2|0,r,r);}
+  x.globalAlpha=1;
+  /* flammes : trois langues qui dansent */
+  const fl2=(dx,base,ph)=>{const h=base+Math.abs(Math.sin(t/6+ph))*H*0.020;
+    const gg=x.createLinearGradient(0,fy-h,0,fy);
+    gg.addColorStop(0,"#ffe884");gg.addColorStop(0.5,"#ff9a2a");gg.addColorStop(1,"#ff5d2a");
+    x.fillStyle=gg;x.beginPath();
+    x.moveTo(fx+dx-W*0.016,fy);
+    x.quadraticCurveTo(fx+dx-W*0.006,fy-h*0.55,fx+dx+Math.sin(t/9+ph)*W*0.006,fy-h);
+    x.quadraticCurveTo(fx+dx+W*0.006,fy-h*0.55,fx+dx+W*0.016,fy);x.closePath();x.fill();};
+  fl2(-W*0.024,H*0.030,0);fl2(W*0.022,H*0.034,2.1);fl2(0,H*0.052,4.2);
+  x.fillStyle="#fff2b0";x.beginPath();x.arc(fx,fy-H*0.010,W*0.011,0,7);x.fill();
+  /* étincelles */
+  for(let i=0;i<7;i++){const prog=((t/34)+i*0.145)%1;
+    const ex=fx+Math.sin(prog*6+i*2)*W*0.028, ey=fy-H*0.02-prog*H*0.12;
     x.globalAlpha=Math.max(0,1-prog);x.fillStyle=i%2?"#ffb84a":"#ff6a2a";x.fillRect(ex|0,ey|0,2,2);}
   x.globalAlpha=1;
 }
 function drawScene(t){
   const cv=document.getElementById("camp"); if(!cv)return;
   const W=cv.width,H=cv.height,x=cv.getContext("2d");
-  const key=W+"x"+H+":"+campTier();
-  if(!campStatic||campStaticKey!==key)buildCampStatic(W,H,campTier());
+  const tier=campTier(), phase=campPhase(), C=CAMP_PAL[phase]||CAMP_PAL.dusk;
+  const key=W+"x"+H+":"+tier+":"+phase+":"+multiplier().toFixed(1);
+  if(!campStatic||campStaticKey!==key)buildCampStatic(W,H,tier,phase);
   x.imageSmoothingEnabled=false;
   x.drawImage(campStatic,0,0);
-  // étoiles scintillantes
-  for(let i=0;i<14;i++){const sx=(i*83.7)%W, sy=(i*47.3)%(H*0.28);
-    if((t+i*11)%90<45){x.fillStyle="#fff";x.fillRect(sx|0,sy|0,1,1);
-      if((t+i*11)%90<12){x.fillRect((sx-1)|0,sy|0,3,1);x.fillRect(sx|0,(sy-1)|0,1,3);}}}
-  // rivière : reflets qui coulent (source -> aval)
-  const rp=riverSamples(W,H);
-  for(let k=0;k<4;k++){const u=((t/50)+k*0.25)%1, idx=Math.min(rp.length-1,Math.floor(u*(rp.length-1))), p=rp[idx];
-    x.fillStyle="rgba(255,255,255,.7)";x.fillRect(p[0]|0,p[1]|0,Math.max(2,W*0.02),1);}
-  drawCanopy(x,W,H,t);
+  /* vie du ciel : nuages + oiseau le jour, étoiles scintillantes sinon */
+  if(phase==="day"){
+    const cl=(cxp,cyp,s,col)=>{x.fillStyle=col;x.fillRect(cxp,cyp,20*s,5*s);x.fillRect(cxp+4*s,cyp-4*s,13*s,5*s);x.fillRect(cxp-4*s,cyp+3*s,28*s,4*s);};
+    cl(((t/8)%(W+60))-40,H*0.06,1.2,"rgba(255,255,255,.85)");
+    cl(((t/12+140)%(W+60))-40,H*0.115,0.9,"rgba(255,255,255,.7)");
+    const bx2=(t/3.5)%(W+20)-10, by2=H*0.16+Math.sin(t/16)*H*0.008;
+    x.fillStyle="#243040";
+    x.fillRect(bx2|0,by2|0,1,1);x.fillRect((bx2+1)|0,(by2-1)|0,1,1);x.fillRect((bx2+2)|0,by2|0,1,1);
+    x.fillRect((bx2+3)|0,(by2-1)|0,1,1);x.fillRect((bx2+4)|0,by2|0,1,1);
+  }else{
+    for(let i=0;i<16;i++){const sx=(i*83.7)%W, sy=(i*47.3)%(H*0.30);
+      if((t+i*11)%90<45){x.fillStyle="#fff";x.fillRect(sx|0,sy|0,1,1);
+        if((t+i*11)%90<10){x.fillRect((sx-1)|0,sy|0,3,1);x.fillRect(sx|0,(sy-1)|0,1,3);}}}
+  }
+  /* reflets de la rivière (coulent de la source vers l'aval) */
+  const rp=riverPts(W,H);
+  for(let k=0;k<5;k++){const u=((t/60)+k*0.2)%1, idx=Math.min(rp.length-1,Math.floor(u*(rp.length-1))), p=rp[idx];
+    x.globalAlpha=0.55;x.fillStyle="#fff";x.fillRect(p[0]|0,p[1]|0,Math.max(2,p[2]*0.8)|0,1);x.globalAlpha=1;}
+  drawLeftTree(x,W,H,t,C);
+  drawCanopy(x,W,H,t,C);
+  drawFireLight(x,W,H,t,phase);
   drawFire(x,W,H,t);
-  // avatar assis sur le rondin, à droite du feu (ne chevauche pas le feu)
-  const sc=Math.max(3,Math.round(H*0.12/13));
-  drawAvatarOnCamp(x, Math.round(W*0.63-9*sc), Math.round(H*0.73-12*sc), sc);
-  // feuilles qui tombent (depuis la canopée)
-  const tier=campTier();
-  for(let i=0;i<8;i++){const prog=((t/(60+i*9))+i*0.31)%1, lx=W*(0.66+i*0.03)+Math.sin(prog*6.28+i)*W*0.05, ly=H*(0.12+prog*0.58);
-    x.fillStyle=["#4f7a3a","#6a9a44","#3f6a34"][i%3];const s=Math.max(2,H*0.007);x.fillRect(lx|0,ly|0,s,s);}
-  // étincelles sur les trésors présents
-  const spark=(fx,fy)=>{ if((t+((fx*97)|0))%64<7){const sx=W*fx,sy=H*fy,r=Math.max(1,H*0.006);x.fillStyle="#fff";x.fillRect(sx-r,sy,r*2+1,1);x.fillStyle="#ffe07a";x.fillRect(sx,sy-r,1,r*2+1);} };
-  if(tier>=2){spark(0.52,0.63);spark(0.34,0.87);}
-  if(tier>=3){spark(0.11,0.77);spark(0.30,0.89);spark(0.62,0.89);}
-  if(tier>=4){spark(0.90,0.72);spark(0.84,0.85);spark(0.78,0.48);}
+  /* avatar assis sur le rondin, éclairé par le feu */
+  const sc=Math.max(3,Math.round(H*0.085/13));
+  drawAvatarOnCamp(x, Math.round(W*0.60-9*sc), Math.round(H*0.795-13*sc), sc, t);
+  /* feuilles qui tombent de la canopée */
+  for(let i=0;i<7;i++){const prog=((t/(70+i*9))+i*0.31)%1;
+    const lx=W*(0.50+i*0.052)+Math.sin(prog*6.28+i)*W*0.05, ly=H*(0.42+prog*0.40);
+    x.fillStyle=C.leaf[i%3];const s2=Math.max(2,H*0.005)|0;x.fillRect(lx|0,ly|0,s2,s2);}
+  /* lucioles la nuit */
+  if(phase==="night"){for(let i=0;i<6;i++){
+    const fx2=W*(0.18+i*0.13)+Math.sin(t/40+i*2.3)*W*0.04, fy2=H*(0.60+((i*37)%25)/100)+Math.cos(t/34+i*1.7)*H*0.02;
+    x.globalAlpha=0.3+0.7*Math.abs(Math.sin(t/22+i*2.9));x.fillStyle="#ffe88a";x.fillRect(fx2|0,fy2|0,2,2);}
+    x.globalAlpha=1;}
+  /* étincelles sur les trésors présents */
+  const spark=(fx3,fy3)=>{ if((t+((fx3*97)|0))%64<7){const sx=W*fx3,sy=H*fy3;
+    x.fillStyle="#fff";x.fillRect(sx-2,sy,5,1);x.fillStyle="#ffe07a";x.fillRect(sx,sy-2,1,5);} };
+  if(tier>=1)spark(0.225,0.875);
+  if(tier>=2){spark(0.262,0.835);spark(0.145,0.875);}
+  if(tier>=3){spark(0.115,0.81);spark(0.205,0.85);}
+  if(tier>=4){spark(0.185,0.765);spark(0.24,0.80);}
 }
 function showLaunch(){
   const l=document.getElementById("launch"); if(!l)return;
@@ -2011,4 +2146,8 @@ document.getElementById("launch").onclick=hideLaunch;
 applyTheme();
 renderHUD();renderTabs();renderList();
 if(S.settings.splash)showLaunch();
+/* Filet de sécurité : sauvegarde forcée quand l'app passe en arrière-plan ou se ferme
+   (sur iOS, "pagehide"/"visibilitychange" sont les seuls signaux fiables avant fermeture) */
+addEventListener("pagehide",()=>{try{save()}catch(e){}});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){try{save()}catch(e){}}});
 </script>
