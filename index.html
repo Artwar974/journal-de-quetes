@@ -1143,11 +1143,11 @@ const CREATURES={
   robot: {name:"Robot",      rar:"commun",     skin:"#a8b4c8", useColor:true},
   renard:{name:"Renardeau",  rar:"rare",       skin:"#ec8a3c"},
   champi:{name:"Champlutin", rar:"rare",       skin:"#d8443a"},
-  tigre: {name:"Tigre",      rar:"rare",       skin:"#ec8a3c", gif:true},
+  tigre: {name:"Tigre",      rar:"rare",       skin:"#ec8a3c", gif:true, gzoom:1.334},
   golem: {name:"Golem",      rar:"tresrare",   skin:"#7a8088"},
-  meduse:{name:"Méduse",     rar:"tresrare",   skin:"#a98ae8"},
-  poussin:{name:"Poussin",   rar:"tresrare",   skin:"#ffd24d", gif:true},
-  dragon:{name:"Dragonneau", rar:"epique",     skin:"#3aa85a", gif:true},
+  meduse:{name:"Méduse",     rar:"tresrare",   skin:"#a98ae8", fly:5},
+  poussin:{name:"Poussin",   rar:"tresrare",   skin:"#ffd24d", gif:true, fly:4},
+  dragon:{name:"Dragonneau", rar:"epique",     skin:"#3aa85a", gif:true, gzoom:1.15, fly:6},
   phenix:{name:"Phénix",     rar:"legendaire", skin:"#ff9a2a"},
 };
 const GIFSPRITES={};
@@ -1200,6 +1200,27 @@ function gifFrame(id){
   const im=r.imgs[r.idx];
   return (im&&im.complete&&im.naturalWidth)?im:null;
 }
+/* Mise à l'échelle fractionnaire SANS déformation : le facteur non entier est appliqué en
+   deux temps (agrandissement entier net ×4, puis réduction lissée vers la taille finale),
+   et le résultat est mis en cache par frame. Chaque frame subit exactement la même
+   transformation : les formes du dessin restent stables d'une image à l'autre. */
+function gifScaledFrame(id,im,dw,dh){
+  const r=gifRT(id); if(!r)return im;
+  if(!r.zcache)r.zcache=new Map();
+  const key=dw+"x"+dh+"#"+r.imgs.indexOf(im);
+  let cv=r.zcache.get(key);
+  if(!cv){
+    const g=gifData(id), up=4;
+    const tmp=document.createElement("canvas");tmp.width=g.w*up;tmp.height=g.h*up;
+    const tx=tmp.getContext("2d");tx.imageSmoothingEnabled=false;
+    tx.drawImage(im,0,0,g.w*up,g.h*up);
+    cv=document.createElement("canvas");cv.width=dw;cv.height=dh;
+    const c2=cv.getContext("2d");c2.imageSmoothingEnabled=true;c2.imageSmoothingQuality="high";
+    c2.drawImage(tmp,0,0,dw,dh);
+    r.zcache.set(key,cv);
+  }
+  return cv;
+}
 /* Dessine une créature dans un contexte (miniatures collection + révélation d'œuf) */
 function paintCreature(ctx,id,ox,oy,sc,mo,blink,still){
   const cr=CREATURES[id]||CREATURES.heros;
@@ -1209,13 +1230,17 @@ function paintCreature(ctx,id,ox,oy,sc,mo,blink,still){
     ctx.imageSmoothingEnabled=false;
     const box=18*sc;                                   // case allouée à la créature
     const cible=box*(cr.gscale||GIF_FILL);             // hauteur voulue pour le DESSIN
-    /* ÉCHELLE ENTIÈRE UNIQUEMENT : un facteur fractionnaire rendrait certains pixels du
-       dessin plus épais que d'autres et trahirait le fichier d'origine. */
     const k=cr.gk||Math.max(1,Math.round(cible/(bb?bb.h:g.h)));
-    const dw=g.w*k, dh=g.h*k;
-    const cxOff=bb?(bb.x0+bb.w/2)*k:dw/2;              // centre horizontal du dessin
-    const basOff=bb?(bb.y1+1)*k:dh;                    // bas du dessin → posé sur la ligne de sol
-    ctx.drawImage(im, Math.round(ox+box/2-cxOff), Math.round(oy+box*GIF_BASE-basOff), dw, dh);
+    /* `gzoom` = rattrapage quand le dessin n'occupe pas assez son cadre 32×32 et paraît
+       plus petit que les créatures dessinées. */
+    const z=k*(cr.gzoom||1);
+    const dw=Math.round(g.w*z), dh=Math.round(g.h*z);
+    const zx=dw/g.w, zy=dh/g.h;                        // échelle réellement appliquée
+    const cxOff=bb?(bb.x0+bb.w/2)*zx:dw/2;             // centre horizontal du dessin
+    const basOff=bb?(bb.y1+1)*zy:dh;                   // bas du dessin → posé sur la ligne de sol
+    /* échelle entière → plus proche voisin direct ; sinon version pré-calculée stable */
+    const src=(dw===g.w*Math.round(z)&&dh===g.h*Math.round(z))?im:gifScaledFrame(id,im,dw,dh);
+    ctx.drawImage(src, Math.round(ox+box/2-cxOff), Math.round(oy+box*GIF_BASE-basOff), dw, dh);
     return;
   }
   const skin=cr.useColor?((COLORS[S.cosmetics.color]||COLORS.bleu).hex):cr.skin;
@@ -3020,12 +3045,23 @@ function drawHub(t){
   const step=wk.state==="walk"?Math.round(Math.abs(Math.sin(t/3.4))*2):0;
   /* coordonnées ENTIÈRES : aucun anti-aliasing, la créature reste nette en mouvement */
   const ax=Math.round(wk.fx)-18, ay=Math.round(wk.fy)-34;
+  const celeb=Date.now()<hubCelebUntil;
+  const jump=celeb?[0,-2,-3,-1,0,-2][Math.floor(t/7)%6]*2:0;
+  /* ---- ombre portée au sol : posée sur la ligne de pieds, elle ne suit ni le pas ni le saut.
+     Les créatures qui volent projettent leur ombre plus bas, plus petite et plus douce. ---- */
+  {
+    const cr=CREATURES[S.cosmetics.model]||{}, vol=cr.fly||0;
+    const sx0=ax+18, sy0=ay+26+vol;                 // 26 = 18*GIF_BASE*2, la ligne de sol
+    const ecart=Math.min(1,(vol-jump)/14);          // s'éloigne du sol → ombre plus discrète
+    const rx=(vol?9.5:11.5)*(1-ecart*.22);
+    x.save();x.translate(sx0,sy0);x.scale(1,.32);x.translate(-sx0,-sy0);
+    T.glow(sx0,sy0,rx,"0,0,0",(vol?.20:.28)*(1-ecart*.35));
+    x.restore();
+  }
   if(S.streak>0){
     const au=AURAS[S.cosmetics.aura]||AURAS.braise, sA=Math.min(S.streak/8,1);
     T.glow(ax+18,ay+18,22+sA*10,au.rgb,(0.42+0.30*sA)*(0.88+0.12*Math.sin(t/9)));
   }
-  const celeb=Date.now()<hubCelebUntil;
-  const jump=celeb?[0,-2,-3,-1,0,-2][Math.floor(t/7)%6]*2:0;
   drawAvatarOnCamp(x,ax,ay-step+jump,2,t);
   if(celeb){
     for(let i=0;i<5;i++){const a=t/3+i*1.256;
