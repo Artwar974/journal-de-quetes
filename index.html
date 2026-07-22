@@ -520,6 +520,67 @@
   .parchment .p-streak{font-size:12px;margin-top:3px;color:#9a4a12;font-weight:700;min-height:13px}
   .parchment .p-rich{font-size:11px;margin-top:6px;font-style:italic;color:#6a4a20;line-height:1.35}
 
+  /* ======= Le Nid : œufs + collection de créatures ======= */
+  .nest{position:fixed;inset:0;z-index:83;display:none;overflow-y:auto;
+    background:
+      radial-gradient(120% 55% at 50% -6%, rgba(232,169,46,.10), transparent 55%),
+      linear-gradient(#2a1c10,#20140a)}
+  .ns-inner{max-width:440px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top,0px)) 15px calc(26px + env(safe-area-inset-bottom,0px))}
+  .ns-sign{width:78%;margin:2px auto 0;text-align:center;position:relative;
+    background:linear-gradient(#6a4a2c,#5a3a22);border:2px solid #2a180c;border-radius:4px;
+    padding:9px 6px 8px;color:#f0ddac;font-family:var(--mono);font-weight:700;letter-spacing:2px;font-size:14px;
+    box-shadow:0 4px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,235,180,.18)}
+  .ns-sign small{display:block;font-weight:400;letter-spacing:1px;font-size:10px;color:#c8ab72;margin-top:3px}
+  .ns-egg{margin:16px auto 4px;max-width:340px;background:linear-gradient(#3a2716,#2e1e10);
+    border:2px solid #6a4a2c;box-shadow:0 4px 0 rgba(0,0,0,.4);padding:14px;display:flex;align-items:center;gap:14px}
+  .ns-egg canvas{width:56px;height:70px;image-rendering:pixelated;flex:0 0 auto;
+    filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+  .ns-egg .txt{flex:1;color:#e8d9b0;font-family:var(--mono)}
+  .ns-egg .txt b{color:#ffd24d;font-size:13px}
+  .ns-egg .txt p{font-size:10.5px;color:#a8926a;margin-top:3px;line-height:1.4}
+  .ns-buy{width:100%;margin-top:10px;min-height:46px;background:var(--gold-deep);border:2px solid var(--gold);
+    color:#3a2600;font-family:var(--mono);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;
+    cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.4)}
+  .ns-buy:disabled{opacity:.5;cursor:default}
+  .ns-buy:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+  .ns-secttl{color:#c8ab72;font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;
+    margin:20px 0 4px;display:flex;justify-content:space-between;align-items:center}
+  .ns-secttl b{color:#ffd24d}
+  .ns-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .ns-card{position:relative;background:linear-gradient(#3a2716,#2c1c0f);border:2px solid #5a3a22;
+    padding:8px 6px 7px;text-align:center;cursor:pointer;border-radius:3px;overflow:hidden}
+  .ns-card.locked{cursor:default;filter:none}
+  .ns-card.eq{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold), 0 0 12px rgba(232,169,46,.4) inset}
+  .ns-card .rglow{position:absolute;inset:0;opacity:.16;pointer-events:none}
+  .ns-card canvas{width:52px;height:52px;image-rendering:pixelated;position:relative}
+  .ns-card .cn{font-family:var(--mono);font-size:9.5px;color:#e8d9b0;margin-top:3px;font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ns-card .cr{font-family:var(--mono);font-size:8px;letter-spacing:.5px;font-weight:700;margin-top:1px}
+  .ns-card .cnt{position:absolute;top:3px;right:4px;font-family:var(--mono);font-size:8.5px;font-weight:700;
+    color:#ffe9b0;background:rgba(0,0,0,.45);border-radius:99px;padding:0 4px}
+  .ns-card .eqtag{position:absolute;top:3px;left:4px;font-family:var(--mono);font-size:7.5px;font-weight:700;
+    color:#3a2600;background:var(--gold);border-radius:2px;padding:0 3px}
+  .ns-card .qm{font-size:26px;color:#5a4a34}
+  .ns-back{width:100%;margin-top:20px;min-height:44px;background:#54341e;border:2px solid #8a6a3c;color:#f0ddac;
+    font-family:var(--mono);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;
+    box-shadow:0 3px 0 rgba(0,0,0,.4)}
+  .ns-back:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+
+  /* ======= Éclosion d'un œuf (animation) ======= */
+  .hatch{position:fixed;inset:0;z-index:90;display:none;background:#000;
+    align-items:center;justify-content:center;flex-direction:column}
+  .hatch.on{display:flex}
+  #hatchCv{width:100%;max-width:330px;height:auto;image-rendering:pixelated}
+  .hatch-card{position:absolute;left:50%;bottom:calc(38px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+    width:min(86%,340px);opacity:0;pointer-events:none;transition:opacity .5s;text-align:center;
+    background:linear-gradient(#efe0b8,#e0ca92);border:3px solid #7a5a30;padding:14px 16px 15px;
+    box-shadow:0 6px 0 rgba(0,0,0,.5),0 0 0 2px #b79a5e inset;font-family:var(--mono)}
+  .hatch-card.show{opacity:1;pointer-events:auto}
+  .hc-rar{font-size:11px;font-weight:700;letter-spacing:2px}
+  .hc-name{font-size:20px;font-weight:700;color:#3a2a12;margin-top:3px}
+  .hc-msg{font-size:10.5px;color:#7c5e34;margin-top:5px;min-height:13px}
+  .hc-actions{display:flex;gap:9px;margin-top:14px}
+
   /* ======= Sélecteur Principales/Secondaires ======= */
   .qseg{display:flex;gap:6px;margin-bottom:10px}
   .qseg button{flex:1;min-height:44px;padding:9px 4px;background:var(--bg2);border:2px solid var(--border);
@@ -631,7 +692,7 @@
   <canvas id="camp" width="330" height="560"></canvas>
   <button class="hub-spot" id="hsTableau" aria-label="Quêtes du jour" onclick="openTavern()"></button>
   <button class="hub-spot" id="hsJournal" aria-label="Ouvrir le journal de quêtes" onclick="hubGo('journal')"></button>
-  <button class="hub-spot" id="hsNid" aria-label="Boutique" onclick="hubGo('boutique')"></button>
+  <button class="hub-spot" id="hsNid" aria-label="Le Nid — créatures" onclick="openNest()"></button>
   <button class="hub-spot" id="hsTente" aria-label="Réglages" onclick="hubGo('parametres')"></button>
   <button class="hub-spot" id="hsAvatar" aria-label="Ton avatar" onclick="hubAvatarTap()"></button>
   <span class="hub-lab" id="labTableau">TABLEAU</span>
@@ -650,6 +711,23 @@
 
 <!-- Le Panneau de la Taverne : quêtes du jour -->
 <div class="tavern" id="tavern"></div>
+
+<!-- Le Nid : achat d'œufs + collection de créatures -->
+<div class="nest" id="nest"></div>
+
+<!-- Animation d'éclosion d'un œuf -->
+<div class="hatch" id="hatch">
+  <canvas id="hatchCv" width="330" height="440"></canvas>
+  <div class="hatch-card" id="hatchCard">
+    <div class="hc-rar" id="hcRar">RARE</div>
+    <div class="hc-name" id="hcName">Renardeau</div>
+    <div class="hc-msg" id="hcMsg"></div>
+    <div class="hc-actions">
+      <button class="tv-btn back" id="hcClose">Fermer</button>
+      <button class="tv-btn" id="hcEquip">Équiper</button>
+    </div>
+  </div>
+</div>
 
 <!-- Overlay générique -->
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
@@ -717,7 +795,6 @@ const AURAS={
   coeur:{name:"Cœur",cost:260,c:["#fff2f6","#ff9db0","#ff5d8a","#b81c4a"],rgb:"255,130,165"},
 };
 const CATS=[
-  {cat:"model", data:MODELS, label:"Modèle", icon:"🧍"},
   {cat:"color", data:COLORS, label:"Couleur", icon:"🎨"},
   {cat:"aura",  data:AURAS,  label:"Aura de série", icon:"✨"},
   {cat:"frame", data:FRAMES, label:"Cadre", icon:"🖼️"},
@@ -746,6 +823,7 @@ function seed(){
   return {
     xpTotal:0, coins:0, streak:0, best:0, totalDone:0, lastDay:today(),
     cosmetics:defaultCosmetics(),
+    creatures:{owned:["heros"], counts:{heros:1}},
     achievements:defaultAchievements(),
     settings:{theme:"light",sound:true,anim:true,splash:true},
     history:{},
@@ -804,6 +882,15 @@ function load(){
     if(s.coins==null)s.coins=0;
     if(!s.rewards)s.rewards=seed().rewards;
     if(!s.cosmetics)s.cosmetics=defaultCosmetics();
+    /* migration Idle : les anciens "modèles" possédés deviennent des créatures du Nid */
+    if(!s.creatures){
+      const owned=(s.cosmetics.owned||[]).filter(k=>k.startsWith("model:")).map(k=>k.slice(6))
+        .filter(id=>CREATURES[id]);
+      if(!owned.includes("heros"))owned.unshift("heros");
+      const counts={}; owned.forEach(id=>counts[id]=1);
+      s.creatures={owned,counts};
+      if(!CREATURES[s.cosmetics.model])s.cosmetics.model="heros";
+    }
     if(!s.cosmetics.aura){s.cosmetics.aura="braise";
       s.cosmetics.owned=s.cosmetics.owned||[];
       if(!s.cosmetics.owned.includes("aura:braise"))s.cosmetics.owned.push("aura:braise");}
@@ -962,7 +1049,123 @@ const MODELDRAW={
          P(10,7,"#5aa9ff");P(10,8,"#5aa9ff");P(11,7,"#5aa9ff");P(11,8,"#5aa9ff");}
     for(let px=6;px<=11;px++)P(px,10,dark);
   },
+  /* ===== Créatures obtenues via les œufs ===== */
+  renard(P,skin,dark,mo,blink){
+    const F="#ec8a3c",Wh="#f7ead2",N="#3a2416";
+    P(4,1,N);P(4,2,F);P(5,2,F);P(4,3,F);P(5,3,F);
+    P(13,1,N);P(13,2,F);P(12,2,F);P(13,3,F);P(12,3,F);
+    for(let py=4;py<=12;py++)for(let px=4;px<=13;px++)P(px,py,F);
+    for(let py=4;py<=12;py++){P(3,py,N);P(14,py,N);}
+    for(let px=4;px<=13;px++)P(px,12,N);
+    for(let px=5;px<=12;px++)P(px,10,Wh);
+    for(let px=6;px<=11;px++)P(px,11,Wh);
+    P(4,9,Wh);P(13,9,Wh);
+    if(blink){P(6,8,N);P(7,8,N);P(10,8,N);P(11,8,N);}
+    else{P(6,7,N);P(6,8,N);P(11,7,N);P(11,8,N);}
+    P(8,10,N);P(9,10,N);
+  },
+  champi(P,skin,dark,mo,blink){
+    const R="#d8443a",RD="#a82c26",Wh="#f7ead2",C="#ecdcae",CD="#b89a5e",N="#3a2416";
+    for(let px=6;px<=11;px++)P(px,2,R);
+    for(let px=5;px<=12;px++)P(px,3,R);
+    for(let py=4;py<=6;py++)for(let px=4;px<=13;px++)P(px,py,R);
+    for(let px=4;px<=13;px++)P(px,7,RD);
+    P(6,4,Wh);P(7,4,Wh);P(11,5,Wh);P(12,5,Wh);P(8,3,Wh);P(5,5,Wh);P(10,4,Wh);
+    for(let py=8;py<=13;py++)for(let px=6;px<=11;px++)P(px,py,C);
+    for(let py=8;py<=13;py++){P(5,py,CD);P(12,py,CD);}
+    for(let px=6;px<=11;px++)P(px,13,CD);
+    if(blink){P(7,10,N);P(10,10,N);}
+    else{P(7,9,N);P(7,10,N);P(10,9,N);P(10,10,N);}
+    P(8,11,N);P(9,11,N);
+    P(6,10,"#ff9db0");P(11,10,"#ff9db0");
+  },
+  golem(P,skin,dark,mo,blink){
+    const S1="#7a8088",Sd="#565c64",Shi="#9aa0a8",Cr="#3a3e44",Moss="#5a8a40",Eye="#7fe0c0";
+    for(let py=3;py<=13;py++)for(let px=3;px<=14;px++)P(px,py,S1);
+    for(let py=3;py<=13;py++){P(3,py,Sd);P(14,py,Sd);}
+    for(let px=3;px<=14;px++){P(px,3,Sd);P(px,13,Sd);}
+    P(5,5,Shi);P(6,5,Shi);P(5,6,Shi);
+    P(10,4,Cr);P(10,5,Cr);P(11,6,Cr);P(10,7,Cr);P(5,10,Cr);P(6,11,Cr);
+    P(5,3,Moss);P(8,3,Moss);P(11,3,Moss);P(4,4,Moss);P(12,4,Moss);
+    if(blink){P(6,8,Cr);P(7,8,Cr);P(10,8,Cr);P(11,8,Cr);}
+    else{P(6,8,Eye);P(7,8,Eye);P(10,8,Eye);P(11,8,Eye);}
+    for(let px=6;px<=11;px++)P(px,11,Cr);
+    P(7,11,S1);P(9,11,S1);
+  },
+  meduse(P,skin,dark,mo,blink){
+    const B="#a98ae8",Bd="#7a5ec8",Bhi="#d8c8f8",T="#c58bff",N="#3a2450";
+    for(let px=6;px<=11;px++)P(px,3,B);
+    for(let px=5;px<=12;px++)P(px,4,B);
+    for(let py=5;py<=7;py++)for(let px=4;px<=13;px++)P(px,py,B);
+    for(let px=4;px<=13;px++)P(px,8,(px===4||px===13)?Bd:B);
+    P(6,4,Bhi);P(7,4,Bhi);P(5,5,Bhi);
+    if(blink){P(7,6,N);P(10,6,N);}
+    else{P(7,6,N);P(7,7,N);P(10,6,N);P(10,7,N);}
+    P(6,7,"#ff9db0");P(11,7,"#ff9db0");
+    const w=(Math.sin(Date.now()/240)>0)?1:0;
+    [5,7,9,11,13].forEach((tx,i)=>{const o=(i%2)?w:1-w;
+      P(tx,9,T);P(tx+(o?1:-1),10,T);P(tx,11,T);P(tx+(o?-1:1),12,T);P(tx,13,T);});
+  },
+  dragon(P,skin,dark,mo,blink){
+    const G="#3aa85a",Gd="#226a34",Belly="#cfe89a",Wing="#2a8a48",Dk="#0a1a10",Eye="#ffd24d",Horn="#e8dcc0";
+    P(5,2,Horn);P(4,3,Horn);P(12,2,Horn);P(13,3,Horn);
+    for(let py=3;py<=12;py++)for(let px=5;px<=12;px++)P(px,py,G);
+    P(2,7,Wing);P(3,6,Wing);P(4,6,Wing);P(3,7,Wing);P(4,7,Wing);P(4,8,Wing);
+    P(15,7,Wing);P(14,6,Wing);P(13,6,Wing);P(14,7,Wing);P(13,7,Wing);P(13,8,Wing);
+    for(let py=3;py<=12;py++){P(4,py,Gd);P(13,py,Gd);}
+    for(let px=5;px<=12;px++){P(px,3,Gd);P(px,12,Gd);}
+    for(let px=7;px<=10;px++){P(px,10,Belly);P(px,11,Belly);}
+    if(blink){P(6,7,Dk);P(7,7,Dk);P(10,7,Dk);P(11,7,Dk);}
+    else{P(6,7,Eye);P(11,7,Eye);P(6,8,Dk);P(11,8,Dk);}
+    P(8,9,Gd);P(9,9,Gd);
+  },
+  phenix(P,skin,dark,mo,blink){
+    const t=Date.now()/120;
+    const Fy="#ffe07a",Fo="#ff9a2a",Fr="#ff5d2a",Fh="#fff2b0",Bec="#e8a92e",N="#3a1808";
+    const cf=(cx,base)=>{const h=base+Math.round(Math.abs(Math.sin(t+cx)));
+      for(let k=0;k<=h;k++)P(cx,3-k,k?Fo:Fy);};
+    cf(6,1);cf(8,2);cf(10,1);
+    for(let py=4;py<=12;py++)for(let px=5;px<=12;px++)P(px,py,Fo);
+    for(let px=5;px<=12;px++){P(px,4,Fy);P(px,5,Fy);}
+    for(let px=5;px<=12;px++){P(px,11,Fr);P(px,12,Fr);}
+    P(2,8,Fr);P(3,7,Fr);P(3,8,Fo);P(4,6,Fo);P(4,7,Fo);P(4,8,Fr);
+    P(15,8,Fr);P(14,7,Fr);P(14,8,Fo);P(13,6,Fo);P(13,7,Fo);P(13,8,Fr);
+    P(8,7,Fh);P(9,7,Fh);
+    if(blink){P(6,8,N);P(7,8,N);P(10,8,N);P(11,8,N);}
+    else{P(6,8,N);P(11,8,N);}
+    P(8,9,Bec);P(9,9,Bec);
+    P(6,13,Fr);P(7,13,Fy);P(8,13,Fo);P(9,13,Fy);P(10,13,Fr);
+  },
 };
+/* ===== Banque de créatures + raretés (système Idle / œufs) ===== */
+const RARITY={
+  commun:    {name:"Commun",     odds:52, col:"#98a2ae", rgb:"152,162,174"},
+  rare:      {name:"Rare",       odds:28, col:"#4fa3e0", rgb:"79,163,224"},
+  tresrare:  {name:"Très rare",  odds:13, col:"#3ec8a0", rgb:"62,200,160"},
+  epique:    {name:"Épique",     odds:6,  col:"#b06ae8", rgb:"176,106,232"},
+  legendaire:{name:"Légendaire", odds:1,  col:"#ffb648", rgb:"255,182,72"},
+};
+const RARITY_ORDER=["commun","rare","tresrare","epique","legendaire"];
+const CREATURES={
+  heros: {name:"Héros",      rar:"commun",     skin:"#bfd0e8", useColor:true},
+  slime: {name:"Slime",      rar:"commun",     skin:"#8fe6b0", useColor:true},
+  chat:  {name:"Chat",       rar:"commun",     skin:"#c8ccd4", useColor:true},
+  robot: {name:"Robot",      rar:"commun",     skin:"#a8b4c8", useColor:true},
+  renard:{name:"Renardeau",  rar:"rare",       skin:"#ec8a3c"},
+  champi:{name:"Champlutin", rar:"rare",       skin:"#d8443a"},
+  golem: {name:"Golem",      rar:"tresrare",   skin:"#7a8088"},
+  meduse:{name:"Méduse",     rar:"tresrare",   skin:"#a98ae8"},
+  dragon:{name:"Dragonneau", rar:"epique",     skin:"#3aa85a"},
+  phenix:{name:"Phénix",     rar:"legendaire", skin:"#ff9a2a"},
+};
+const EGG_COST=150;
+/* Dessine une créature dans un contexte (miniatures collection + révélation d'œuf) */
+function paintCreature(ctx,id,ox,oy,sc,mo,blink){
+  const cr=CREATURES[id]||CREATURES.heros;
+  const skin=cr.useColor?((COLORS[S.cosmetics.color]||COLORS.bleu).hex):cr.skin;
+  const P=(px,py,col)=>{ctx.fillStyle=col;ctx.fillRect(ox+px*sc,oy+py*sc,sc,sc);};
+  (MODELDRAW[id]||MODELDRAW.heros)(P,skin,"#0c0a17",mo||"happy",blink||false);
+}
 function drawAcc(P,dark){
   const a=S.cosmetics.acc;
   if(a==="lunettes"){for(let px=5;px<=12;px++)P(px,7,dark);
@@ -2460,6 +2663,199 @@ function openTavern(){
     n.onclick=()=>{closeTavern();hubGo(n.dataset.go==="evenement"?"evenement":"journal");};});
 }
 function closeTavern(){const tv=document.getElementById("tavern");if(tv)tv.style.display="none";}
+
+/* ================= Le Nid : œufs + collection de créatures ================= */
+function nestEquip(id){
+  if(!S.creatures.owned.includes(id))return;
+  S.cosmetics.model=id; save(); renderHUD(); playSound(S.cosmetics.sound);
+  if(launchOpen){campStaticKey="";drawHub(0);}
+  openNest(); toast("Créature équipée !");
+}
+function openNest(){
+  const nest=document.getElementById("nest");if(!nest)return;
+  const total=Object.keys(CREATURES).length, got=S.creatures.owned.length;
+  const canBuy=S.coins>=EGG_COST;
+  const cardHTML=id=>{
+    const cr=CREATURES[id], owned=S.creatures.owned.includes(id), eq=S.cosmetics.model===id;
+    const R=RARITY[cr.rar], cnt=S.creatures.counts[id]||0;
+    if(!owned)return `<div class="ns-card locked"><span class="rglow" style="background:${R.col}"></span>
+      <div class="qm">?</div><div class="cn" style="color:#5a4a34">???</div>
+      <div class="cr" style="color:${R.col}">${R.name}</div></div>`;
+    return `<div class="ns-card${eq?" eq":""}" data-eq="${id}">
+      <span class="rglow" style="background:${R.col}"></span>
+      ${eq?'<span class="eqtag">ÉQUIPÉ</span>':""}
+      ${cnt>1?`<span class="cnt">×${cnt}</span>`:""}
+      <canvas width="18" height="18" data-cr="${id}"></canvas>
+      <div class="cn">${esc(cr.name)}</div>
+      <div class="cr" style="color:${R.col}">${R.name}</div></div>`;
+  };
+  const order=Object.keys(CREATURES).sort((a,b)=>RARITY_ORDER.indexOf(CREATURES[a].rar)-RARITY_ORDER.indexOf(CREATURES[b].rar));
+  nest.innerHTML=`
+    <div class="ns-inner">
+      <div class="ns-sign">LE NID<small>Fais éclore des œufs, collectionne les créatures</small></div>
+      <div class="ns-egg">
+        <canvas id="nsEggCv" width="26" height="32"></canvas>
+        <div class="txt"><b>Œuf mystère</b><p>Une créature au hasard t'attend à l'intérieur. Plus elle est rare, plus elle est précieuse.</p></div>
+      </div>
+      <button class="ns-buy" id="nsBuy" ${canBuy?"":"disabled"}>🥚 Ouvrir un œuf — 🪙 ${EGG_COST}</button>
+      <div class="ns-secttl">Ma collection <b>${got} / ${total}</b></div>
+      <div class="ns-grid">${order.map(cardHTML).join("")}</div>
+      <button class="ns-back" id="nsBack">↩ Retour au camp</button>
+    </div>`;
+  nest.style.display="block";
+  // miniature d'œuf
+  const ec=document.getElementById("nsEggCv");if(ec)drawEgg(ec.getContext("2d"),13,15,1,0);
+  // miniatures créatures possédées
+  nest.querySelectorAll("canvas[data-cr]").forEach(cv=>{
+    paintCreature(cv.getContext("2d"),cv.dataset.cr,0,0,1,"happy",false);});
+  document.getElementById("nsBuy").onclick=buyEgg;
+  document.getElementById("nsBack").onclick=()=>{closeNest();};
+  nest.querySelectorAll("[data-eq]").forEach(c=>c.onclick=()=>nestEquip(c.dataset.eq));
+}
+function closeNest(){const n=document.getElementById("nest");if(n)n.style.display="none";}
+
+/* ---- tirage pondéré par rareté ---- */
+function rollRarity(){let r=Math.random()*100,acc=0;
+  for(const k of RARITY_ORDER){acc+=RARITY[k].odds;if(r<acc)return k;}return"commun";}
+function pullCreature(){
+  const rar=rollRarity();
+  const inRar=Object.keys(CREATURES).filter(id=>CREATURES[id].rar===rar);
+  const unowned=inRar.filter(id=>!S.creatures.owned.includes(id));
+  const pool=unowned.length?unowned:inRar;
+  const id=pool[Math.floor(Math.random()*pool.length)];
+  const dup=S.creatures.owned.includes(id);
+  if(!dup)S.creatures.owned.push(id);
+  S.creatures.counts[id]=(S.creatures.counts[id]||0)+1;
+  return {id,rar,dup};
+}
+function buyEgg(){
+  if(S.coins<EGG_COST){toast("Pas assez de pièces 🪙");return;}
+  S.coins-=EGG_COST;
+  const res=pullCreature();
+  if(res.dup){res.refund=Math.round(EGG_COST*0.4);S.coins+=res.refund;}
+  save();renderHUD();
+  playHatch(res);
+}
+
+/* ---- dessin d'un œuf (miniature + animation) ---- */
+function drawEgg(x,cx,cy,sc,crackLvl){
+  const R=(a,b,w,h,c)=>{x.fillStyle=c;x.fillRect(a|0,b|0,Math.max(1,w|0),Math.max(1,h|0));};
+  const w=13*sc,h=17*sc;
+  x.fillStyle="#e8d9b8";x.beginPath();x.ellipse(cx,cy,w/2,h/2,0,0,7);x.fill();
+  x.fillStyle="#f6eeda";x.beginPath();x.ellipse(cx-w*0.12,cy-h*0.14,w*0.22,h*0.2,0,0,7);x.fill();
+  x.fillStyle="#c8a86a";
+  R(cx-w*0.28,cy-h*0.05,3*sc,2*sc,"#c8a86a");R(cx+w*0.1,cy+h*0.12,3*sc,2*sc,"#c8a86a");
+  R(cx-w*0.1,cy+h*0.24,2*sc,2*sc,"#c8a86a");R(cx+w*0.16,cy-h*0.2,2*sc,2*sc,"#c8a86a");
+  x.fillStyle="#8a6a3c";x.beginPath();x.ellipse(cx,cy+h*0.44,w*0.42,h*0.09,0,0,7);x.fill();
+  if(crackLvl>0){x.strokeStyle="#3a2416";x.lineWidth=Math.max(1,sc);
+    x.beginPath();x.moveTo(cx-w*0.3,cy-h*0.2);x.lineTo(cx-w*0.05,cy);x.lineTo(cx-w*0.2,cy+h*0.12);
+    if(crackLvl>1)x.lineTo(cx+w*0.05,cy+h*0.28);
+    x.moveTo(cx-w*0.05,cy);x.lineTo(cx+w*0.22,cy-h*0.08);x.stroke();}
+}
+function drawMallet(x,cx,cy,ang){
+  x.save();x.translate(cx,cy);x.rotate(ang);
+  const R=(a,b,w,h,c)=>{x.fillStyle=c;x.fillRect(a,b,w,h);};
+  R(-4,6,8,64,"#6a4a2c");R(-4,6,3,64,"#7a5a3c");R(-4,66,8,4,"#4a2f1c"); // manche
+  R(-22,-16,44,26,"#9aa0a8");R(-22,-16,44,5,"#b8bec6");R(-22,4,44,6,"#6a707a"); // tête
+  R(-22,-16,6,26,"#c8ced6");R(16,-16,6,26,"#6a707a");
+  R(-14,-10,3,14,"rgba(0,0,0,.15)");R(8,-10,3,14,"rgba(0,0,0,.15)");
+  x.restore();
+}
+let hatchRAF=null, hatchResult=null;
+function playHatch(res){
+  hatchResult=res;
+  const ov=document.getElementById("hatch"), cv=document.getElementById("hatchCv");
+  const card=document.getElementById("hatchCard"); card.classList.remove("show");
+  ov.classList.add("on");
+  const W=cv.width,H=cv.height,x=cv.getContext("2d");
+  x.imageSmoothingEnabled=false;
+  const R=RARITY[res.rar];
+  const showCard=()=>{
+    document.getElementById("hcRar").textContent=R.name.toUpperCase();
+    document.getElementById("hcRar").style.color=R.col;
+    document.getElementById("hcName").textContent=CREATURES[res.id].name;
+    document.getElementById("hcMsg").textContent=res.dup
+      ? `Déjà dans ta collection · +${res.refund} 🪙 remboursés`
+      : "Nouvelle créature débloquée !";
+    document.getElementById("hcEquip").style.display=res.dup&&S.cosmetics.model===res.id?"none":"";
+    card.classList.add("show");
+  };
+  if(reduce){
+    x.fillStyle="#000";x.fillRect(0,0,W,H);
+    T_revealStatic(x,W,H,res,R);showCard();return;
+  }
+  const cx=W/2, groundY=H*0.6, sc=3;
+  const t0=performance.now();
+  const rnd=(a)=>Math.sin(a*12.9898)*43758.5453%1;
+  (function loop(now){
+    const t=now-t0;
+    x.fillStyle="#000";x.fillRect(0,0,W,H);
+    // halo de rareté qui monte en intensité
+    const hg=Math.min(1,t/2600);
+    const gr=x.createRadialGradient(cx,groundY-10,4,cx,groundY-10,120);
+    gr.addColorStop(0,`rgba(${R.rgb},${(0.10+0.30*hg).toFixed(2)})`);gr.addColorStop(1,`rgba(${R.rgb},0)`);
+    x.fillStyle=gr;x.fillRect(0,0,W,H);
+    if(t<900){ // chute de l'œuf
+      const p=t/900, ey=(-60)+(groundY-(-60))*(1-(1-p)*(1-p));
+      drawEgg(x,cx,ey,sc,0);
+    }else if(t<1450){ // anticipation : l'œuf tremble
+      const w=Math.sin(t/40)*2*Math.min(1,(t-900)/300);
+      drawEgg(x,cx+w,groundY,sc,0);
+    }else if(t<1950){ // le maillet s'abat
+      const p=(t-1450)/500, ease=p*p;
+      drawEgg(x,cx,groundY,sc,p>0.6?1:0);
+      drawMallet(x,cx+18,groundY-150+ease*100,-0.5+ease*0.5);
+    }else if(t<2150){ // impact : flash + éclats
+      const shake=(2150-t)/200*4;
+      drawEgg(x,cx+((t/30|0)%2?shake:-shake),groundY,sc,2);
+      drawMallet(x,cx+18,groundY-50,0);
+      x.globalAlpha=(2150-t)/200;x.fillStyle="#fff";x.fillRect(0,0,W,H);x.globalAlpha=1;
+      for(let i=0;i<10;i++){const a=i/10*6.283,d=(t-1950)/200*40;
+        x.fillStyle="#e8d9b8";x.fillRect(cx+Math.cos(a)*d,groundY+Math.sin(a)*d*0.6,3,3);}
+    }else{ // le maillet se relève, la créature apparaît
+      const p=Math.min(1,(t-2150)/500);
+      // éclats qui retombent
+      for(let i=0;i<8;i++){const a=i/8*6.283,d=40+p*20;
+        x.globalAlpha=1-p;x.fillStyle="#c8a86a";
+        x.fillRect(cx+Math.cos(a)*d,groundY+Math.sin(a)*d*0.6+p*30,2,2);x.globalAlpha=1;}
+      drawMallet(x,cx+18,groundY-50-p*260,p*0.6);
+      // halo créature
+      const pop=Math.min(1,(t-2200)/400);
+      if(pop>0){
+        const csc=sc*(0.5+0.5*Math.min(1,pop*1.2))*(pop<1?1+0.15*Math.sin(t/60):1);
+        x.save();
+        const bob=Math.sin(t/200)*csc*0.4;
+        paintCreature(x,res.id, cx-9*csc, groundY-15*csc+bob, csc, "happy", false);
+        x.restore();
+        // étincelles de rareté
+        for(let i=0;i<6;i++){const a=t/400+i*1.047;
+          x.fillStyle=i%2?R.col:"#fff";
+          x.fillRect(cx+Math.cos(a)*(24+8*Math.sin(t/300)),groundY-24+Math.sin(a)*18,2,2);}
+      }
+      if(t>2900 && !card.classList.contains("show"))showCard();
+    }
+    if(t<3400||!card.classList.contains("show")){hatchRAF=requestAnimationFrame(loop);}
+    else{ // garde la créature affichée sous la carte
+      x.fillStyle="#000";x.fillRect(0,0,W,H);
+      const gr2=x.createRadialGradient(cx,groundY-10,4,cx,groundY-10,120);
+      gr2.addColorStop(0,`rgba(${R.rgb},.32)`);gr2.addColorStop(1,`rgba(${R.rgb},0)`);
+      x.fillStyle=gr2;x.fillRect(0,0,W,H);
+      paintCreature(x,res.id,cx-9*sc,groundY-15*sc,sc,"happy",false);
+    }
+  })(t0);
+}
+function T_revealStatic(x,W,H,res,R){
+  const cx=W/2,groundY=H*0.6,sc=3;
+  const gr=x.createRadialGradient(cx,groundY-10,4,cx,groundY-10,120);
+  gr.addColorStop(0,`rgba(${R.rgb},.32)`);gr.addColorStop(1,`rgba(${R.rgb},0)`);
+  x.fillStyle=gr;x.fillRect(0,0,W,H);
+  paintCreature(x,res.id,cx-9*sc,groundY-15*sc,sc,"happy",false);
+}
+function closeHatch(){
+  const ov=document.getElementById("hatch");ov.classList.remove("on");
+  if(hatchRAF){cancelAnimationFrame(hatchRAF);hatchRAF=null;}
+  if(document.getElementById("nest").style.display==="block")openNest();
+}
 /* ================= Ouverture / fermeture du camp ================= */
 function showLaunch(){
   const l=document.getElementById("launch"); if(!l)return;
@@ -2480,7 +2876,7 @@ function showLaunch(){
 }
 function hideLaunch(){
   const l=document.getElementById("launch"); if(l)l.style.display="none";
-  closeTavern();
+  closeTavern();closeNest();
   launchOpen=false;
   if(campRAF){cancelAnimationFrame(campRAF);campRAF=null;}
 }
@@ -2512,6 +2908,8 @@ setInterval(()=>{
 },120);
 // Planificateur de rappels (quand l'app est ouverte)
 checkSchedule(); setInterval(checkSchedule,20000);
+document.getElementById("hcClose").onclick=closeHatch;
+document.getElementById("hcEquip").onclick=()=>{ if(hatchResult){nestEquip(hatchResult.id);} closeHatch(); };
 applyTheme();
 renderHUD();renderTabs();renderList();
 if(S.settings.splash)showLaunch();
