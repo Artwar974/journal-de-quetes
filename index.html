@@ -329,7 +329,7 @@
   .streak-badge{z-index:2}
   .avatar-aura{position:absolute;top:50%;left:50%;width:42px;height:42px;
     transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;opacity:0;
-    filter:blur(9px);z-index:0;
+    filter:blur(9px) brightness(1.2);z-index:0;
     background:radial-gradient(circle, #fff64a 0%, var(--aura-c1,#ffcf00) 26%, var(--aura-c2,#ff7c10) 56%, #dd2410 84%, transparent 96%);
     animation:auraPulse 2.4s ease-in-out infinite;transition:opacity .6s,width .6s,height .6s}
   @keyframes auraPulse{0%,100%{transform:translate(-50%,-50%) scale(.9)}50%{transform:translate(-50%,-50%) scale(1.06)}}
@@ -632,6 +632,7 @@
   <button class="hub-spot" id="hsJournal" aria-label="Ouvrir le journal de quêtes" onclick="hubGo('journal')"></button>
   <button class="hub-spot" id="hsNid" aria-label="Boutique" onclick="hubGo('boutique')"></button>
   <button class="hub-spot" id="hsTente" aria-label="Réglages" onclick="hubGo('parametres')"></button>
+  <button class="hub-spot" id="hsAvatar" aria-label="Ton avatar" onclick="hubAvatarTap()"></button>
   <span class="hub-lab" id="labTableau">TABLEAU</span>
   <span class="hub-lab" id="labJournal">JOURNAL</span>
   <span class="hub-lab" id="labNid">NID</span>
@@ -707,20 +708,28 @@ const SOUNDS={
   piece:{name:"Pièce",cost:150},
   power:{name:"Power-up",cost:200},
 };
+const AURAS={
+  braise:{name:"Braise",cost:0,c:["#fff64a","#ffcf00","#ff7c10","#dd2410"],rgb:"255,166,42"},
+  glace:{name:"Glace",cost:220,c:["#eafaff","#8ae0e8","#3fa0d8","#1c50a0"],rgb:"110,205,230"},
+  sylve:{name:"Sylve",cost:220,c:["#eaffe6","#8fe6b0","#3fae5a","#14602c"],rgb:"110,220,140"},
+  arcane:{name:"Arcane",cost:260,c:["#f6eaff","#c58bff","#8a3aea","#41108a"],rgb:"186,130,255"},
+  coeur:{name:"Cœur",cost:260,c:["#fff2f6","#ff9db0","#ff5d8a","#b81c4a"],rgb:"255,130,165"},
+};
 const CATS=[
   {cat:"model", data:MODELS, label:"Modèle", icon:"🧍"},
   {cat:"color", data:COLORS, label:"Couleur", icon:"🎨"},
+  {cat:"aura",  data:AURAS,  label:"Aura de série", icon:"✨"},
   {cat:"frame", data:FRAMES, label:"Cadre", icon:"🖼️"},
   {cat:"acc",   data:ACCS,   label:"Accessoire", icon:"🎩"},
   {cat:"effect",data:EFFECTS,label:"Effet de victoire", icon:"🎉"},
   {cat:"sound", data:SOUNDS, label:"Son de victoire", icon:"🔊"},
 ];
-function catData(c){return {model:MODELS,color:COLORS,frame:FRAMES,acc:ACCS,effect:EFFECTS,sound:SOUNDS}[c];}
+function catData(c){return {model:MODELS,color:COLORS,aura:AURAS,frame:FRAMES,acc:ACCS,effect:EFFECTS,sound:SOUNDS}[c];}
 
 function defaultCosmetics(){
   return {
-    owned:["color:bleu","color:vert","model:heros","frame:none","acc:none","effect:confettis","sound:arpege"],
-    color:"bleu", model:"heros", frame:"none", acc:"none", effect:"confettis", sound:"arpege"
+    owned:["color:bleu","color:vert","model:heros","aura:braise","frame:none","acc:none","effect:confettis","sound:arpege"],
+    color:"bleu", model:"heros", aura:"braise", frame:"none", acc:"none", effect:"confettis", sound:"arpege"
   };
 }
 function ach(title,icon,desc,reward){return{id:uid(),title,icon,desc:desc||"",reward:reward||1000,done:false,dateDone:null};}
@@ -794,6 +803,9 @@ function load(){
     if(s.coins==null)s.coins=0;
     if(!s.rewards)s.rewards=seed().rewards;
     if(!s.cosmetics)s.cosmetics=defaultCosmetics();
+    if(!s.cosmetics.aura){s.cosmetics.aura="braise";
+      s.cosmetics.owned=s.cosmetics.owned||[];
+      if(!s.cosmetics.owned.includes("aura:braise"))s.cosmetics.owned.push("aura:braise");}
     if(!s.achievements)s.achievements=defaultAchievements();
     if(!s.settings)s.settings={theme:"light",sound:true,anim:true,splash:true};
     ["sound","anim","splash"].forEach(k=>{if(s.settings[k]==null)s.settings[k]=true;});
@@ -861,7 +873,7 @@ function renderHUD(){
 
   const m=multiplier();
   const mb=document.getElementById("multBox");
-  mb.innerHTML = m>1 ? `🔥 x${m.toFixed(1)}` : "";
+  mb.innerHTML = m>1 ? `🔥 x${m.toFixed(1)} XP·🪙` : "";
 
   const sb=document.getElementById("streakBadge");
   if(S.streak>=1){sb.style.display="block";sb.textContent=`SÉRIE ${S.streak}`;}
@@ -873,8 +885,8 @@ function renderHUD(){
     const s=Math.min(S.streak/8,1);
     aura.style.opacity = S.streak>0 ? Math.min(1,(0.97+0.4*s)).toFixed(2) : 0;
     const size=(34+s*8).toFixed(0); aura.style.width=size+"px"; aura.style.height=size+"px";
-    aura.style.setProperty("--aura-c1","#ffe000");
-    aura.style.setProperty("--aura-c2", s>=0.7?"#ff5a12":"#ff7a10");
+    const au=AURAS[S.cosmetics.aura]||AURAS.braise;
+    aura.style.background=`radial-gradient(circle, ${au.c[0]} 0%, ${au.c[1]} 26%, ${au.c[2]} 56%, ${au.c[3]} 84%, transparent 96%)`;
     aura.style.animationDuration=(2.6-1.3*s).toFixed(2)+"s";
   }
 
@@ -1360,7 +1372,7 @@ function award(it,rating,base){
   else                             { S.quests=S.quests.filter(x=>x.id!==it.id); }
   S.done.push({title:it.title,icon:it.icon,gain,rating,type:it.type});
   celebrate(); victorySound();
-  toast(`+${gain} XP !`);
+  toast(`+${gain} XP · +${gain} 🪙 !`);
   persist();
 }
 
@@ -1728,7 +1740,9 @@ function shopHTML(){
       const it=c.data[id];
       const owned=S.cosmetics.owned.includes(c.cat+":"+id);
       const equipped=S.cosmetics[c.cat]===id;
-      const swatch = c.cat==="color" ? `<span class="swatch" style="background:${it.hex}"></span>` : c.icon;
+      const swatch = c.cat==="color" ? `<span class="swatch" style="background:${it.hex}"></span>`
+        : c.cat==="aura" ? `<span class="swatch" style="background:radial-gradient(circle, ${it.c[1]} 15%, ${it.c[2]} 60%, ${it.c[3]});box-shadow:0 0 8px 2px ${it.c[2]}"></span>`
+        : c.icon;
       let btn;
       if(equipped) btn=`<button class="btn go pix" disabled>✓ Équipé</button>`;
       else if(owned) btn=`<button class="btn pix" data-eq="${c.cat}:${id}">Équiper</button>`;
@@ -1990,13 +2004,16 @@ function buildHub(W,H,day){
   t.R(0,sy(248),W,HZ-sy(248)+6,C.valley);
   t.dith(0,sy(248),W,6,C.valleyD1,.35,55);
   t.dith(0,HZ-8,W,8,C.valleyD2,.4,56);
-  /* ---- lac à gauche ---- */
-  t.poly([[0,sy(254)],[24,sy(251)],[52,sy(253)],[84,sy(250)],[112,sy(253)],[138,sy(251)],[150,sy(254)],[150,HZ-3],[0,HZ-3]],C.lake);
-  for(let i=0;i<26;i++){const lx=hubHash(i,17)*146,ly=sy(255)+hubHash(i,18)*(HZ-6-sy(255));
+  /* ---- lac sur toute la largeur, rive ondulée ---- */
+  t.poly([[0,sy(254)],[24,sy(251)],[52,sy(253)],[84,sy(250)],[112,sy(253)],[138,sy(251)],
+    [168,sy(254)],[196,sy(250)],[224,sy(253)],[252,sy(251)],[280,sy(253)],[308,sy(250)],
+    [330,sy(253)],[330,HZ-3],[0,HZ-3]],C.lake);
+  for(let i=0;i<48;i++){const lx=hubHash(i,17)*(W-8),ly=sy(255)+hubHash(i,18)*(HZ-6-sy(255));
     t.R(lx,ly,2+hubHash(i,19)*6,1,C.lakeStreak);}
+  /* colonne de reflet de l'astre (sur l'eau libre, à gauche de l'arbre) */
   for(let i=0;i<18;i++){const ly=sy(255)+i*1.2;
-    t.R(38+hubHash(i,20)*16-6,ly,1+hubHash(i,21)*4,1,i%3?"rgba(207,216,240,.45)":C.lakeGlint);}
-  t.dith(0,sy(251),150,4,C.valleyD1,.4,22);
+    t.R(208+hubHash(i,20)*16-8,ly,1+hubHash(i,21)*4,1,i%3?"rgba(207,216,240,.45)":C.lakeGlint);}
+  t.dith(0,sy(251),W,4,C.valleyD1,.4,22);
   /* ---- lisière de sapins ---- */
   for(let i=0;i<52;i++){const px=i*6.5+hubHash(i,23)*5, ph=8+hubHash(i,24)*11, py=HZ+hubHash(i,25)*4;
     t.tri(px-3.6,py,px+3.6,py,px,py-ph,hubHash(i,26)>.5?C.pine:C.pine2);}
@@ -2035,14 +2052,7 @@ function buildHub(W,H,day){
   for(let j=0;j<12;j++){t.P(282+hubHash(j,35)*8,trTop+4+j*3.4,C.trunkD);}
   t.poly([[281,trBase-6],[276,trBase],[281,trBase+1]],C.trunk);
   t.poly([[292,trBase-6],[298,trBase],[292,trBase+1]],C.trunk);
-  const cc=trTop-48;
-  t.disc(287,cc,30,C.leaf[0]);t.disc(263,cc+16,20,C.leaf[0]);t.disc(312,cc+14,19,C.leaf[0]);
-  t.disc(287,cc+24,22,C.leaf[0]);
-  t.disc(278,cc-6,18,C.leaf[1]);t.disc(300,cc+2,16,C.leaf[1]);t.disc(268,cc+6,13,C.leaf[1]);
-  t.disc(290,cc-14,12,C.leaf[2]);t.disc(277,cc+4,9,C.leaf[2]);t.disc(299,cc-8,8,C.leaf[2]);
-  for(let i=0;i<60;i++){const lx=250+hubHash(i,36)*76, ly=cc-24+hubHash(i,37)*62;
-    const d2=Math.hypot(lx-287,ly-(cc+6));
-    if(d2<38)t.P(lx,ly,hubHash(i,38)>.5?C.leafHi:C.leafD);}
+  const cc=trTop-48; /* la canopée est dessinée dans la couche animée (balancement doux) */
   /* ---- bannière à gauche ---- */
   const bnB=gy(362);
   t.R(20,bnB-62,3,62,"#3a2a1c");t.R(21,bnB-62,1,62,"#4c3826");
@@ -2165,7 +2175,7 @@ function buildHub(W,H,day){
   const vg=x.createRadialGradient(165,H*0.5,H*0.24,165,H*0.5,H*0.62);
   vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,C.vign);
   x.fillStyle=vg;x.fillRect(0,0,W,H);
-  hubPos={W,H,HZ,fireY,logT,tchB,tnA,tnB,bdT,pbB,ndY,jnB,bnB,trBase};
+  hubPos={W,H,HZ,fireY,logT,tchB,tnA,tnB,bdT,pbB,ndY,jnB,bnB,trBase,cc};
   campStatic=oc;campStaticKey=W+"x"+H+":"+(day?"d":"n");
 }
 /* ================= Rendu animé du HUB ================= */
@@ -2191,8 +2201,20 @@ function drawHub(t){
     bd((t/2.6)%(W+10)-5,P.HZ*0.56+Math.sin(t/14)*4);
     bd((t/3.4+80)%(W+10)-5,P.HZ*0.36+Math.sin(t/11)*4);
   }
-  for(let i=0;i<7;i++){const ly=Math.round(P.HZ*0.905)+((t/7+i*3.4)%(P.HZ*0.075));
-    T.R(36+Math.sin(t/24+i)*7,ly,2,1,day?"rgba(255,250,225,.6)":"rgba(220,228,248,.5)");}
+  /* ---- lac vivant : reflet de l'astre + scintillement + vaguelettes dispersées ----
+     (limité à x<238 : à droite, l'arbre du premier plan masque l'eau) */
+  const lkT=Math.round(P.HZ*0.895), lkB=P.HZ-5, lkC=day?"rgba(255,250,225,.65)":"rgba(220,228,248,.55)";
+  for(let i=0;i<7;i++){const ly=lkT+((t/7+i*3.4)%(lkB-lkT));
+    T.R(208+Math.sin(t/24+i)*7,ly,2,1,lkC);}
+  for(let i=0;i<14;i++){const sx=6+hubHash(i,80)*228, syy=lkT+hubHash(i,81)*(lkB-lkT);
+    const tw=Math.sin(t/11+i*2.4);
+    if(tw>.55){T.R(sx,syy,2,1,lkC);
+      if(tw>.9){T.P(sx-1,syy,lkC);T.P(sx+2,syy,lkC);T.P(sx,syy-1,lkC);}}}
+  for(let i=0;i<6;i++){const u=((t/110)+i*.37)%1;
+    const wx=6+((hubHash(i,83)*206+u*26)%226), wy=lkT+hubHash(i,84)*(lkB-lkT-2);
+    const wa=.35+.25*Math.sin(t/9+i);
+    const wc=day?`rgba(210,230,250,${wa.toFixed(2)})`:`rgba(160,180,225,${wa.toFixed(2)})`;
+    T.R(wx,wy,4,1,wc);T.P(wx-1,wy+1,wc);T.P(wx+4,wy+1,wc);}
   const pu=k=>(.26+.08*Math.sin(t/16+k))*(day?.8:1);
   T.glow(255,P.bdT+28,44,"232,169,46",pu(0));
   T.glow(272,P.jnB-28,36,"232,169,46",pu(2));
@@ -2238,10 +2260,42 @@ function drawHub(t){
       const w=(t|0)%12<6?2:1;T.R(bx,by,w,1,col);T.R(bx+2,by-1,w,1,col);};
     bf(0,120,gy2(P,470),"#ffd24d");bf(2,250,gy2(P,440),"#c58bff");bf(4,60,gy2(P,510),"#ff8aa0");
   }
-  for(let i=0;i<3;i++){const pr=((t/(95+i*14))+i*.31)%1;
-    const lx=285-pr*60+Math.sin(pr*6.28+i)*10, ly=P.trBase-80+pr*140;
-    T.P2(lx,ly,[C.leaf[1],C.leaf[2],C.leaf[0]][i%3]);}
-  drawAvatarOnCamp(x,98,P.logT-31,2,t);
+  /* ---- feuillage de l'arbre : balancement lent et léger ---- */
+  {const cc=P.cc;
+   const s1=Math.sin(t/52)*1.6, s2=Math.sin(t/52-0.7)*2.6;
+   T.disc(287+s1,cc,30,C.leaf[0]);T.disc(263+s1,cc+16,20,C.leaf[0]);T.disc(312+s1,cc+14,19,C.leaf[0]);
+   T.disc(287+s1,cc+24,22,C.leaf[0]);
+   T.disc(278+s2,cc-6,18,C.leaf[1]);T.disc(300+s2,cc+2,16,C.leaf[1]);T.disc(268+s2,cc+6,13,C.leaf[1]);
+   T.disc(290+s2,cc-14,12,C.leaf[2]);T.disc(277+s2,cc+4,9,C.leaf[2]);T.disc(299+s2,cc-8,8,C.leaf[2]);
+   for(let i=0;i<60;i++){const lx=250+hubHash(i,36)*76, ly=cc-24+hubHash(i,37)*62;
+     const d2=Math.hypot(lx-287,ly-(cc+6));
+     if(d2<38)T.P(lx+(ly<cc?s2:s1),ly,hubHash(i,38)>.5?C.leafHi:C.leafD);}}
+  /* ---- avatar : aura de série + célébration au toucher (même rythme que les quêtes) ---- */
+  if(S.streak>0){
+    const au=AURAS[S.cosmetics.aura]||AURAS.braise, sA=Math.min(S.streak/8,1);
+    T.glow(116,P.logT-12,22+sA*10,au.rgb,(0.42+0.30*sA)*(0.88+0.12*Math.sin(t/9)));
+  }
+  const celeb=Date.now()<hubCelebUntil;
+  const jump=celeb?[0,-2,-3,-1,0,-2][Math.floor(t/7)%6]*2:0;
+  drawAvatarOnCamp(x,98,P.logT-31+jump,2,t);
+  if(celeb){
+    for(let i=0;i<5;i++){const a=t/3+i*1.256;
+      T.P2(116+Math.cos(a)*17,P.logT-16+Math.sin(a)*11,i%2?"#ffe07a":"#fff2b0");}
+    if(multiplier()>1.5){
+      const ph=(t%36)/36, hx=118, hy=P.logT-42-ph*7;
+      x.globalAlpha=ph<.8?1:1-(ph-.8)*5;
+      T.R(hx+1,hy,2,2,"#ff5d6c");T.R(hx+4,hy,2,2,"#ff5d6c");
+      T.R(hx,hy+1,7,2,"#ff5d6c");T.R(hx+1,hy+3,5,1,"#ff5d6c");
+      T.R(hx+2,hy+4,3,1,"#e84a5a");T.P(hx+3,hy+5,"#e84a5a");
+      T.P(hx+2,hy+1,"#ff9aa8");
+      x.globalAlpha=1;
+    }
+  }
+}
+let hubCelebUntil=0;
+function hubAvatarTap(){
+  if(!reduce && !(S.settings&&!S.settings.anim)) hubCelebUntil=Date.now()+1100;
+  if(reduce)drawHub(1);
 }
 function gy2(P,v){return Math.round(P.HZ+(v-282)*(P.H-P.HZ)/278);}
 /* ---- zones tactiles + étiquettes positionnées sur la scène ---- */
@@ -2254,6 +2308,7 @@ function placeHubSpots(){
   set("hsJournal",236,P.jnB-58,90,72);
   set("hsNid",16,P.ndY-40,84,64);
   set("hsTente",38,P.tnA-6,126,(P.tnB+10)-(P.tnA-6));
+  set("hsAvatar",88,P.logT-48,56,66);
   const lab=(id,cx,cy)=>{const e=document.getElementById(id);if(!e)return;
     e.style.left=px(cx);e.style.top=py(cy);};
   lab("labTableau",255,P.pbB+12);
@@ -2289,7 +2344,8 @@ function openTavern(){
     const bits=[];
     if(q.time)bits.push("🕐 "+q.time);
     if(q.dur)bits.push("⏱ "+(q.dur>=60?(q.dur/60).toLocaleString("fr-FR")+" h":q.dur+" min"));
-    bits.push("<b>+"+Math.round((TYPES[q.type]?.base||25)*m)+" XP</b>");
+    const g=Math.round((TYPES[q.type]?.base||25)*m);
+    bits.push("<b>+"+g+" XP · +"+g+" 🪙</b>");
     return bits.join(" · ");};
   const note=(q,cls)=>`
     <div class="tv-note ${cls}${q.doneToday?" done":""}" data-go="${q.type==="evenement"?"evenement":"journal"}">
@@ -2306,7 +2362,7 @@ function openTavern(){
       <div class="tv-chips">
         <span class="tv-chip">${doneMains} / ${totalMains} faites</span>
         <span class="tv-chip">🔥 Série ${S.streak}</span>
-        <span class="tv-chip">×${m.toFixed(1)} XP</span>
+        <span class="tv-chip">×${m.toFixed(1)} XP & 🪙</span>
       </div>
       <div class="tv-notes">
         ${mains.map(q=>note(q,"r"+(1+(q.title.length%3)))).join("")||'<div class="tv-empty">Aucune quête principale aujourd’hui — repos mérité ⛺</div>'}
@@ -2338,7 +2394,7 @@ function showLaunch(){
   launchOpen=true; l.style.display="block";
   const li=levelInfo(S.xpTotal), m=multiplier();
   document.getElementById("launchLvl").textContent="Niveau "+li.level;
-  document.getElementById("launchStreak").textContent = S.streak>0?`Série ${S.streak} · ×${m.toFixed(1)} XP`:"Une nouvelle journée d'aventure";
+  document.getElementById("launchStreak").textContent = S.streak>0?`Série ${S.streak} · ×${m.toFixed(1)} XP & 🪙`:"Une nouvelle journée d'aventure";
   document.getElementById("launchRich").textContent = campRichLabel(campTier());
   const cv=document.getElementById("camp");
   cv.width=330;
