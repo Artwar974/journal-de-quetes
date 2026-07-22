@@ -1183,6 +1183,11 @@ function gifBBox(id){
   if(x1<0)return null;
   return r.bbox={x0,y0,x1,y1,w:x1-x0+1,h:y1-y0+1};
 }
+function gifStill(id){        // 1re image, sans faire avancer l'animation (catalogue figé)
+  const r=gifRT(id); if(!r)return null;
+  const im=r.imgs[0];
+  return (im&&im.complete&&im.naturalWidth)?im:null;
+}
 function gifFrame(id){
   const g=gifData(id),r=gifRT(id);if(!g||!r)return null;
   const now=performance.now();
@@ -1195,25 +1200,39 @@ function gifFrame(id){
   return (im&&im.complete&&im.naturalWidth)?im:null;
 }
 /* Dessine une créature dans un contexte (miniatures collection + révélation d'œuf) */
-function paintCreature(ctx,id,ox,oy,sc,mo,blink){
+function paintCreature(ctx,id,ox,oy,sc,mo,blink,still){
   const cr=CREATURES[id]||CREATURES.heros;
   if(cr.gif){
-    const im=gifFrame(id); if(!im)return;
+    const im=still?gifStill(id):gifFrame(id); if(!im)return;
     const g=gifData(id), bb=gifBBox(id);
     ctx.imageSmoothingEnabled=false;
     const box=18*sc;                                   // case allouée à la créature
     const cible=box*(cr.gscale||GIF_FILL);             // hauteur voulue pour le DESSIN
-    const k=cible/(bb?bb.h:g.h);                       // échelle déduite de l'emprise réelle
+    /* ÉCHELLE ENTIÈRE UNIQUEMENT : un facteur fractionnaire rendrait certains pixels du
+       dessin plus épais que d'autres et trahirait le fichier d'origine. */
+    const k=cr.gk||Math.max(1,Math.round(cible/(bb?bb.h:g.h)));
     const dw=g.w*k, dh=g.h*k;
     const cxOff=bb?(bb.x0+bb.w/2)*k:dw/2;              // centre horizontal du dessin
     const basOff=bb?(bb.y1+1)*k:dh;                    // bas du dessin → posé sur la ligne de sol
-    ctx.drawImage(im, Math.round(ox+box/2-cxOff), Math.round(oy+box*GIF_BASE-basOff),
-      Math.round(dw), Math.round(dh));
+    ctx.drawImage(im, Math.round(ox+box/2-cxOff), Math.round(oy+box*GIF_BASE-basOff), dw, dh);
     return;
   }
   const skin=cr.useColor?((COLORS[S.cosmetics.color]||COLORS.bleu).hex):cr.skin;
   const P=(px,py,col)=>{ctx.fillStyle=col;ctx.fillRect(ox+px*sc,oy+py*sc,sc,sc);};
   (MODELDRAW[id]||MODELDRAW.heros)(P,skin,"#0c0a17",mo||"happy",blink||false);
+}
+/* Vignette FIGÉE du catalogue : le dessin d'origine, à sa taille native, jamais animé */
+function paintStill(cv,id){
+  const cr=CREATURES[id]||CREATURES.heros, ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if(cr.gif){
+    const r=gifRT(id); if(!r)return;
+    const im=r.imgs[0]; if(!im)return;
+    if(!im.complete||!im.naturalWidth){im.addEventListener("load",()=>paintStill(cv,id),{once:true});return;}
+    ctx.imageSmoothingEnabled=false; ctx.drawImage(im,0,0);
+    return;
+  }
+  paintCreature(ctx,id,0,0,1);
 }
 function drawAcc(P,dark){
   const a=S.cosmetics.acc;
@@ -1231,11 +1250,14 @@ function drawAcc(P,dark){
 function drawAvatar(mo){
   mo=mo||mood();
   const c=document.getElementById("avatar"); if(!c)return;
-  const x=c.getContext("2d"); x.clearRect(0,0,18,18);
+  const id=S.cosmetics.model, g=(CREATURES[id]||{}).gif?gifData(id):null;
+  const n=g?g.w:18;                      // les créatures GIF gardent leur résolution native
+  if(c.width!==n){c.width=n;c.height=n;}
+  const x=c.getContext("2d"); x.clearRect(0,0,c.width,c.height);
   c.className=(FRAMES[S.cosmetics.frame]||FRAMES.none).cls;
-  const id=S.cosmetics.model;
-  if((CREATURES[id]||{}).gif){           // créature GIF dans le HUD : même cadrage que les autres
-    paintCreature(x,id,0,0,1);
+  if(g){                                 // créature GIF : image courante, 1:1, sans déformation
+    const im=gifFrame(id);
+    if(im){x.imageSmoothingEnabled=false;x.drawImage(im,0,0);}
     return;
   }
   const skin=(COLORS[S.cosmetics.color]||COLORS.bleu).hex, dark="#0c0a17";
@@ -2638,10 +2660,8 @@ function buildHub(W,H,day){
     t.R(sx-3,syy-2,6,4,i%2?C.stone1:C.stone2);
     t.P(sx-2,syy-2,C.stoneHi);}
   t.R(154,fireY-8,22,5,"#3a2a1a");t.R(158,fireY-12,15,4,"#2e2114");
-  /* ---- rondin du héros ---- */
+  /* (le rondin a été retiré ; logT sert encore de repère pour la créature) */
   const logT=fireY-22;
-  t.R(104,logT,30,7,"#4a3220");t.R(104,logT,30,2,"#5e4028");
-  t.disc(104,logT+3,3.5,"#57452c");t.disc(104,logT+3,1.6,"#3a2c1c");
   /* ---- sac + marmite + tasse ---- */
   const skY=gy(468);
   t.R(206,skY-22,18,22,"#4a3018");t.R(206,skY-22,18,4,"#5e3e20");
@@ -3109,7 +3129,7 @@ function openNest(){
       <span class="rglow" style="background:${R.col}"></span>
       ${eq?'<span class="eqtag">ÉQUIPÉ</span>':""}
       ${cnt>1?`<span class="cnt">×${cnt}</span>`:""}
-      <canvas width="18" height="18" data-cr="${id}"></canvas>
+      <canvas width="${cr.gif?(gifData(id)||{w:32}).w:18}" height="${cr.gif?(gifData(id)||{h:32}).h:18}" data-cr="${id}"></canvas>
       <div class="cn">${esc(cr.name)}</div>
       <div class="cr" style="color:${R.col}">${R.name}</div></div>`;
   };
@@ -3129,9 +3149,8 @@ function openNest(){
   nest.style.display="block";
   // miniature d'œuf
   const ec=document.getElementById("nsEggCv");if(ec)drawEgg(ec.getContext("2d"),13,15,1,0);
-  // miniatures créatures possédées
-  nest.querySelectorAll("canvas[data-cr]").forEach(cv=>{
-    paintCreature(cv.getContext("2d"),cv.dataset.cr,0,0,1,"happy",false);});
+  // miniatures créatures possédées : figées, jamais animées
+  nest.querySelectorAll("canvas[data-cr]").forEach(cv=>paintStill(cv,cv.dataset.cr));
   document.getElementById("nsBuy").onclick=buyEgg;
   document.getElementById("nsBack").onclick=()=>{closeNest();};
   nest.querySelectorAll("[data-eq]").forEach(c=>c.onclick=()=>nestEquip(c.dataset.eq));
