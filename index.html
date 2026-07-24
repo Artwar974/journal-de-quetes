@@ -575,18 +575,22 @@
     padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.6)}
   .ne-ttl{font-family:var(--mono);font-weight:700;font-size:13px;color:#f0ddac;text-align:center}
   .ne-sub{font-family:var(--mono);font-size:9.5px;color:#c8ab72;text-align:center;margin:6px 0 10px}
-  .ne-wrap{display:flex;justify-content:center;align-items:center;gap:22px;margin:4px 0 6px}
-  .ne-jauge{display:flex;flex-direction:column;gap:4px;padding:8px 10px;touch-action:none;
-    background:#241609;border:1.5px solid #5a3a22;border-radius:4px;cursor:ns-resize;
-    user-select:none;-webkit-user-select:none}
-  .ne-slot{width:34px;height:26px;display:grid;place-items:center;font-size:15px;
-    opacity:.18;filter:grayscale(1);border-radius:3px;transition:opacity .12s,filter .12s}
-  .ne-slot.on{opacity:1;filter:none;background:rgba(232,169,46,.14)}
-  .ne-slot.off{opacity:.06}
-  .ne-info{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);color:#f0ddac;
-    font-size:12px;min-width:96px}
-  .ne-info b{color:#ffd24d;font-size:17px}
-  .ne-info .ne-hint{font-size:9px;color:#8a6a3c}
+  .ne-mol-row{display:flex;justify-content:center;align-items:center;gap:16px;margin:12px 0 8px}
+  .ne-fic{font-size:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+  .ne-mol{display:flex;flex-direction:column;align-items:center;width:64px;
+    background:#241609;border:1.5px solid #8a6a3c;border-radius:5px;touch-action:none;
+    user-select:none;-webkit-user-select:none;cursor:ns-resize}
+  .ne-mol b{font-family:var(--mono);font-size:24px;color:#ffd24d;min-height:32px;
+    display:grid;place-items:center;pointer-events:none}
+  .ne-step{width:100%;min-height:28px;background:#54341e;border:none;color:#f0ddac;
+    font-size:12px;cursor:pointer}
+  .ne-step:first-child{border-radius:4px 4px 0 0;border-bottom:1px solid #2a180c}
+  .ne-step:last-child{border-radius:0 0 4px 4px;border-top:1px solid #2a180c}
+  .ne-step:disabled{opacity:.3;cursor:default}
+  .ne-trad{display:flex;flex-direction:column;gap:4px;font-family:var(--mono);min-width:78px}
+  .ne-trad b{color:#f0ddac;font-size:15px}
+  .ne-trad span{color:#c8ab72;font-size:11px}
+  .ne-hint2{font-family:var(--mono);font-size:9px;color:#8a6a3c;text-align:center;margin-bottom:4px}
   .ne-actions{display:flex;gap:8px;margin-top:10px}
   .ne-go{flex:1;min-height:36px;background:var(--gold-deep);border:2px solid var(--gold);
     color:#3a2600;font-family:var(--mono);font-weight:700;font-size:11px;cursor:pointer;
@@ -636,6 +640,9 @@
   .hc-name{font-size:20px;font-weight:700;color:#3a2a12;margin-top:3px}
   .hc-msg{font-size:10.5px;color:#7c5e34;margin-top:5px;min-height:13px}
   .hc-actions{display:flex;gap:9px;margin-top:14px}
+  .hc-actions .tv-btn{flex:1 1 0}                 /* Fermer et Relancer : même largeur */
+  .tv-btn.alt{background:#54341e;border-color:#8a6a3c;color:#f0ddac}
+  .tv-btn:disabled{opacity:.45;cursor:default}
 
   /* ======= Sélecteur Principales/Secondaires ======= */
   .qseg{display:flex;gap:6px;margin-bottom:10px}
@@ -772,8 +779,8 @@
     <div class="hc-name" id="hcName">Renardeau</div>
     <div class="hc-msg" id="hcMsg"></div>
     <div class="hc-actions">
-      <button class="tv-btn back" id="hcClose">Fermer</button>
-      <button class="tv-btn" id="hcEquip">Équiper</button>
+      <button class="tv-btn alt" id="hcClose">Fermer</button>
+      <button class="tv-btn" id="hcRelance">🥚 Relancer</button>
     </div>
   </div>
 </div>
@@ -844,10 +851,8 @@ const AURAS={
   coeur:{name:"Cœur",cost:260,c:["#fff2f6","#ff9db0","#ff5d8a","#b81c4a"],rgb:"255,130,165"},
 };
 const CATS=[
-  {cat:"color", data:COLORS, label:"Couleur", icon:"🎨"},
   {cat:"aura",  data:AURAS,  label:"Aura de série", icon:"✨"},
   {cat:"frame", data:FRAMES, label:"Cadre", icon:"🖼️"},
-  {cat:"acc",   data:ACCS,   label:"Accessoire", icon:"🎩"},
   {cat:"effect",data:EFFECTS,label:"Effet de victoire", icon:"🎉"},
   {cat:"sound", data:SOUNDS, label:"Son de victoire", icon:"🔊"},
 ];
@@ -1207,17 +1212,18 @@ const RARITY={
 const RARITY_ORDER=["commun","rare","tresrare","epique","legendaire"];
 const CREATURES={
   heros: {name:"Héros",      rar:"commun",     skin:"#bfd0e8", useColor:true, tal:"exploration"},
-  slime: {name:"Slime",      rar:"commun",     skin:"#8fe6b0", useColor:true, tal:"cuisine"},
+  slime: {name:"Slime",      rar:"tresrare",   skin:"#8fe6b0", gif:true, gzoom:1.6, tal:"cuisine"},
   chat:  {name:"Chat",       rar:"commun",     skin:"#c8ccd4", useColor:true, tal:"peche"},
   robot: {name:"Robot",      rar:"commun",     skin:"#a8b4c8", useColor:true, tal:"exploration"},
   renard:{name:"Renardeau",  rar:"rare",       skin:"#ec8a3c", tal:"exploration"},
-  champi:{name:"Champlutin", rar:"rare",       skin:"#d8443a", tal:"cuisine"},
+  champi:{name:"Champlutin", rar:"rare",       skin:"#d8443a", gif:true, gzoom:1.3, tal:"cuisine"},
   tigre: {name:"Tigre",      rar:"rare",       skin:"#ec8a3c", gif:true, gzoom:1.334, tal:"peche"},
-  golem: {name:"Golem",      rar:"tresrare",   skin:"#7a8088", tal:"cuisine"},
+  golem: {name:"Golem",      rar:"epique",     skin:"#7a8088", gif:true, gzoom:1.78, idleFrames:6, walkFrames:8, profile:true, tal:"cuisine"},
   meduse:{name:"Méduse",     rar:"tresrare",   skin:"#a98ae8", fly:5, tal:"peche"},
   poussin:{name:"Poussin",   rar:"tresrare",   skin:"#ffd24d", gif:true, fly:4, tal:"exploration"},
   dragon:{name:"Dragonneau", rar:"epique",     skin:"#3aa85a", gif:true, gzoom:1.15, fly:6, tal:"cuisine"},
-  phenix:{name:"Phénix",     rar:"legendaire", skin:"#ff9a2a", tal:"exploration", gif:true, fly:8, gzoom:1.21},
+  capybara:{name:"Capybara", rar:"tresrare",   skin:"#9a6b47", gif:true, gzoom:1.3, idleFrames:2, walkFrames:4, profile:true, tal:"peche"},
+  phenix:{name:"Phénix",     rar:"legendaire", skin:"#ff9a2a", tal:"exploration", gif:true, fly:8, gzoom:1.57},
 };
 /* ================= Talents & tâches des créatures =================
    Chaque créature a un talent (cuisine / pêche / exploration). Sa stat de talent =
@@ -1229,47 +1235,69 @@ const TALENTS={cuisine:{name:"Cuisine",ic:"🍲"},peche:{name:"Pêche",ic:"🎣"
    chaque 🍢 donné ajoute 10 min. L'or récolté = minutes × rendement, et le rendement
    dépend de la stat d'exploration. Les réserves sont plafonnées : il faut gérer. */
 const TASK_BASE={
-  cuisine:    {dur:15*60, batch:3},              // passe jusqu'à 3 🐟 au gril par fournée
-  peche:      {dur:15*60, yield:3},              // 3 🐟 par sortie
-  exploration:{base:10*60, perFish:10*60, maxFish:5}   // 10 min + 10 min par 🍢 (max 5)
+  cuisine:    {perFish:15*60},                   // niv. 1 : 1 🍢 toutes les 15 min, plus vite ensuite
+  peche:      {stepMin:15, maxMin:120},          // on choisit la DURÉE (15 à 120 min)
+  exploration:{base:10*60, perFish:10*60}        // 10 min + 10 min par 🍢 embarqué
 };
 const FISH_CAP=20, GRILL_CAP=10;
+const MAX_TAL={peche:2, cuisine:1, exploration:2};   // un seul cuisinier à la fois
 /* niveaux de base : les épiques (8) et légendaires (12) sont bien plus durs à obtenir */
 function talentLvl(id){const cr=CREATURES[id];if(!cr)return 1;
   return [1,2,3,8,12][RARITY_ORDER.indexOf(cr.rar)]+Math.max(0,(S.creatures.counts[id]||1)-1);}
-/* pêche & cuisine : le niveau accélère la tâche. Exploration : durée fixée par les 🍢,
-   le niveau joue sur le RENDEMENT en or (voir explGain). */
+/* Pêche : on choisit la durée, le NIVEAU dope le rendement (poissons ramenés).
+   Cuisine : le niveau accélère le gril. Exploration : le niveau dope l'or par minute. */
+/* rendement : 1 🐟 par 15 min de base, +1 tous les 2 niveaux (nv2=2, nv4=3, nv6=4…) */
+function fishYield(id,min){return Math.max(1,Math.round(min/15*(1+Math.floor(talentLvl(id)/2))));}
+function cookPer(id){return Math.round(TASK_BASE.cuisine.perFish*Math.max(.4,1-0.07*(talentLvl(id)-1)));}
 function taskDur(id,fish){
-  const tal=CREATURES[id].tal, b=TASK_BASE[tal];
-  if(tal==="exploration")return b.base+b.perFish*(fish||0);
-  return Math.round(b.dur*Math.max(.4,1-0.07*(talentLvl(id)-1)));
+  const b=TASK_BASE.exploration;
+  return b.base+b.perFish*(fish||0);
 }
 function explGain(id,fish){
   const min=taskDur(id,fish)/60;
   return Math.round(min*(0.5+0.25*talentLvl(id)));
 }
-function startTask(id,fish){
+function startTask(id,param){
   S.tasks=S.tasks||{};S.res=S.res||{fish:0,grilled:0};
   if(S.tasks[id])return;
   const tal=CREATURES[id].tal, tk={start:Date.now(),tal};
+  const pris=Object.values(S.tasks).filter(k=>k.tal===tal);
+  if(pris.length>=MAX_TAL[tal]){
+    toast(MAX_TAL[tal]===1?"Il y a déjà un cuisinier au feu !"
+      :`Déjà ${MAX_TAL[tal]} créatures en ${TALENTS[tal].name.toLowerCase()} !`);return;
+  }
+  tk.slot=pris.some(k=>(k.slot||0)===0)?1:0;   // poste attitré : gauche (0) puis droite (1)
   if(tal==="peche"){
-    if(S.res.fish>=FISH_CAP){toast("Réserve de poissons pleine ! 🐟 "+FISH_CAP+"/"+FISH_CAP);return;}
-    tk.dur=taskDur(id);
+    const min=Math.max(TASK_BASE.peche.stepMin,Math.min(TASK_BASE.peche.maxMin,param||TASK_BASE.peche.stepMin));
+    tk.dur=min*60;
+    tk.yield=fishYield(id,min);
   }else if(tal==="cuisine"){
     if(S.res.fish<1){toast("Aucun poisson à griller — envoie d'abord un pêcheur ! 🐟");return;}
-    tk.amt=Math.min(TASK_BASE.cuisine.batch,S.res.fish,GRILL_CAP-S.res.grilled);
-    if(tk.amt<1){toast("Réserve de grillés pleine ! 🍢 "+GRILL_CAP+"/"+GRILL_CAP);return;}
-    S.res.fish-=tk.amt;                          // les poissons partent au gril
-    tk.dur=taskDur(id);
+    tk.done=0;                                   // 🍢 déjà grillés (versés au coffre au fil de l'eau)
+    tk.last=Date.now()+9000;                     // le gril démarre après le trajet
+    setTimeout(ensureCookFire,9500);             // s'il arrive devant un feu froid, il le rallume
   }else{
-    tk.fish=Math.max(0,Math.min(fish||0,TASK_BASE.exploration.maxFish,S.res.grilled));
+    tk.fish=Math.max(0,Math.min(param||0,S.res.grilled));  // autant de 🍢 qu'on en possède
     S.res.grilled-=tk.fish;                      // provisions consommées au départ
     tk.dur=taskDur(id,tk.fish);
     tk.gain=explGain(id,tk.fish);
   }
   S.tasks[id]=tk;save();
-  toast(`${TALENTS[tal].ic} ${CREATURES[id].name} part en ${TALENTS[tal].name.toLowerCase()}`+
-    (tal==="exploration"&&tk.fish?` avec ${tk.fish} 🍢 (${Math.round(tk.dur/60)} min)`:"")+" !");
+  toast(`${TALENTS[tal].ic} ${CREATURES[id].name} `+(
+    tal==="peche"?`part pêcher ${Math.round(tk.dur/60)} min (≈${tk.yield} 🐟) !`
+    :tal==="cuisine"?`s'installe au gril — tant qu'il y a du poisson, ça grille !`
+    :`part en exploration${tk.fish?` avec ${tk.fish} 🍢 (${Math.round(tk.dur/60)} min)`:""} !`));
+}
+/* Arrêter le cuisinier (bouton du Nid) — ou fin naturelle quand il n'y a plus de poisson. */
+function stopCooking(id,auto){
+  const tk=S.tasks&&S.tasks[id];if(!tk||tk.tal!=="cuisine")return;
+  delete S.tasks[id];
+  HUB_DROPS.push({id,tal:"cuisine",slot:tk.slot||0,t0:Date.now()});
+  toast(auto?`🍲 ${CREATURES[id].name} a tout grillé (${tk.done||0} 🍢) !`
+            :`🍲 ${CREATURES[id].name} range son gril (${tk.done||0} 🍢 au coffre)`);
+  save();campStaticKey="";
+  const n=document.getElementById("nest");
+  if(n&&n.style.display==="block")openNest();
 }
 /* À la fin d'une tâche, la créature va déposer son butin dans le COFFRE près de la
    tente (animation courte), et le coffre s'entrouvre. Le joueur clique dessus pour
@@ -1277,27 +1305,50 @@ function startTask(id,fish){
 let HUB_DROPS=[];
 function checkTasks(){
   if(!S.tasks)return;
-  S.chest=S.chest||{coins:0,fish:0,grilled:0};
+  S.chest=S.chest||{coins:0,fish:0,grilled:0};S.res=S.res||{fish:0,grilled:0};
   let changed=false;
   Object.keys(S.tasks).forEach(id=>{
     const tk=S.tasks[id];
+    /* auto-réparation : une tâche d'un ancien format (durée manquante, talent inconnu…)
+       resterait coincée À VIE et bloquerait la balade de la créature — on la libère. */
+    if(!tk||!TALENTS[tk.tal]||!CREATURES[id]||(tk.tal!=="cuisine"&&!isFinite(tk.dur))){
+      delete S.tasks[id];changed=true;
+      if(CREATURES[id])toast(`${CREATURES[id].name} rentre au camp (mission expirée)`);
+      return;
+    }
+    if(tk.tal==="cuisine"){
+      /* gril CONTINU : consomme la réserve de 🐟, verse les 🍢 au coffre au fil de l'eau */
+      if(!S.camp.fire){tk.last=Math.max(tk.last||Date.now(),Date.now());ensureCookFire();return;}  // feu éteint : pause + rallumage
+      const per=cookPer(id)*1000;
+      let n=Math.floor((Date.now()-(tk.last||tk.start))/per);
+      if(n>0){
+        const can=Math.min(n,S.res.fish);
+        if(can>0){
+          S.res.fish-=can;S.chest.grilled+=can;
+          tk.done=(tk.done||0)+can;tk.last=(tk.last||tk.start)+can*per;
+          changed=true;campStaticKey="";
+        }
+        if(S.res.fish<=0){changed=true;stopCooking(id,true);}
+        else if(can<n)tk.last=Date.now();
+      }
+      return;
+    }
     if(Date.now()-tk.start>=tk.dur*1000){
       changed=true;delete S.tasks[id];
       if(tk.tal==="peche"){
-        S.chest.fish+=TASK_BASE.peche.yield;
-        toast(`🎣 ${CREATURES[id].name} dépose ${TASK_BASE.peche.yield} 🐟 dans le coffre`);
-      }else if(tk.tal==="cuisine"){
-        const n=tk.amt||TASK_BASE.cuisine.batch;S.chest.grilled+=n;
-        toast(`🍲 ${CREATURES[id].name} dépose ${n} 🍢 dans le coffre`);
+        const n=tk.yield!=null?tk.yield:3;
+        S.chest.fish+=n;
+        toast(`🎣 ${CREATURES[id].name} dépose ${n} 🐟 dans le coffre`);
       }else{
         const g=tk.gain!=null?tk.gain:35;S.chest.coins+=g;
         toast(`🧭 ${CREATURES[id].name} dépose ${g} 🪙 dans le coffre`);
       }
-      HUB_DROPS.push({id,tal:tk.tal,t0:Date.now()});
+      HUB_DROPS.push({id,tal:tk.tal,slot:tk.slot||0,t0:Date.now()}); // repart de SON poste
     }});
   if(changed){save();renderHUD();
     const n=document.getElementById("nest");
-    if(n&&n.style.display==="block")openNest();
+    if(n&&n.style.display==="block"&&!document.getElementById("nsExpl")
+       &&Date.now()-(window.nestTouchT||0)>1200)openNest();
     campStaticKey="";}
 }
 function collectChest(){
@@ -1334,6 +1385,10 @@ function showLoot(got,reste){
   ov.onclick=e=>{if(e.target===ov)close();};
 }
 const GIFSPRITES={};
+GIFSPRITES.champi={w:32,h:32,delays:[140,140,140,140,140,140],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAERSURBVFhH7ZTbDYMwDEUzGlI/O0nVGRilO7BOt2CDVI5w5RgnfjQIVeJK5yeY3MMzpSv/mEdKWYLPDQ0tyg0OkdFKK0iGiJiLBYG8rmUtJOG6ag6GrLnuRrjYgCqhlgtX56UpYS4/SqIr0AqfM7IT6JYDrfA5B5VEEdA25OHHPWz/ibrcsql1DoF/wfY/kPYpEqarj4DlLQl8DOrzj3K6ANApB8wCMBOB78MpAtpnCMfu01R4zXN+L0sXmMF5bd/9Z8heRloeEehJVAIWCUs5lzCXY74SwgleAXc5BgYkUOCZUoGX0nUUkOB95lCBmyAAa1SAn/9TPLcfGSYRKR8qcQlAIhLDyiGnC0BgQw/8/FY+qxP5ZDuhgskAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAENSURBVFhH7ZTLDYMwEERdGlKOqSRKDZSSHmgn1Thai43sYe39xEg5MNK74MXzDIKUrlwJ5JFSlsC5qamLcodTZLTShipTRMzFgkBJVMJ1aqQqZ1xPI1xsQJVQy4XTeelKmMvPkhgK9IJzRg4Cw3KiF5xz0EgUAW1DDK572P8TbbllU+ucNr+nSJhOHwGD6/wa1PcfBYPrpwsQg3LCLEAzEXAfpAhonyGt3Zel8FrX/N62ITTD89q+x88QHlddHhEYSTQCFglLOUqYyzlfCeEGFnimVMDS+jrNuss5NCBRC9wEAbqGAhLYZ45XAO//KZ73z0yTiJRPlfgLgYgE34f7hRIVwH3C4dN4wX2kfAAQHst+jENecwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD4SURBVFhH7ZTRDYMwDEQ9GlI/O0nVGRilO7BOp0nlCFfhiBPbBakSOel9QEzuEQmIRkZGAnkQpRo4d2jKoqRwikyvdEORQ0TMxTWJ9Tok4XprA67TaBbD23npSpjKz5RQBbTgnAFVQC1ntOCckapEU4DB4LqDnUAut2zqLdfm1/+Er9wLBtflJLpHHwWD66cLMI1yxizAMxFwHyQL9L4AXrtPU+Y1z+m9LE14RuZ7++6/Ajgub7lHYiNgkYgImMslX4nKAyLwJEo3ol0p3+M1EXCXS3igRikgRSXlfRGogX2meI5f4Gdwn3CuLRApP1TiLwR+AffDfADCGVoKXKlslwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVFhH7ZPdDYMwDIQ9GlIfO0nVGRilO7BOp0nlCKNw5Mc2iegDJ90D2PF9SYDo1i2HXkQhZ+zrqjQoFDwEphW6c6IuIOrgHMT67IIw7Vph02lUg2F3VjchVOGjIEzhIuxTOgtxKUAMbw1EYd3i9Te1AUiPpq/VnwKow61GYV2uonr3Z4zC+nAAdiWcrQbgHo9xDjoCbN9BwVx7TlP0Z57Dd1mq5h7pb809/gVwXGm4B6AGsQPQQGjCEUIdLtogMgsE4E0UHkSHUH7HNQEwh4u4IWcPQM6Yp5YVANefkuX+xd0gPOFdIf4CwAMh63CeS14AnOPW5QAsOVKtcX1JP9Nop0bWCDwsAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEcSURBVFhH7ZTbCcMwDEU9WqCfnaR0hozSHbJOt8gGLjJRsW9kW1IdQiEXzo+j+J48Q/jHPEKIEjg3NHlRrHCITK+0IMsQEXWxIBDXNa25JExXjXCyNdPdcBcr6Ep0y4Wrs1KVUJcfJdEUqAXnlOwEmuVELThnoJBIAr0NMXjcwvafKMs1m2rnGPoXbP8DaZ8kobp6D1xek+DH0H3+Xk4XIBrlhFqAZjzgPkgS6H2GdOw+TYnXPMf3sjShGZ7v7bv/DOFlzMs9Ai2JQkAjoSlHCXU55yshnGAVMJdzaECCBZ4hJLA0X2cBCexTJxe4CQK0lgvg+T/FcvuZoRKnCnjKh0pcAhSPxLByjkVieDmHNm6J8HE8b3i4CME5TT6eNSzzj81GswAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEcSURBVFhH7ZTbCcMwDEU9WqCfnaR0hozSHbJOt8gGLjJRsW9kW1IdQiEXzo+j+J48Q3DkEUKUwLmhyYtihUNkeqUFWYaIqIsFgbiuac0lYbpqhJOtme6Gu1hBV6JbLlydlaqEuvwoiaZALTinZCfQLCdqwTkDhUQS6G2IweMWtv9EWa7ZVDvH0L9g+x9I+yQJ1dV74PKaBD+G7vP3croA0Sgn1AI04wH3QZJA7zOkY/dpSrzmOb6XpQnN8Hxv3/1nCC9jXu4RaEkUAhoJTTlKqMs5XwnhBKuAuZxDAxIs8AwhgaX5OgtIYJ86ucBNEKC1XADP/ymW288MlThVwFM+VOISoHgkhpVzLBLDyzm0cUuEj+N5w8NFCM79RT5FgCzzl+LEZQAAAABJRU5ErkJggg=="]};
+GIFSPRITES.golem={w:32,h:32,delays:[170,170,170,170,170,170,170,170,170,170,170,170,170,170],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGFSURBVFhH1VU7TsQwFMyRtthiFaEU2+xKEVtQ0HIYLsBR9hJIXIGCIyDRURqN0Vgvw7N3k9gCRnpyYjtv5n3sdN1/wX4Ygs79Ku5Pp1Cy2+OxnWAl8mzf920FKKEa9jQRAcc3223YbTaRiM98by6CAj5CNxGAdy8zTQR4RLn5qgJsuq1xHiOsmQDWOdZ2GH5Eq4Y9VQUA0em15C0E0LlXbxrKAOLq5ARKcTeO0RhlGlsSK3L/B6Zf56si1fiC2f1TDytA51p7rwn129UYD4dEbn9K1qwA9Iv6WAySYySZ7lERvKx03yKAGMboOf/0FkJ3Dum9ehZYS00/5h5ePsPzewgYo5CMgMU9gbNOYj5bAY+v3+SXMsA7A99PCEqw5Bg9AQqvBzDPAGZlgoReBlQEiUmuGWAAswVoFqKDvp+IUGJLrgLoQ7lc2LrxoyQicxEpsS0BjD6VaxZsV+ds9dHLgeoZnUbblPzPwJ6MOWtVYDuZds1aFXhHkvUurVWDTa82XGmthC9Pp6LU+0yX8AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGISURBVFhH7VU7TgMxEN0jpUiBVmiLNIm0IgUFbQ7DBXKUXAKJK1BwBCQ6ykFj9KzZx9jZ3YwlCp705Kw/855nbKfr/rECT8ej1PhwOAivuQm7YcgBWcjjru9jDVjUhEGd08SEBr7fbuVus0lC+I3v5iZg4FO6iQH99jLTxIAnVOoPNWDTbYl+bZXNDKDOqbbD8Gu3TJ0TakCRgs4Vb2EAwb16g1oGFQ4XB7QUj+OYiF3mtqWwB/tCWqAE3B+KXOcr5HUhQHCuv3cQ7ZpplJUY9/ssbv+YLK0BPTMcYzUgri3EeA6bwIPF81ZBhUErfn4X6S6Sv8OzgPpx+rXv9PolLx8i2iYjBQN8JmZD7zuE8dsaeH77Eb+WAbwbun4iUIMV19YzwPDOgPZjA4syAUEvA2wCwhDnDGADiw1wFlKAvp+YYGErzgYQg7Vc2LphUTZReIhY2JZAiZistQj2VJd489UrAe6xO95tU/E/A3szloyFwJ5kcM5YCLwriXrXxsJg08sHrjZWwzdXfqLQlxVzowAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGISURBVFhH7VU7TgMxEN0jpUiBVmiLNIm0IgUFLYfhAhyFSyBxBQqOgERHafQMz5p92GY/4wLEk0aOx555zzNep+v+8Rtxcz6Hml2dTkFjNuMwDDGpEuXs0Pf+AogaMQ17mohA4sv9PlzsdpGIvzlvLoIC3kI3EYB5rjJNBOSISn5XAbbc1ujHCGsmgH2OvR2Gb6dVwx5XAUBMOpe8hQAmz/WbhjaA2J2cQCuuxzEaT5lG2lcFNNYVqcw/mMa5gMm1/Ll7oLGbMR6Pidz+L1izAtAyxLmIITlGkukeFcH3QvetAohplvz+JYTuIaR5qQqboRWA7/bpPTy+hoAxCikI2NQCBuPTAzn7D9/d8yf5nAqsEkFSBOcEKHJ3AH6+G4jXmCIsOUYrQEWQmORaAR6AvilTASS0ImKCvp+IUGJLTgE8wGIBtgrwJRGFh0iJ2QJbwUUC7MnhY2JLlDP99OhnTru2CjydJeRcyf8e7MVcsuYCe5Foc9ZcoO+C7XdtzQ22vHrhams1fAABPaEP/qUfVQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF6SURBVFhH7VQ7TsQwFMyRttgCRSjFNrtSxBYUtHsYLrBH2UsgcQUKjoBER2k0RhNNBjtKsrYQiJGeHD9/ZjzPcdP84zdi13XBcz+Ch+MxTMXd4VBPqBOlYte2dQU4oQfmVBGBjW+323Cz2UQifrNfXQQFvIdmJAD9lDNVBKSIcvmiAtRuDebRIqoJYJ1jbbvu22k9MKeoACBuOpe8hgBunqo3A2UAcXFyAqW47/sYPOXQMmo92XNKwDm+9mr0+/1Ars+xhgqAU77HapAcLcl8jovgb1rEDRAzlPz8GkJzCUO/mgvuAHKn54/w9BYC2igkI+AqB7gYN94deHz5Ip/jwCoRJMVifvMC+lwgdQeQ5++K9b4mCyVHqwJcBIlJ7g7wAMyNmTJQyykibtC2IxFOrOQUwAMsFqAuIDeIyDxETswSqIOLBOjJkePGSpQK//WY5546tgr6wJCQfSf/e9CLuWSsCPQiMeaMFYG/C1rvqbFiUHv9wk2NTeETWreN7Lxbh4sAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGDSURBVFhH7VUxagMxELwnuXARjnCFGxuOuEiR1o/JB/wUfyKQL6TIEwLpUm4YhRF7E0m580kEQgYWWSutZnZXJ3fdPxZiNwymvl/Fw/FoJbs7HNoJVqKU7fq+rQAlVMOeJiJw8O12azebTSDib86bi6CAd+smAjBPVaaJgBRRzl9VgC+3N/oxwpoJYJ9Db4fhW7Zq2FNVABAOnUveQgAPT/WbhjaAuDo5gVbcj2MwZhnHlsRALO0PpnFVwMO15Knea+xqjPt9JPf/Bd68ALQJcVXEkBwjyXSPiuAbofuuAohhzJ7+86tZd7E4z1VhNbT88J2eP+zpzQxjEJIRsKoFDMbnphV4fPkin1OBq0SQFMEpAYrUHYCfbwXiNSYLT47RC1ARJCa5VoAJ0DdlyoCEXkQ4oO8nIpTYk1MAE1gswFcBvigi8xApMVvgK7hIgM+cfpa0ZPrp0c8z/doiMJjZeULOlfzvwV/MJWtV4C8Sbc5aFei74PtdWqsGX169cKW1Ej4Bu92dnfrKznkAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGGSURBVFhH7VU7TgMxEN0jpUiBVmiLNIm0IgUFbQ7DBTgKl0DiChQcAYmO0ugZPWv2Zdb7s6HhSSNnx/a8NzO20zT/WIBD1wX1PZzPIWd3p9PVnmJQIs8ObVtXgBKqYU0VEQh8u9+Hm90uEvE3v6uLoIDP0AwE4NurTBUBHtGYv6gAW25r9GOEVRPAPsfedt1VtmpYU1QAEIPOJa8hgMG9ftPQBhAXJyfQivu+j8Ys01iTmPCeZoBlV39RpN5OmF0/jLABDK499w6f7t2M/nhM5PbPyJoVgHOiMVaD5BhJpmtUBB8pXbcKIIYxe/qf3kNonkP6Ll4F9lLLD9/l9Su8fISAMQoZEbD6TOCOk5i/rYDHtx/yqQrwrcD+AUEOlhyjJ0DhnQH4mcCiSpDQq4CKIDHJtQJMYLEArUIM0LYDEUpsyVUAYyiXC9s3bkoiRh4iJbYtgDGmcs0GA1sizzZfvSkwO832V8j/HPZmLJkrAnuSaXPmisC7kux3bq4YbHn1wOXmcvgGzmOi1HBPJ3oAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGFSURBVFhH1VUxTsQwEMyTrrgCRSjFNXdSxBUUtPcYPsBT+AQSX6DgCUh0lEZjNNZm2Fx8js2JkUZOnM3OeNdOuu6/YTcMQeeuiofjMZzj3eHQzrAKedz1fVsDKqhETBMTSHy73YabzSYK8Zr3zU3QwGfoJgZw71WmiQFPaG6+qgFbbkvOYwSbGWCfY2+H4ddqlYipagCISXPFWxhgcq/fJNoA4eriBFpxP46RXGUaWwoTc/8Fll3nqyL1doE2fpphBZhce+5tPn13Ncb9Ponbn5GlNYB9ojmKQXGMFNMYNcGPlMYVAcKkFX96D6F7Dum+ehXYSy0/5k6vX+HlIwSM0ciMgeI9gTNOYV5bA49vP+JLFeC3Au9PBM7BimP0DCi8PYB5LuCiSlDQq4CaoDDFtQJcwMUGtAoxQd9PTKiwFVcDzKFaLmzf+FIyMfMhUmHbApA5VSsbTGyFPK4+ekvg6nS1fyJ+NdgToc+InJgi2B1MlsQUwTuK2uecmGLYss5ttJwYD9+ngaLQx0WqfAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGFSURBVFhHzZUxTgMxEEX3SClSRBHaIk0irUhBQcthuABHySWQuAIFR0Cioxz0jb41+dib3awH+NLIsdfx+57xertupnZ9bzr2p7o/Hm0sbg+HOMMKKsVuu401oEANzAkxgYVv1mvbrFYJxN/sh5uggQ/rzgygX8pMiIESqDbe1IBPtw+Oo0WEGWCdU237/sduNTCnqQEoLToVHmGAi5fqzUAZAG4Op1CKu2FIwV3mNhL8b1T7MLHuOt5U+XBdCD//fIUF4uJ66EqnX/+7WMN+n+H+a+jDG8BB1TWuFuFoCdM5aoK3pM6bJaYSYIaHP72ZdSfL/VoWrioJ3nG/c59+PH94+bTndzO0yUjFAO8KrKGMqhTOvjfw+PoNv5QBtPnCmpoJAmmiZEBVOgMY5wZmG/BZ8AbUBMGEawZ8BmcZYPp9izvem1Cwh9MAf3NNZU1WNlG5iBS8+BVU6Y5q0Rys4u50t78CH5N/a/RZM9Ug/pQz/PMmqkH00gopxRjEZyXsLERAvgC3AqETr/r2CQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGCSURBVFhH1VUxTsNAEPSTUqRAFnKRJpEsUlDQ8hg+wFP4BBJfoOAJSHSUi+bQWOthHSf2LYiRRmef1juzu2e7af4Tdl1nuvenuDse7RRvDoc8wyoUcde2uQZUUImYFBNIfL3d2tVmU4R4zft0EzTwYc3IAO6jzqQYiISm9qsa8O325D5WMM0A51xm23U/qlUipqoBoCQ9VzzDAJNH8yYxBghXFycwitu+L2SVw5op7DH1b2Drdb8qhvnO0MePM6wAk+vcowOoz65Gv98P4v6H5OkN4KxojsWgOFaKaYya4IdK4xYBwqQXf3wza55suK/eBc5S24+9+5dPe343w1qMTBhYfCbwnlOY197Aw+u3+FwH+L3A8yOBU/DiWCMDiugMYJ8FXNQJCkYdUBMUprh2gAVcbEC7UBK07ciECntxNcAcqhXCz40PDSYmPkQq7EcAMqdqnQ0m9kIRV796c2B1XtCfF41Ph58vqTFVEb0duOaaOgKt1pvhWNIM/Hq1itrVfgGRA5woocZQ6AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF+SURBVFhH7VW7TsNAEPQnpUiBLOQiTSJZpKCgzcfwA3wKP4HEL1DwCUh0lIfm0JzGw5nEjxUUjLS6eLO3M7t7PjfNPyZi13XJfb+Ku+Mx/WQ3h0OcYCeq2a5tYwU4oRtiQkQg8fV2m642m0zE33wOF0EB76kZCMBzrTMhAmpEY/5VBWi71ejHCgsTwDnn2Xbdt2rdELOqACAnvZQ8QgCT1+ZNwxhAvDo5gVHc9n02VlnWSGKgtPaMafwwwwIwube8Nnvfuxj9fl/I9VugpgIwJs8xGyTHSjKPcRG8IzxuFkBMU/KH15Sax1Sew7rg7Yfv9PyRnt5SwpqFjAhYdB64Ga8bRKiA+5cv8ks6MEsESbG5JsBROwPw867Aft8zCiXHqgJcBIlJ7h1gAfQNmUZAQhWRE7TtQIQTKzkFsIDJArQL8BURIxeRE3ME2sFJArRy+LQiFePmrx79zKn/TYZW4tXWyFeFH8xwQoe2Xite3NY5qI3CY8LwZ0fhcefwCXDDjgq9UIjAAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGLSURBVFhH3VUxTsQwEMyTrrjiFKEU19xJEVdQ0PIYPsBT7hNIfIGCJyDRURqN0USTwQafEwvBSCvHm/XOeNdxuu4vYT8MwX2/itvTKXxn18djO8FOlLJ937cV4IRuiGkiAomvttuw22wiEZ85by6CAt5CNxOAeaoyTQSkiHL+VQVoudXoxwhrJoB9jr0dhi+7dUPMqgKAmLSUvIUAJk/1m4Y2gHh1cgKtuBnHaNzlNLYkVuT+DSy9+1fF1N8fTOPnGRaAyb3vqQPoaxdjPBwmcv0hqakAnBXPUQ2SYySZx7gIXlQeVwUQ05T84SWE7hymebMqePnhu3t6D4+vIWCMQjICFp0HLsY3DxEq4P75k7ykAlUiSIrFKQGO1BmAnxcW1vuaLJQcowpwESQmuVeAG6BvzpQBCVVETND3MxFOrOQUwA1cLECrAN8kInMROTFboBW8SIDuHD4mVqKU+adHP3Pquypwd0rIuZP/H+iB9HdESUwV9ADRamKq4PdBqs8lMdXQsuYOWklMCh/hc6LQnUt3twAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF9SURBVFhH7ZUxTsQwEEVzpC22QBFKsc2uFLEFBS2H4QIchUsgcQUKjoBER2n0jb41+UySTeKBhi+NnHided8zTrZp/rVQh65LOvenujuf01TcnE5xhhXkxaFtYw0oUANrQkwg8fV+n652uwziNe/DTdDAR2oGBnDvVSbEgAcam69qwJbbBucxIsIMsM+5t133Y7caWFPVAJSTXgqPMMDkXr8ZaAPA1eEUWnHb9zm4yzJGgqFS2pmw64cZNojJteRe7/XZzeqPxwK3/wU2rAG0SXOsFuEYCdM1aoLfCF23SgAzLPzxLaXmKZX76lVgL7X8mLt/+UzP7ylhzEZGDKw+E3jFCOa1NfDw+g2fqwBfVTw/AEzJwjF6BlTeGcA8N7CoEgR6FVATBBOuFeAGFhvQKuQEbTswoWALVwPMoSxXtm98qJgY+RAp2LYAwZzKulhMbEFebH715sTd6W5/BT4le2j1t2oag9hDxrC/V9EYxHtbqrdiCmKrEnYWIiBfoWydmXFdlssAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGCSURBVFhH1VU7TgMxFNwjpUiBIrRFmkRakYKCNofhAhyFSyBxBQqOgERHaTSLxpoMNtnN+oEY6cmfvLyZ957t7br/hm3fJ9/7U9wdDuknu9nv4wQ7Ucm2m02sACd0g0+ICAS+Xq/T1Wo1EnHOdbgICnhP3YkArEuVCRFQIqrtNxWg5VbjPkZYmAD2eext33/L1g0+TQUAY9Cp5BECGLzUbxraAOLm5ARacTsMozHLPEYSE7XvAsvu+02Re3vG1P80wgIwuPe8dPj8v4sx7HaZXD9GaioA58RjXAySYySZ+7gIPlLuNwssJYhpSv7wmlL3mPK6VoWLWoIrpplr+fH78fkjPb2lhHEUUhHAq4oYzlGFk3OtAu5fvsjPVQBjfi+mVoKEFFES4CidAewzgdkCtAoqwEWQmOReAa3gLAEsv454YlWEEys5BXDOmM41GVlE5SFy4sVX0OEZ1aw5sYPZKaEeWPcPhx4wmvs0Rel6Ys4xtAWerYphW8IE/Hq2jtbZfgKtj5prz0aJOAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF9SURBVFhH1VW7TsNAEPQnpUiBLOQiTSJZpKCgzcfwA3wKP4HEL1DwCUh0lIvm0JzWw9pO7DseI43OPq13ZnfPdtP8J+y6znTvV3F3PNoUbw6HeoZVKOKubesaUEElYqqYQOLr7dauNpskxGveVzdBA+/WDAzgPupMFQOR0Nh+UQO+3Z7cxwpWM8A5p9l23bdqlYgpagBISc8Vr2GAyaN5kxgDhIuLExjFbd8nssq81hT2GPs3sPW6XxR5vjP08cMMK8DkOvfoAOqzq9Hv91nc/5A8vQGcFc2xGBTHSjGNURP8UGncIkCY9OIPr2bNo+X74l3gLLX92Ds9f9jTmxnWZGTEwOIzgfecwrz2Bu5fvsTnOsDvBZ4fCEzBi2ONDCiiM4B9FnBRJygYdUBNUJji2gEWcLEB7UJK0LYDEyrsxdUAc6hWCD83PpRNjHyIVNiPAGRO1TobviJvRrn61ZuCb6VW+6PiXKsKKnzrfcWr5roU0Sg0phr+7Cg0bg6ff9mTQX5cQ7kAAAAASUVORK5CYII="]};
+GIFSPRITES.capybara={w:32,h:32,delays:[90,90,90,90,90,90,90,90,90,90],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAErSURBVFhH7ZZNCsIwFIS9TnGjnqAbNy5ceA03Lt168soUpgxD/tokgtCBQWKSN99LQ/Vw2LXrnzQMwwTnvusihLzv5+l1Oy2B+Pw8LrO7QbDDmAEEsC4Q2mHImH9ejwtEU4BcOM3umwKgEAuvsT8er1skbBzHcbY+W9pDY950IhruEFu8CiIU/lMIHjECQzDdIVLhtQBFEL0BshA5ALxsvOAWRyFyAC1OAEadLISbr1svttVRAAgTbv3BaeEkAIUF6Lx193AxAIJ7dK//KaLCAl4YL1Lj1QBeoNShvQzHY+0GwFOjEcY5PtImAB6k90WDdD0vdTYcSgFosZR1fXHnlF5CXhothnHKVeEQAXSzj329HnFVOIQN3MwCPvb1OlcVTumRhsYunc+tpb732CJxQleoPAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEvSURBVFhH7Za9CsJAEITzOsFGfYI0NhYWvoaNpa1PHpnAhGG5u73cT0DIwCBn9na++yE6DIcO/ZPGcZxh77suQsjncZnf9/MaiM/v87q4GwRXGDOAANYFQlcYMp6/bqcVoimAF05z9U0B0IiNt9gej+2bJUycpmmxni1tQ2Mu2hENtxAl3gQRCt8VIgWwCwTPGGEhmBqALIhUeAsAF8IDwMvGNixxFMIDaLEDMPq4ENZ83dpmpY4CQLyMav3BaeEkAIUCrLz16uFsAAT3WL3+p4gKBbwwtkmNNwPYBrkOzWU4jrUbAHeNRhif8UibANggvS8apPW81G44lALQZilrffbKKb2EvDTaDOOUq8IhAuhkO7b1usVV4RAmcDIb2LGt12dV4ZRuaWhspc+9WuoHh8oittpYVWEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAErSURBVFhH7ZZNCsIwFIS9TnGjnqAbNy5ceA03Lt168soUpgxD/tokgtCBQWKSN99LQ/Vw2LXrnzQMwwTnvusihLzv5+l1Oy2B+Pw8LrO7QbDDmAEEsC4Q2mHImH9ejwtEU4BcOM3umwKgEAuvsT8er1skbBzHcbY+W9pDY950IhruEFu8CiIU/lMIHjECQzDdIVLhtQBFEL0BshA5ALxsvOAWRyFyAC1OAEadLISbr1svttVRAAgTbv3BaeEkAIUF6Lx193AxAIJ7dK//KaLCAl4YL1Lj1QBeoNShvQzHY+0GwFOjEcY5PtImAB6k90WDdD0vdTYcSgFosZR1fXHnlF5CXhothnHKVeEQAXSzj329HnFVOIQN3MwCPvb1OlcVTumRhsYunc+tpb732CJxQleoPAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEvSURBVFhH7Za9CsJAEITzOsFGfYI0NhYWvoaNpa1PHpnAhGG5u73cT0DIwCBn9na++yE6DIcO/ZPGcZxh77suQsjncZnf9/MaiM/v87q4GwRXGDOAANYFQlcYMp6/bqcVoimAF05z9U0B0IiNt9gej+2bJUycpmmxni1tQ2Mu2hENtxAl3gQRCt8VIgWwCwTPGGEhmBqALIhUeAsAF8IDwMvGNixxFMIDaLEDMPq4ENZ83dpmpY4CQLyMav3BaeEkAIUCrLz16uFsAAT3WL3+p4gKBbwwtkmNNwPYBrkOzWU4jrUbAHeNRhif8UibANggvS8apPW81G44lALQZilrffbKKb2EvDTaDOOUq8IhAuhkO7b1usVV4RAmcDIb2LGt12dV4ZRuaWhspc+9WuoHh8oittpYVWEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAErSURBVFhH7ZZNCsIwFIS9TnGjnqAbNy5ceA03Lt168soUpgxD/tokgtCBQWKSN99LQ/Vw2LXrnzQMwwTnvusihLzv5+l1Oy2B+Pw8LrO7QbDDmAEEsC4Q2mHImH9ejwtEU4BcOM3umwKgEAuvsT8er1skbBzHcbY+W9pDY950IhruEFu8CiIU/lMIHjECQzDdIVLhtQBFEL0BshA5ALxsvOAWRyFyAC1OAEadLISbr1svttVRAAgTbv3BaeEkAIUF6Lx193AxAIJ7dK//KaLCAl4YL1Lj1QBeoNShvQzHY+0GwFOjEcY5PtImAB6k90WDdD0vdTYcSgFosZR1fXHnlF5CXhothnHKVeEQAXSzj329HnFVOIQN3MwCPvb1OlcVTumRhsYunc+tpb732CJxQleoPAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEiSURBVFhH7ZY7DsIwEES5TkQDnCANDQUF16ChpOXkQRNpotHK9vqbKiONkIm989a2AqfToUOHCjRN0wJ73w0RQr7P6/J5XLZAfP5et9XDINhhzAAC2BAI7TBkPH/fzxtEVwAvnGb3XQFQiIVLbI/H1s0SFs7zvFrPlrahMVftiIZbiBoXQYTCd4VIAewCwTNGWAimBSALIhXeA8CF8ADwsrEFaxyF8AB67ACMOi6ENV+3tlitowAQL6Naf3B6OAlAYQI67909nA2A4BHd63+KqDCBF8YWaXExgC2Q69BahuNYhwFw12iE8RmPtAuADdL7okE6n5faDYdSAFosZZ2f3Tmll5CXRothnHJTOEQAXWzHdr5ucVM4pR2Fxlb63NrOpf6zAwatsEH8BQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEgSURBVFhH7ZY9DsIwFIN7nYoFOEEXFgYGrsHCyMrJi1zJlWXlr2nCVEsWKkmev5dEhWE4dOjQBo3jOMO577oIIZ/HZX7fz2sgPr/P6+JuEOwwZgABrAuEdhgyxl+30wrRFCAXTrP7pgAoxMJb7MfjdYuEhdM0LdazpT005qod0XCHqPEmiFD4XyG4xQgMwXSHSIXvBSiC6A2QhcgB4GXjBWschcgBtNgBGHWyEG6+br1YraMAEAbc+oPTwkkAChPQeevu4WIABPfoXv9TRIUJvDBeZI83A3iBUofWMhzH2g2Au0YjjGM80iYAHqT3RYN0Pi91NhxKAWixlHV+ceeUXkJeGi2G55R3hUME0MX+7PN1i3eFU9pR6Nml426fS/0AReUGaGZL5RcAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEiSURBVFhH7ZY7DsIwEES5TkQDnCANDQUF16ChpOXkQRNpotHK9vqbKiONkIm989a2AqfToUOHCjRN0wJ73w0RQr7P6/J5XLZAfP5et9XDINhhzAAC2BAI7TBkPH/fzxtEVwAvnGb3XQFQiIVLbI/H1s0SFs7zvFrPlrahMVftiIZbiBoXQYTCd4VIAewCwTNGWAimBSALIhXeA8CF8ADwsrEFaxyF8AB67ACMOi6ENV+3tlitowAQL6Naf3B6OAlAYQI67909nA2A4BHd63+KqDCBF8YWaXExgC2Q69BahuNYhwFw12iE8RmPtAuADdL7okE6n5faDYdSAFosZZ2f3Tmll5CXRothnHJTOEQAXWzHdr5ucVM4pR2Fxlb63NrOpf6zAwatsEH8BQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEtSURBVFhH7ZY7DsIwEERznYgGOEEaGgoKrkFDScvJgybSRJvBjj/xIoEYaYQU2ztvbSuh675Jfd+PcOqZixDyuBzG+3k/B+L3eT1OdoNghzEDCGAuELbDkDF+O+1miKYAqXCa3TcFQCEWLrEej9bNEhYOwzDZni2toTFX7YgNV4gaF0GEwj8KwS1GYAjGHWItfCtAFoQ3QBIiBYCXjRascRQiBdBiB2DUSUKo+brVYrWOAkAYUNsPTguvAlCYgM5bdw9nAyDYo3v7nyIqTOCF0SJbXQSgi1s4egR6+bwAcK/eAPCAE3hO3Cq7uBQqND94BAxiOCm1WK21ThAAA6FwFiF5qS2ArbMAIAQdC9c1OSKENqjzFuIiexd0TomwnuFZAJDdER2rUet6f/2GXmK4L2olpLgvAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEwSURBVFhH7ZY7DsIwEERznYgGOEEaGgoKrkFDScvJgybSRJvBjj9ZI4EYaYQU2ztvbSuh6/76JvV9P8KpZ02EkMflMN7P+zkQv8/rcXIzCHYYM4AA1gTCdhgyxm+n3QzhCpAKp9m9KwAKsXCJ9Xi0bpawcBiGyfZsaQ2NuWpHbLhC1LgIIhT+UYg1gI9A8IwRFoLZApAFsRbuAZCESAHgZaMFaxyFSAF47ACMOkkINV+3WqzWUQCIl9HafnA8vApAYQI69+4ezgZAcIvu7X+KqDCBF0aLbHURgC72cPQI9PK1AsC9egPAA07gOXGr7OJSqND84BEwiOGk1GK11jpBAAyEwlmE5KW2ALbOAoAQdCxc1+SIENqgzluIi+xd0DklwnqGZwFAdkd0rEbe9X5DL22SL69G1oDQAAAAAElFTkSuQmCC"]};
+GIFSPRITES.slime={w:32,h:32,delays:[60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADiSURBVFhH7ZE9CgIxEIVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYiTCk/DI/mTGgMU8eOxPkvk+dkPwKDLdNJIr7/t5AFpex9lWE2Hw4tRkW0VkCJibivC8ogDOgPVj8i2vsYhaogt+k6Pc5SyH16qOBMPTXwCBi+xk+5z3ChRLtMHTd0N/gUqCBXA4XkMIn/JwtGvdJMCA2X6UbTUBBjC4bd0swABt1QLxnoeVNs4wCaQSeO4r7y8SiMlJaFsMR+IBq4QajqQSmprgCCQ0NcMR/rRDy3M8Ho/H85d5A0ANrwotenabAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADsSURBVFhH7ZE7CgIxFEWzh8Haxg3YCVauwMJFWNpaausmRKxsXYDgnmzE4skTrmQumZl8QSEXLhPyO4eJMTX/mummEbu8XiwALq/jVouLMHhxalotJjIE5mYV6QKvH5NvWcAlwvd6BXC+WKE3OcpdznJ4rXolIBIswXD7L0DgIjvZPueDAsESXXB7zucJuN4SLIDD+jXGfMqXo33rSQIMmO1HzhYVsAEMZgEd8/koAR0zJLR6R5KASwLz3K590QK2RGyDn0CjG3NIRMGRVIkkOMISoU2CI7ESWeAIJEKaDY7wGw+Vz9fU1NT8bN6X1LsimQW9PwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADxSURBVFhH7ZIxCgIxEEVzh8XaxgvYCVaewMJDWNpaausllsXK1gMI3slGLEYijEw+2ZhMErDIhwe7m+z8R3aNaWlRZr7rSILr1cKF6+vUoboIFq+GzqGqSKgYkSI4RxUulyXbx+wLCkiRbImx8hv1dKcznV6behKyXB4/C1zoQPvnMiiglvCVy5OI+QRqCd+x870x5gMWMKH1aAmfgK9gcZw44DpSVADLmaoCWPYLfF8lYK9xcCp2RnEB+9wH7isiIAdj4Ri4Xy0gJbQk/wM2dmMJCVU5J1ciq5yDEqlklXNYQkN2OQePNxac09LS8pd5A6a/6IKv82rXAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD9SURBVFhH7ZIxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQCswyfRJNJVizy4cFuEvJfsutcS0tLQaabjhgcHzxSvLyOPT8V0cWLU+fRIri+WvSppRgZ7Dbw1OvHpCckUfU28NRceqMj3elMh9cqKKFvA/fLij65Pj0LXGhH2+c8KlAsgeV4C7FPgJgk8Nrl2TnnkfHZfuSRd5w3SWC5RhdIuZaICWRJpAhguTCYABalUkUAN82lSAA30/A6Dc6jhEkgVoLj3+bNAgJumIrpH+CEJFJlcH12OeeTgIVsAU4tCVO5RCRKMJdL8Bvngvu1tPxd3hrs1o6rQaF6AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEUSURBVFhH7ZIxCsJAFET3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYuUHRn7G3Zj9iQFxB4aEbPbP20mcy8rK+mWNV4UX8/P/EE7fWwsIQeD8PKy4FxAdPDsUFWsQ3tda+tQczO4cInTq5W30MgPoNvSM6tSGCp1aQi9+76/+6HePRRQCIDyzsXS4bgAAJ7/x6/u0FgB7TQ2E/nTnXOnYJ8B6awCuHvccMNkOStcBmCAYIBbwFYBYuA5AMDsGkAQBALliMwc1NfbrmZz3Jt0AD7Ta3AAP0pZ1bV7nd5MBUF0ohJ9/Wjc1oL9fGyf/hCJ5sQsIU7iIAVJBeF8ygCgGkWpTOASINjaHQ1xvqnleFusJoIDmAghUiesAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEESURBVFhH7ZI9CgIxEIVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQCI8MzWTPZXf/Ig49lN5m8l5l1rqioqOiXNVxUxOD3/9RX3vRjIxDj6bHveWsQbTzZVR4dBPe3KjEXY6TTEK/M60Lgu1loPr8MHmCAWIhshcxPtKUz7Wlzm3UbQv9wEkICHGhFy+s4GqBxCDRnnHOe2AhkvXEILtCtlycajNY9T0oAUwice51ByrqpC3j7GHJ77EIIUxdC5miWSigE+j1JB8ADc8kKwE88SCMtFXAd92YFQGLmKevJAVi6oA1M5iwp4tnhYVZM89fiAi5sA7O5CG+TC56rdQfRa5p4Pd4eUgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADeSURBVFhH7ZIxCsJAEEX3DsHaxgvYCak8gYWHsLS11NZLBLGy9QCCd7IRi5FZGBl/JuJml5XgfvgkJNl5L5s4V1JSUlIy5EzXFXHx+v/kpzvA4MV57JtFQkMEPj9UvtkkOAjPKiHw1W3yajYJDb9QQ1c60v6xzCOht10ETrSlzb1uCVgSUUL6bxdA1yf4JNErFjykURLW3+6c8+Xz2W70VrwfJWHBNQDhUksgWALhCAltsIQI8BGH9a2eibxW9MNYHNxVXJdMIKbDE0gpoechz4xelKpfwyX4FrHF+ZInoYxZdgjM46IAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADmSURBVFhH7ZM9CgIxEIVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQCb4lPF/Ozm2oefCybncx7STbOmUwmk8lkKtB004jC41Wkxsvr2FM9BMwXp8ZTJQQM9Ll+TFqqh1DTmxzlLmc5vFb1QmDbEeAiO9k+5x8BBgvBZ/7rCAYJgWsWmseCEIB7/xWMc8zDEFm70bVq55xnth95MI53fOd5ySG0mJvngj7RAbB6fXKzXMKe7PelsJjhxl3wvN4ClJAcAOfWB0k/ohaF14+bpQLz6AAqLcSkvog2h3glpXB/6A2FUjeuX7lb2QAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADwSURBVFhH7ZExCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQWZhm+2WyyE6zmw2chyfz/NgnB5XK5XC5Xpua7hnDt72KIHOOcWRK8vk+zXBVEF68uTevta9ZZ1rQ1COYVScp1OJc+6ExPutLps+mFEJDRELpc34AA3OhA+/cyCWCCiL25hA49gRkArx6fodRFEFLOXwwKIbTG9aF9nYl9P9KHF8dJVkFqnzNMANpY2GecGw0gxsAYDO5LsdgEkAKJGeeqAVhcDMDXiiFjzVlFAOxaELqcjX1RyWEerOGichH+idWYL/oCj9abOtz2zHAAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD2SURBVFhH7ZE9CgIxFIRzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzE4sksPHk7xpC/RsjAEJa8zHzJOtfU1NTU1NT0r5puOrHm/ariMnh5HQ/M+1WgfpWtH5OPF6euN89YKM6Nki3XEhilNznKXc5yeK0GEOxsCC7XG1mAi+xk+5wHAbIhfOX2JXy/IGSF4B6vfM+u38653lygDu1HQygAVg4JFYT2bSb3fUmHZ/tRbw5LteYkA2DVwzkg9mzWC2BV27AU24wiAIWIgbGzRQB4Rg7JNbKiASAM1oJILocwjEOlEFqeDABZiFInl6v4RrnmXKs3XM+TV7hyGgEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADuSURBVFhH7ZKxDcIwEEW9Q0RNwwJ0SFRMQMEQlLSU0LIEQlS0DIDETjSI4tAhXWQ+JvGdbWj8pS8nPvv+S2znqqqqqqqqEjReNYRzf9HPQTgwZFyXXRI0Pw+DLgaCwbNDE3QRkJhgtA+C/VSScAxY3katsYYgZoiu8Avt6UpH2j0WZSAw3D8CATjRhtb3aS+AGuJbuD8XewQmCASQzTw6517G5uKuehJATEBfXQ0w2Q7eGvC7BPBzyH4d96oBeMSAFJsAckH4PTHvQwiAIJY5EwCfHTaxWnUJWbww9BesVoWLZGMOq8NF+CVWY19fT620pMa5GggLAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhHY2AYBaNgFIyCUTAKRsFQA4b5wv/xYXT1VAHIFvhvkseLqe4YdEsdFwrjxeiOQTePJACzHN2S9C8qcIwuh+4Ysh2Bz/J9/+f/P/h/8f+u38G0cQS65cjBD3PAyv8N/yt+WhN0AMmOwGU5shixUUCWI9AdANOMbiCpmCIHwDADAwMYWzSKYsUweXR9FDsA3QJ0i3HJU+QAEI1uAbkY2Ux0+zDAoHIAOkY2EBvGJ08VB1CCSXYAKOGgG0IuJikRggBIIUgDNTHRlsMAui8oxejmwwAAwMWffAsLYBEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADSSURBVFhH7ZI9CsJAEIX3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQCL6wPzCYzWgTmwUd+djPvI0lKkUgkEolEhpDpphILPMcUHbS8jk24JVC+OFUfrB+TBl7LcUm0ld/kKHc5y+G1+o8El+OV5gIX2cn2OS8K9Jb4Vp7f6/oJTBIsgIf1mFKq4eGgbd0l0KWgtO4SmO1HNSjANcPrbgEusDJcAT1XMAjXJXi/WSCXsNL7H9Doxl9ImMoRlrBiKkcg4cFcjvBr7QvP47wB0bakRBDoz0UAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADxSURBVFhH7ZMxCsJAEEX3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfEn6+7MxkLYDw9DNjv/JTEh1NTU1NTU/GPGq4YQvKb36LL5edjiZ0JdpbND0yImhPNM0cVYmEKL4NysSDkOZpa30RtcQ1wSqfIL7elKR9o9Fv1LdJXr1yACJ9rQ+j7NEjBJoID+Y8k5yysoFpDN/BtCeIHDhW/rRQI5Bal1l8BkO/hACvgYC3Bd05uAF7cAHzM4MBfZXyygwRIErzcLcEQCB3kxlXNkU+wpWDDfvYQ3xD5HC65yiUiU4C6X4CO1gvMwT8B40+IZg3y0AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADbSURBVFhH7ZIxCgJBDEXnDou1jRewE6w8gYWHsLS11NZLiFjZegDBO9mIRWSEyPJhM5NkLIR8eLCQ2fzHzqYUiUQikci/ZbrpSALPN0m/YHkdizSXwdLFqRNBGdynCpdjSS0uCal8/Zh8wRlikiiV3+hIdzrT4bX6jQQK9O+fBS60o+1z3l5gqDyTUvowdAU8RwGVBArwy6WC0twlUFNQmpsFZvuRC5dAfsaFWvIOl4BHgt93CyBYhIWIWUCSqEX9D+Tkgy0kTOUclLBiKuewhAdzOQc/qxbch3kDw3XdWE0Rx9EAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADWSURBVFhH7ZI9CsJAEIX3DsHaxgvYCVaewMJDWNpaauslQrCy9QCCd7IRi5EVRoaHZmdnYiHMB4/8bHbeR5KUgiAIgiCoYLppSBPc54YHL89jVQYVkcWLrlFFiuC8KrgcC9a3yTu4hiJmib7yC7V0pSMdHqvfSGC5/AQscKIdbe/zokC1xLdyeU/7CUwSKMCb8zGl9AoO5/StuwQ0BaV1l8BsPzLFLYADrflfgXyew4P4uhR83iwgJawx/wNDSMhytUDmk4Q11eWMlPCmupzBV2oNzpU8AUUnyyLv4mryAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADfSURBVFhH7ZMxCsJAEEX3DsHaxgvYCVaewMJDWNpaauslQrCy9QCCd7IRi5ERRsYPSWZn124+PLJks/MfCUkpEolEIpFIRua7hizgueLI4PV1aqKqiC5edY0JLYLzsiLlWLB9zL7gHoq4JYbKb9TSnc50em3+I4Hl+hOIwIUOtH8uRwWyJfrK9T3rJ3BJoIAc5mtK6QMOF4b2iwQsBWP7LoHFcfKDFPAaC3BfU03Ai1uA1wwOtCLniwU0WILg89UFPLgFakjIHLMAhx/s+xU9ZJVLRKIG2eUSfJ1ecK7OGyjyxjbiQdqfAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADjSURBVFhH7ZIxCsJAEEX3DsHaxgvYCVaewMJDWNpamtZLiFjZegDBO9mIxcgIE5aPbHZmthHmwyMhu5n/yCalSCQSiUT+LfNdRyVwf7NIwfo2LdJcBItX565IUxFNMZKL4NyqSDkOZrbP2QCuISaJsfI7nehBFzq+N+0lfpXnxyACVzrQ/rWsElBJoICU5880R+AWkJf5mlL6gsOF0rpLoKZgbN0ssOgnA1KQPxtbdwnwPZZo4RkuAY+EvO8WQLAICxGzQEmiFvU/wOGNLSRM5RKUsGIql4iEB3O5BD+rFpyH+QBpMN30OsKV8AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADgSURBVFhH7ZI7CgIxFEWzh8Haxg3YCVauwMJFWNpaausmRKxsXYDgnmzE4kkG7hAucSZ5L1MIuXCZTz7nMBnnampqampq/jHzXSOx8rziAWh9n0Y7mgiDV5cm2lFEUsDcUIT3ywrgDNi+Zl15jEXUEn3wh5zlKVc5fTbjSDA8PAII3OQg+/dyUCBb4hc8fJd6BCoJFsBif3XOteXN0b5xk0AKYGjcJLA4TtoCgGcuj5sF/D1Dcuv3MAlYJLDeLGCtWqCERPY/4OMnlpBQwRGW0FYFRyBhqRqO8GfNLe/H+QI76sJ2m7AChgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADjSURBVFhH7ZMxCsJAEEX3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSECeuHbDKzYyHMh0dCdnf+IyEpRSKRSCTyb5luGiqB+90iBcvruIi7CBYvTk0RVxFNMZKL4NxBkXIczKwfkxZcQ0wSfeU3OtKdznR4rX4jgQL5ZxCBC+1o+5z7C3SV5880n0AtgQJymK8ppQ84XCitVwkMKehbNwnM9qMvpACf962bBfgeh2nhGVUCNRJyvlogB0sQ3O8uYEElwOGNXhLqcgkf6PodNZjKJSJRg7lcgq9UC87DvAEBCdjs4LLzGwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADjSURBVFhH7ZI9CgIxEIVzh8XaxgvYCVaewMJDWNpauq2XELGy9QCCd7IRi5EIs4RHzM/MphDmwWOX/H0fm3XOYrFYLJZ/zHzXUay4bvQwaH2bRttMBMGrcxdtE5ESMDYUwfOqwnAEbJ+zoTiHImKJFPxOJ3rQhY7vTRsJhIdXwAJXOtD+tcwKVEv8godjpVcgkkAB3uyfzrlv8XBual4lUALIzYsFFv1kKAPCsdy8SsC/I6S2/gyVgEaC96sFsAhCIFYskJIobfU/4OMXjiEhgnNQQloRnMMSmorhHPystcXzMB+vAMLKvnVgyQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADlSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfjJbjKTpBDy4bHLJpn/2GWda2lpaWlp+cdMNx2FwH3FI0XL6zhINREsXpy6IFVEUooRXwTnqSLlWLB+TL7gGoqYJYbKb3SkO53p8FrVkcBy/xOIwIV2tH3OowJqib5y/1nqJzBJoIAc5qtz7gMOF4bWswRSCmLrJoHZfvSDFODz2LpZgO9xmBaekSWQIyHnswV8sATB/cUFLKgEOLyxlIS6XMIH+n5HDaZyiUjkYC6X4CvVgvMwb+Fpwaqbe8DgAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADlSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfjJbjKTpBDy4bHLJpn/2GWda2lpaWlp+cdMNx2FwH3FI0XL6zhINREsXpy6IFVEUooRXwTnqSLlWLB+TL7gGoqYJYbKb3SkO53p8FrVkcBy/xOIwIV2tH3OowJqib5y/1nqJzBJoIAc5qtz7gMOF4bWswRSCmLrJoHZfvSDFODz2LpZgO9xmBaekSWQIyHnswV8sATB/cUFLKgEOLyxlIS6XMIH+n5HDaZyiUjkYC6X4CvVgvMwb+Fpwaqbe8DgAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADlSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfjJbjKTpBDy4bHLJpn/2GWda2lpaWlp+cdMNx2FwH3FI0XL6zhINREsXpy6IFVEUooRXwTnqSLlWLB+TL7gGoqYJYbKb3SkO53p8FrVkcBy/xOIwIV2tH3OowJqib5y/1nqJzBJoIAc5qtz7gMOF4bWswRSCmLrJoHZfvSDFODz2LpZgO9xmBaekSWQIyHnswV8sATB/cUFLKgEOLyxlIS6XMIH+n5HDaZyiUjkYC6X4CvVgvMwb+Fpwaqbe8DgAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADlSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfjJbjKTpBDy4bHLJpn/2GWda2lpaWlp+cdMNx2FwH3FI0XL6zhINREsXpy6IFVEUooRXwTnqSLlWLB+TL7gGoqYJYbKb3SkO53p8FrVkcBy/xOIwIV2tH3OowJqib5y/1nqJzBJoIAc5qtz7gMOF4bWswRSCmLrJoHZfvSDFODz2LpZgO9xmBaekSWQIyHnswV8sATB/cUFLKgEOLyxlIS6XMIH+n5HDaZyiUjkYC6X4CvVgvMwb+Fpwaqbe8DgAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhHY2AYBaNgFIyCUTAKRsEoIBIY5gv/JwWj6ycbwAz03yRPEqbYIegWOy4UhuP0LypwjCyOjClyCC6LYZbv+z///8H/i/93/Q7G6wh0h6DbgxXALMdmCLIDVv5v+F/x05qgA5DNIOgIfJYjixMTBdgwQUdgcwBMI4hmYGAAY3R5GCYkT7YDiLWAkDxJDrBoFMXAMAvQxYmRJ8kBsKyDbgi5GGbe0HMAtTHRDoAlGnQDyMVEJ0IQACnAlxPIxURZDgMwR1ATE205DKAHI6UY3XwYAAAKxLYaSAVBCwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADQSURBVFhH7ZMxCsJAEEX3DsHaxgvYCak8gYWHsLS1NK2XELGy9QCCd7IRi5Fd+GGcTHQzroUwD16xs2H+JyQhOI7jOI7jOBlM1xVZlHsGg0WL87h1dZvQhfZ0pSPtHst05vdccxEtODo/VG2BE21pc6/TOc41TUV4MF+CM0pAGarJi8i8FxCuLZAzi29L9IVzQwhJOc+9j/aW4AVmzUgVAXKee59dAB+NXGAV+wYXKO3/FPhFieyP8NOf8I3YrxaIoC0eLC32y9wO8vWVUuZEnrMDjYPRbz0RAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACxSURBVFhHY2AYBaNgFIyCUTAKRsEoGAWDGRjmC/+nBkY3lyCAafTfJI+CHRcK/0//ovJ/3//5/1f+b/hf8dMazAeJY8MwfSQ5BNliZENgfJgjYBjdUmwY2SHo9qEAmOXYDEAXIwfjdQQuy6mNcToC2QEWjaJYMQMDAxijGwrDMHl0fTBMtANgiQbdAHIxzDySHUBtPHQcQAtHwMwl2gG0wgQdQA+M1QEggB5stMLIdgIAood8JAru7eMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACxSURBVFhHY2AYBaNgFIyCUTAKRsEoGAWDGRjmC/+nBkY3lyCAafTfJI+CHRcK/0//ovJ/3//5/1f+b/hf8dMazAeJY8MwfSQ5BNliZENgfJgjYBjdUmwY2SHo9qEAmOXYDEAXIwfjdQQuy6mNcToC2QEWjaJYMQMDAxijGwrDMHl0fTBMtANgiQbdAHIxzDySHUBtPHQcQAtHwMwl2gG0wgQdQA+M1QEggB5stMLIdgIAood8JAru7eMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACxSURBVFhHY2AYBaNgFIyCUTAKRsEoGAWDGRjmC/+nBkY3lyCAafTfJI+CHRcK/0//ovJ/3//5/1f+b/hf8dMazAeJY8MwfSQ5BNliZENgfJgjYBjdUmwY2SHo9qEAmOXYDEAXIwfjdQQuy6mNcToC2QEWjaJYMQMDAxijGwrDMHl0fTBMtANgiQbdAHIxzDySHUBtPHQcQAtHwMwl2gG0wgQdQA+M1QEggB5stMLIdgIAood8JAru7eMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADbSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpauq2XELGy9QCCd7IRi5EIfxnGmEwmW86Hz0Jm8/9jNwnB5XK5XC6XS6n5rqMay/1mIXB9m1a5GUQWr87d4O1zNpivczeB/CtG+Z1O9KALHd+bLIQEkT1JoTwVwgGudKD9a1kE4BlFiFw5X9f8gpSLECkAbIzPEMLXcg6X5mYAbUFpXgWw6Cc/RoFc18yrAHB1ZEiuIDdHXjOA1WaAsa0GwKGRAVarD2FUfCF3E6xWlUOAGNPqckh+xlbLfOgDfQuy4tzDR1YAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEFSURBVFhH7ZMxCsJAEEX3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkeG7u1lnN8ZAPnwSMpn/XxLiXK9eXdJ4VRF7fh56LXPcyxYWzw6V142ApBSjNQjmfSUpx4LlbfQ2zhDEDBErv9CernSk3WPRDASW608gACfa0Po+rQUwQWgAKUcAdspnyAaQAD46514OAci8OAAW/BWAb457xQFCv+HPAUJzvF4cgM9bB/A5NC8GYHV3Afg42Q4+AlPNuzoLe6LSAGIsCFnvCADm10oAECIGgvfJfjaAD6LOetcEwNIhqSB4Pxtzk4VvwWLz07NaB2DlQGSXizjIYszp5dMTBh6jR1gN89EAAAAASUVORK5CYII="]};
 GIFSPRITES.phenix={w:32,h:32,delays:[40,40,40,40,40,40,40,40,40,40,40,40],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE3SURBVFhH7ZZBysIwFIRzEk/wn0DwDq7/U7jwCOLaYwkexBu4cRFJ8ZXpl9emaRQ3HRiwycvMF0rBEFatWqB430Wu/UQJ5KcwHgCfvyYrvxw3GcRXpCVa/rz+ZRAfB7JC2gAUQs2cKlkAC81WrABmQjTBaHk8h4EVQNcVgnmzxNt75SUTogijA3owK/9/e+q3QDCPXaNaenOaX4grEvbrGmY3nGs5m+V6fbbYvzMWmx5OmTntmQDidYwCdCZACjezeGrGcpDP/k41ALf9fmBvZgyAvQMNAHBDlo6Z5xSAfa56gJCXnrYhxoPvtMf5lGEA7JlUd1BcgmA5zzN/lhiiMAph5ZxrKk9ikAIYhN6cc80ASQyrNfOqxcBaM2+RGDrXzGkS//3U7jerVFDa/4hS8FR4aX+Vpxd0G+S5UuRLWgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE+SURBVFhH7ZbBycJAFIRTiRVYgWAPOVuFB0sQz5YlWIgdePGw8jSzzE5eshs3iogDwy9v3843QX+xaf76FYXLOujs92VP/bEn90A2O+4WvflbhSKA307LWMIrOYsYykYBlOC3ZJYyCjYIG3AUgKuLKBjwsG1CODzNcDPmtsMlqot48KylhOYWKYFLePJ3aHaoLOHCN53xmud6LiU0P9HQggsvNd3VXJPL5GHy9BYIXR0YbGcQlbAsjxHFn9TEXMDCYQVzAd7Bfcl1i+hSLDAQfm7bxN5OLKG5CmcNFuisYLXuawHluYoXmj5wv+r+3Rzbme5bxiQ49LgoHivBcL1n1vwiaQgX4RKA614V3KRBXokcvKqAScOmWvMmSwOnWvNekoaWWnOqxD9A+Ku19LxaOUDufBZZ8Fh47vyvr9QddTy7KKjukFgAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFGSURBVFhH7ZbNbcMwFIM1SSboBAGyQ86dIoeMUPTcsQp0kG6QSw4KngAKFPVs/di3+AOIOH4yScuBkRAOJon/l+gdvwfeHXvndsdCIHz/uZ/yMc92R585wp+/H+lT5/nCGdSM75iFAlxC13qe3XiBLISjAKTXqW83Gh6/QxIHszDXEurbxVL4Ugmdby6xFo4C8TMkeQW0hPo3qcItjI89OWtRQv1XyVvXCmwJ18/sQnX34OEEQTYDVMC81L9JVcDMIQ3mArxmpABvUf7x8PaL+d/1Wshbk0vQK1uzKvLzN8kdauiS9Dr21LwEBj3hX+cQ482XzXpLFGWKYCjU4WslOLwqYV7qr7vhnewt0QovPJ2cRVIBR1yi2HZnrRYYRs1GpX7DqOGo1G8KNe2V+mzCXiT852N0vplWQGu+C2a8Zt6aHxx4vACvHAWbTM3S6gAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE8SURBVFhH7ZZNCsIwFIRzEk/gCQTv0HVP4cIjiGuPJXgQb+DGRSTFFyeTl6ZpUqjQgYGan/kmKQWN+TfZ59Hy2Kq1aGEXLoBFQSKECPx23vkSvKaJOBzt4O/73pfAG2kuhmOBxUpIEALRApcCYixRVSZ12pyb3QbC7dV4Owj+1sb4JooVwPsYINDUuNtTVSI4ef/zGFTA3nATnJ/V0JzgHB6Y53HdnALR6UUvBSJ2cyIowNmTJO8+CBczOLOGs7OK4Er4o+sCa2tml/DfMIUwNGXeV/QleDiVkPDLwVh70u3mohKUx7xAvNiab4gJT6+VQPhQAPZyLnO9eMGwmayVCE6u7Enle6mDiQJcIgfHAqgUMxKHlZrzisWBpea8WeLQqeacKuH/AfdcOl+tHCA330QueCw8N79p0yr1ASlwyJ13i5HsAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE1SURBVFhH7ZbBbcMwEARZSSpwBQHSg9+uwo+UEPidsgKkkHSgjx80SHuF84TkUaKQR6AFFibujrt7hiU4hB2DiD9vkbX/C7tt7fwnSIbi5/vLfObcJuCmNL9+HZ5CcH4WWguJ0NwGqIUYDlAytJS5Aoi8R90uUESG8RIyW+fNQ2TBh0Evh3+ctc0t9fWzrt5QiKfNT3dmM32augztjOoKQX0XObmERrkmQE5uRYQJWz6Ya5OZM72kRX0XvwIkcZEbOjNdAfjY9Ih/H4+ZrZmZrceSzWoIGJOcq5kXQwjzQCgbfryGGM9lpl4xUNJqmRL5QoGtENac90T6uKBALYRnTt1uUIhBkrHM2d8kQALFlpJ6i0HBpaTeKlC0l9QZgv0DUnqzef1heAZefxMk4Za419+xo4QbjJjhuh6m87gAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEwSURBVFhH7ZbBTQMxFERdCRVQQSR6yJkqOKQExJmykCiEDrhwMPorxvp+mP322gcEedJoE397ZqxI0aZ0ZZL8dpe59rf5PzeObqr58+Umcy+/L8OMZW5PC/94ud2enC/DB1IqoBJ+5s9OwUAvhauAtLSID89PqZLCue5L0G+IvfBI0yW6wu+/xPUVJZrhCmyF/jBTCfqHbM1pfETm0VOAm8rtZSTeGyGSzYQrYF7em1kF/V5FNJcYHO2BL3M3uOlbEZi/ns8loHxmAfpEJQxu9DexoB4N355Uh1Id/HhKOT+0ZbOqSKoLMGeX7bBTVKIZ7kT/Lmjii/gSPpz7D4cbNGIRC1Y450sKGDQbFf2GoeGo6HcImvaKPlP4FxD+tfbMp4kCovkSzHjPPJpf+ZV8AgrMwCBbsZBdAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE4SURBVFhH7ZbBacQwFERVSSpIBQvpYc+pIoctIeScsgIpJB3kkoOCQsaMnr8ty9plLx4YWFtfM082C07p0KEdyl9PmffuogJyV5gIgNc3k8rfLw8ziJvIS7z85+NxBnF1IBXSAnAIN3O6pAAWyip2AJkQQzBent9SZQfw+w7BvE3i6aPylgnRBeMbZ+XP/177bRDMWxQH9p6c5j9E2X69qCpMJ9xq28vcUHpM0ztjsfQdlMllTQJI1BGWTyZACZdZvDajHOYTYgbSAPg8nytHM0sA7K1UAeCELF0y9zkA+0JNAGle+npKOb/ELmucLxkCYM+q/jaaWxAs537mbxJDHMYhVM65ofIiBjmAIPzknBsGKGJYr5nXLQb2mnm7xNCtZs6Q+PXTuz6sVkFr/SoqwWvhrfVDkX4B3qHedQdJitIAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE1SURBVFhH7VbbCcJAELxKrMAKBHvIt1X4YQnit2UJFmIH+fHjZNfMsRnvlVwQFQcGj929mdkQRef++Hb429Zz7Xdht02d3wIxBM+HVTjz3CLgTdn8flmPQvB8EJoLiLC5DZAK0RwgZmgJcwQA+R7rVoFFYOhPTpk7Lx5CBQeDWja/nKnNLfH4uY5eU4jR5rsn1Qyfpg5DO4M6QrB+EZocQq2cE0CTWxGgpy0Haq03c6YnWqyfBNK+BBBxkDcszCBA9kngZQmsEL92nTI3E5j7WnIzGYKMmTyXMo+GAMKAixseN877fZzSiwYSrZwpQy9EmAthzfkeyD5FsEAqRMmcdavBQhxEjGHO/UUCCFhsKllvMlhwKllvFli0lqzTBPsHJPbTWuo3o2RQ6i8CEc6Jl/p/fCQeu1jn/mkgYd0AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE9SURBVFhH7ZZBCsIwEEVzEk/gCQTv0HVP4cIjiGuPJXgQb+DGRSTFiTM/k07TpFChHz5oJ/nvJ1LQuX+Tfx49Plu1Fi0cwgmwKIjEIQS/nXexBK5pIgznDvD3fR9L8BtpLoTzAouVoCAO5CY4FSDzElVlcqe13Ow2ONxfXXSA8O/aM7yJYgl4nwIImnse9lSVECfvfx6DEjia3QTmmxqaAxzDhXHO180pkJye9FIg5DAjsQKYPUn024twMoKNNZhtKoEr4Y+uE9bWzC4R32EIQWjOuK/oTYhwKEHhl4Pz/qQ7zJISkIc8IVzs3TfEydNrJTh8KMD2Yi5yo3DBsBmslRAnV/bk8oW0IQZpJSw4LzBkKpxRYVipMa9YGFhqzJslDJ1qzKkS/z8QPpfOq2UBrHkTheCxcGu+adMq9QF7RM7hJsvIlQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE7SURBVFhH7ZbLDcIwEERdCRVQARI9cKYKDpSAOFMWEoXQARcORmtprcl4/c+NPGlEYJ2ZcQIRzm0M4t9Hbx3/B9aOrc9WR0JU+v5x3cVjnK0O33MN/z734ZXn8cQR2Ax3jNICWILXWp7NWIEoDdcCKj6PfZvhcH93QRiM0jmXYN8mcuG5EjyfLlEK1wL+7IKsAlyC/ask4RKGx5aMtVqC/YvES1cLrEnPH7kKye6VjxGkkpkCBcSL/askBcRcxcFYANeMFohfHrz8ZP46nRay1sQS8MjOovcIfzq8Qw7Nic9DT8xKaAm/HZz3F1syay2RsAgXuTS8VALDkxLiRf6cb9JaohbOvs2EAoawxOKyG2unCghs1iv264YNe8V+Q7Bpq9hnCnmQ4J+P3vk0tYDafBXEuGRem29sWPwAxersfHhSfvMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE1SURBVFhH7VbbCcJAELxKrMAKBHvIt1X4YQnit2UJFmIH+fHjZNfMsRnvlVwQFQcGj929mdkQRef++Hb429Zz7Xdht02d3wIxBM+HVTjz3CLgTdn8flmPQvB8EJoLiLC5DZAK0RwgZmgJcwQA+R7rVoFFYOhPTpk7Lx5CBQeDWja/nKnNLfH4uY5eU4jR5rsn1Qyfpg5DO4M6QrB+EZocQq2cE0CTWxGgpy0Haq03c6YnWqyfBNK+BBBxkDcszCBA9kngZQmsEL92nTI3E5j7WnIzGYKMmTyXMo+GAMKAixseN877fZzSiwYSrZwpQy9EmAthzfkeyD5FsEAqRMmcdavBQhxEjGHO/UUCCFhsKllvMlhwKllvFli0lqzTBPsHJPbTWuo3o2RQ6i8CEc6Jl/p/fCQeu1jn/mkgYd0AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE/SURBVFhH7ZbBjcIwFERTCRVsBUj0wHmr4EAJiDNlrUQhdMCFg9GHTPT98oMTHPaAMtIIZH/PGwsFpWkWLZpJ6bJJXPt+2a3/7eYRyNZO+1Vv/aNSEcFvfz9diajkLPJQbxVQCf+TzFKGYIN4C64CcnURggVPuyal49Mebta6zfgS1UUieNEowdxRyuAIzz6H1o5vlPCDIfy3tb77de6jRMQoKoSPtTvL3J6iVtntLVC6BjDZ9iRXwrKYHzF7z3lWwMJlgn0BP6PzyCX3IQ51BQbCz9tt5mimK8HcoRKmwQKtCaY5zwLkheoONH3gYd0+boFtj/OWMQkuPQ7Cr0p4OM+ZmT9KDPFFfAnBOVcFNzEoKlGCVxUwMWyqmTdZDJxq5r0lho41c6rkX0Civ9bSfrVKgNL+LLLgV+Gl/UWR7n5OtOQVLC6GAAAAAElFTkSuQmCC"]};
 GIFSPRITES.dragon={w:32,h:32,delays:[60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD6SURBVFhH7ZJdCsIwEIRzFcW3XkL0UTyHx/KokQ1OmU6zoSlpoJAPFuz+ze7GEAaDMzM9btFM/d2Y3pdopv5udL8AxO7fazTDBfDNOU3QDVksDfCPL3z0JFpfDb/xLChDqDgG0vpd5DassWYX4K1fn+dKKBfjWu2bxYph7McWJWE1y81t72mkgDbguApsNe7hamhglUADGCGEZJoPv6EDFDW84JxAA0CkNADHSuLc3z3x0QPgQgs0yWtgfjaNe7Wq51Jqssen/avgRvgtp14Jzu/bityGnjUXB1uGOEwceH86+DW/ORCHIA/UZQDDu4DmHYpeQOODwWn4AWuvWl2n+RfcAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD/SURBVFhH7VJBDsIwDOtXQNz2CQRHxDt4Fk8dyoQn16ShHWWnWrIKdRIn6VIaGPgB0+U0G/V+N0z3w2zU+92w+wZgdn4eZyM2gP8c0wU6IZstDbz17I6eRPObwW+8GkoTao6GNH8TvAlb2G0DPPXtcf0w8jTO1bpNwBSRsdJif56eoQa11DqbgYKGlNJCx2yhobkBW5mSdTWJGmCNa2j9zMN7Xw6ITCKtqr4nIgBBqrEOqm6M6qNGGICgnneqhw14E+K3rDrTSrnKrAHvxBt+W6WylOud69eJQD4VNU1EuXqWYkMg0TPeVLAVvD5mNH13lDagcX+FbkD1gYGBWrwAt2aBYbO85oYAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEKSURBVFhH7ZLBDcIwDEWzCohbl0BwRMzBWIxa5ApXzqsdkrb0lCf5gP3t77ik1OlsYLhdRgnmD2N4nkYJ5g/j8Auo2fV9HiX0AvrbanaBL7Rm0wLfepYzn4T9zdhvPBtiCZrrQuxfhffCltjtAvbVj9d9YeTVbC/nNqGvKBkzRLv59RYa1AbnrEYHCimlKRyzKYS/LaAmpQVsjXNWUzIp1TjnJ/LnYUieZhLUsa4LaI0zF3iDvJzma3PMu0tQ5DXQCKfOal4fI1siEtYuyeALWc800WA7QIm07mBA3azlUDaS6LSap56wJ1uAYg/Vq6FdqGYBIVtA0AEURkQXoC6iVe/CC7De6XRq+QA/vGYJY96EjwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEJSURBVFhH7ZLRDcIwDESzCoi/LoHgEzEHYzFqkatedT2cpEnbfOVJJxHb8TkuIXQ6Oxget9Gk8WYM78to0ngzmm8AZvfvdTRhAzhzzSHoC9lsGmDOr2L0SfR+MfyNF0MZQs0xkN6vwnthiQ7bAL/69Xn+GXk5vqt9i8ArUsYqq939ekYNtkr7VIOGRghhkmM2yThtAJikBuCc9qkmZZLKaZ9q1MxkfzSW5g8ZINa8JGbSvlm0GZ/xW1YdreOz+rjoxVg8JTaLxV3UJJf35Jnk8gtsoDlgNd4giGs9yA6gTTUPUAdDHijaPLeFreZA692mDtF6bri6kUA3oPkY7gCcWAVPoJVPp7OZH+5AOqVj0VEFAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAELSURBVFhH7ZLBDcIwDEWzCohbl0BwRMzBWIxa5ApXzqsdklIqIeVJPmB/+zsuKXU6/8xwOY0SzO/GcD+MEszvxu4XULPz8zhK6AX0t9VsAl9ozaYF3vUsZz4J+5ux33g2xBI014XYvwrvhS2x2QXsq2+P68LIq9lezm1CX1EyZoj269dbaFAbnLMaHSiklKZwzKYQfraAmpQWsDXOWU3JpFTjnI/In4cheZpJUMe6LqA1zlzgDfJymq/NMe8uQZHXQCOcOqt5fYxsiUhYuySDL2Q900SD7QAl0rqDAXWzlkPZSKLTap56wp5sAYo9VK+GdqGaBYRsAUEHUBgRXYC6iFa9Cy/AeqfzN7wA0qhmCWphbJEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD/SURBVFhH7VJBDsIwDOtXQNz2CQRHxDt4Fk8dyoQn16RhHWXSpFqyCnUSJ+lS6ujYM4bLaTTq/WYY7ofRqPebYfMNwOz8PI5GbAD/OaYJdEI2mxp469kdPYnmV4PfeDaUJtQcDWn+KngT1rDZBnjq2+P6YeRpnKt1q4ApImOlxf48PUMNllLrrAYKGlJKEx2ziYbqBmxlStbVJGqANa6h9TMP7305IDKJtEX1PREBCFKNdVB1Y1QfNcIABLW8Uz1swJsQv2XVmVbKVWYNeCfe8NsqlaVc75y/TgTyqVjSRJSrZyk2BBI941UFa8HrY0bTN0dpAxr3V+gGVO/o2A1egjeBYR9txYoAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD6SURBVFhH7ZJdCsIwEIRzFcW3XkL0UTyHx/KokQ1OmU6zoSlpoJAPFuz+ze7GEAaDMzM9btFM/d2Y3pdopv5udL8AxO7fazTDBfDNOU3QDVksDfCPL3z0JFpfDb/xLChDqDgG0vpd5DassWYX4K1fn+dKKBfjWu2bxYph7McWJWE1y81t72mkgDbguApsNe7hamhglUADGCGEZJoPv6EDFDW84JxAA0CkNADHSuLc3z3x0QPgQgs0yWtgfjaNe7Wq51Jqssen/avgRvgtp14Jzu/bityGnjUXB1uGOEwceH86+DW/ORCHIA/UZQDDu4DmHYpeQOODwWn4AWuvWl2n+RfcAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD/SURBVFhH7VJBDsIwDOtXQNz2CQRHxDt4Fk8dyoQn16ShHWWnWrIKdRIn6VIaGPgB0+U0G/V+N0z3w2zU+92w+wZgdn4eZyM2gP8c0wU6IZstDbz17I6eRPObwW+8GkoTao6GNH8TvAlb2G0DPPXtcf0w8jTO1bpNwBSRsdJif56eoQa11DqbgYKGlNJCx2yhobkBW5mSdTWJGmCNa2j9zMN7Xw6ITCKtqr4nIgBBqrEOqm6M6qNGGICgnneqhw14E+K3rDrTSrnKrAHvxBt+W6WylOud69eJQD4VNU1EuXqWYkMg0TPeVLAVvD5mNH13lDagcX+FbkD1gYGBWrwAt2aBYbO85oYAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAELSURBVFhH7ZJBrsIwDERzFRC7XgLBEnEOjsVRi1zhynm1Q9KWrvIkSx97MuOkP6VOZwPD7TJKsX8Yw/M0SrF/GIe/gIZd3+dRSl9Af1vNLvCGNmxa4DvPeuaT8Hwz9hvPgViC4boQz6/Cu2FL7fYC9taP130R5M3sWfo2obcoBbNEu/n2FgbUFn1Wo4ZCSmkqJ2wq4W8LaEhpATujz2pKIaUZfX4i/zws6TNMijrOdQGd0XOBZ+T1tF/bY99dgiKWnevfeOpQF1W2RCRuWTI0L3zCorE1UCKtawyom7U05UEiep5RsyjcwjPZAhR7qF4D7UI1CwjZAoIaUBgRvQB1Ea16F74A551Op5YP1yBmIfD9tGEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEJSURBVFhH7ZLRDcIwDESzCoi/LoHgEzEHYzFqkatedT2cpEnbfOVJJxHb8TkuIXQ6Oxget9Gk8WYM78to0ngzmm8AZvfvdTRhAzhzzSHoC9lsGmDOr2L0SfR+MfyNF0MZQs0xkN6vwnthiQ7bAL/69Xn+GXk5vqt9i8ArUsYqq939ekYNtkr7VIOGRghhkmM2yThtAJikBuCc9qkmZZLKaZ9q1MxkfzSW5g8ZINa8JGbSvlm0GZ/xW1YdreOz+rjoxVg8JTaLxV3UJJf35Jnk8gtsoDlgNd4giGs9yA6gTTUPUAdDHijaPLeFreZA692mDtF6bri6kUA3oPkY7gCcWAVPoJVPp7OZH+5AOqVj0VEFAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAELSURBVFhH7ZJBrsIwDERzFRC7XgLBEnEOjsVRi1zhynm1Q9KWrvIkSx97MuOkP6VOZwPD7TJKsX8Yw/M0SrF/GIe/gIZd3+dRSl9Af1vNLvCGNmxa4DvPeuaT8Hwz9hvPgViC4boQz6/Cu2FL7fYC9taP130R5M3sWfo2obcoBbNEu/n2FgbUFn1Wo4ZCSmkqJ2wq4W8LaEhpATujz2pKIaUZfX4i/zws6TNMijrOdQGd0XOBZ+T1tF/bY99dgiKWnevfeOpQF1W2RCRuWTI0L3zCorE1UCKtawyom7U05UEiep5RsyjcwjPZAhR7qF4D7UI1CwjZAoIaUBgRvQB1Ea16F74A551Op5YP1yBmIfD9tGEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD/SURBVFhH7VJBDsIwDOtXQNz2CQRHxDt4Fk8dyoQn16RhHWXSpFqyCnUSJ+lS6ujYM4bLaTTq/WYY7ofRqPebYfMNwOz8PI5GbAD/OaYJdEI2mxp469kdPYnmV4PfeDaUJtQcDWn+KngT1rDZBnjq2+P6YeRpnKt1q4ApImOlxf48PUMNllLrrAYKGlJKEx2ziYbqBmxlStbVJGqANa6h9TMP7305IDKJtEX1PREBCFKNdVB1Y1QfNcIABLW8Uz1swJsQv2XVmVbKVWYNeCfe8NsqlaVc75y/TgTyqVjSRJSrZyk2BBI941UFa8HrY0bTN0dpAxr3V+gGVO/o2A1egjeBYR9txYoAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD6SURBVFhH7ZJdCsIwEIRzFcW3XkL0UTyHx/KokQ1OmU6zoSlpoJAPFuz+ze7GEAaDMzM9btFM/d2Y3pdopv5udL8AxO7fazTDBfDNOU3QDVksDfCPL3z0JFpfDb/xLChDqDgG0vpd5DassWYX4K1fn+dKKBfjWu2bxYph7McWJWE1y81t72mkgDbguApsNe7hamhglUADGCGEZJoPv6EDFDW84JxAA0CkNADHSuLc3z3x0QPgQgs0yWtgfjaNe7Wq51Jqssen/avgRvgtp14Jzu/bityGnjUXB1uGOEwceH86+DW/ORCHIA/UZQDDu4DmHYpeQOODwWn4AWuvWl2n+RfcAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD7SURBVFhH7VJBDsIwDNtXQNz2CQRHxDt4Fk8d6oQn10tD25Weaskq1EmcpJumgYEDmG+XJVDvu2F+npZAve+G7huA2fV9XgKxAfznmCbQCdlsbeCrR3f0JJpfDH7jzVCaUHM0pPlVsCYsYbMN8NSP131nZGmcq3WLgCk8Y2WIPTw9Qw1yqXWqoYVzqXWSCCtTsk4FNxpmO41raP3Iw3pfDvBMPC2rviUiAEGqsQ6qHujVRw03AEEt71R3G7AmxG9ZdaSlcpVRA9aJN/y1SmUq1zq3rxOBfCpymvBy9UzFukCiZVxVsBS8PqY3fXOkNqBxf4VuQPWBgYFcfAAiAYFtEnC8twAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEESURBVFhH7ZLBDcIwDEW7Cohbl0BwRMzBWIxaZIQr59UOSVrllCdZovb3t5MwTYPBDubbZZFgvhvz87RIMN+N7jegw67v8yKhN6DfVnMIPKEd9l3gV09y5knYX41943UgluBwXYj9TXgnrInDbsCe+vG6bwZ5NdtL3yr0FLnBDNHuPr2FA0qDPs3QuDTo04wxXMMZtqnRpxkOKw36/EX+PAzJ01iCOtZ1Aa3Rc4Nn5OU0X5pj3l2CIoat62+8daiLIlkiEtcsGZpnnjBrbA2USOsaA+pWLU3ZSETPHjWLhlvYkyxAsYfqdaBdqGQBIVlAUAMKI6IboC6iVu/CG2B9MBiU8gFUEGwz0q8mhgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEDSURBVFhH7ZJLDsIwDER7FRC7XgLBEnEOjsVRi4JwNX11vi1Z9UmWiO3MOC7DcHCwgfF2mUIw343xeZpCMN+N7hsws+v7PIWwDdhZe3aBL1Sz7wC/+iInn4T3q9FvPBtiCJrbQLzfhPfCmthtA/rqx+u+MvJqepe6VdgrUsaM0Lv59QoNSoM6zVC4NKjTjAjO4ZitatRpJmWSqlGnGZqFCH80DdZ3GSAmXpMLQd0sFNOz/caqo316po8LL8byqVCzWN6FJrm6F55Jrj6jBqwZoccbxPLsN7IDUJR1w/rMUAeKiue2UGpusN8VdYj2q+DiRgJugPUY7gBaWCT/QC+fg4NiPljbOrGp8p2NAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAELSURBVFhH7ZJBrsIwDERzFRC7XgLBEnEOjsVRi1zhynm1Q9KWrvIkSx97MuOkP6VOZwPD7TJKsX8Yw/M0SrF/GIe/gIZd3+dRSl9Af1vNLvCGNmxa4DvPeuaT8Hwz9hvPgViC4boQz6/Cu2FL7fYC9taP130R5M3sWfo2obcoBbNEu/n2FgbUFn1Wo4ZCSmkqJ2wq4W8LaEhpATujz2pKIaUZfX4i/zws6TNMijrOdQGd0XOBZ+T1tF/bY99dgiKWnevfeOpQF1W2RCRuWTI0L3zCorE1UCKtawyom7U05UEiep5RsyjcwjPZAhR7qF4D7UI1CwjZAoIaUBgRvQB1Ea16F74A551Op5YP1yBmIfD9tGEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD/SURBVFhH7VJBDsIwDOtXQNz2CQRHxDt4Fk8dyoQn16RhHWXSpFqyCnUSJ+lS6ujYM4bLaTTq/WYY7ofRqPebYfMNwOz8PI5GbAD/OaYJdEI2mxp469kdPYnmV4PfeDaUJtQcDWn+KngT1rDZBnjq2+P6YeRpnKt1q4ApImOlxf48PUMNllLrrAYKGlJKEx2ziYbqBmxlStbVJGqANa6h9TMP7305IDKJtEX1PREBCFKNdVB1Y1QfNcIABLW8Uz1swJsQv2XVmVbKVWYNeCfe8NsqlaVc75y/TgTyqVjSRJSrZyk2BBI941UFa8HrY0bTN0dpAxr3V+gGVO/o2A1egjeBYR9txYoAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD6SURBVFhH7ZJdCsIwEIRzFcW3XkL0UTyHx/KokQ1OmU6zoSlpoJAPFuz+ze7GEAaDMzM9btFM/d2Y3pdopv5udL8AxO7fazTDBfDNOU3QDVksDfCPL3z0JFpfDb/xLChDqDgG0vpd5DassWYX4K1fn+dKKBfjWu2bxYph7McWJWE1y81t72mkgDbguApsNe7hamhglUADGCGEZJoPv6EDFDW84JxAA0CkNADHSuLc3z3x0QPgQgs0yWtgfjaNe7Wq51Jqssen/avgRvgtp14Jzu/bityGnjUXB1uGOEwceH86+DW/ORCHIA/UZQDDu4DmHYpeQOODwWn4AWuvWl2n+RfcAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD/SURBVFhH7VJBDsIwDOtXQNz2CQRHxDt4Fk8dyoQn16ShHWWnWrIKdRIn6VIaGPgB0+U0G/V+N0z3w2zU+92w+wZgdn4eZyM2gP8c0wU6IZstDbz17I6eRPObwW+8GkoTao6GNH8TvAlb2G0DPPXtcf0w8jTO1bpNwBSRsdJif56eoQa11DqbgYKGlNJCx2yhobkBW5mSdTWJGmCNa2j9zMN7Xw6ITCKtqr4nIgBBqrEOqm6M6qNGGICgnneqhw14E+K3rDrTSrnKrAHvxBt+W6WylOud69eJQD4VNU1EuXqWYkMg0TPeVLAVvD5mNH13lDagcX+FbkD1gYGBWrwAt2aBYbO85oYAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAELSURBVFhH7ZJBrsIwDERzFRC7XgLBEnEOjsVRi1zhynm1Q9KWrvIkSx97MuOkP6VOZwPD7TJKsX8Yw/M0SrF/GIe/gIZd3+dRSl9Af1vNLvCGNmxa4DvPeuaT8Hwz9hvPgViC4boQz6/Cu2FL7fYC9taP130R5M3sWfo2obcoBbNEu/n2FgbUFn1Wo4ZCSmkqJ2wq4W8LaEhpATujz2pKIaUZfX4i/zws6TNMijrOdQGd0XOBZ+T1tF/bY99dgiKWnevfeOpQF1W2RCRuWTI0L3zCorE1UCKtawyom7U05UEiep5RsyjcwjPZAhR7qF4D7UI1CwjZAoIaUBgRvQB1Ea16F74A551Op5YP1yBmIfD9tGEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEJSURBVFhH7ZLRDcIwDESzCoi/LoHgEzEHYzFqkatedT2cpEnbfOVJJxHb8TkuIXQ6Oxget9Gk8WYM78to0ngzmm8AZvfvdTRhAzhzzSHoC9lsGmDOr2L0SfR+MfyNF0MZQs0xkN6vwnthiQ7bAL/69Xn+GXk5vqt9i8ArUsYqq939ekYNtkr7VIOGRghhkmM2yThtAJikBuCc9qkmZZLKaZ9q1MxkfzSW5g8ZINa8JGbSvlm0GZ/xW1YdreOz+rjoxVg8JTaLxV3UJJf35Jnk8gtsoDlgNd4giGs9yA6gTTUPUAdDHijaPLeFreZA692mDtF6bri6kUA3oPkY7gCcWAVPoJVPp7OZH+5AOqVj0VEFAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAELSURBVFhH7ZJBrsIwDERzFRC7XgLBEnEOjsVRi1zhynm1Q9KWrvIkSx97MuOkP6VOZwPD7TJKsX8Yw/M0SrF/GIe/gIZd3+dRSl9Af1vNLvCGNmxa4DvPeuaT8Hwz9hvPgViC4boQz6/Cu2FL7fYC9taP130R5M3sWfo2obcoBbNEu/n2FgbUFn1Wo4ZCSmkqJ2wq4W8LaEhpATujz2pKIaUZfX4i/zws6TNMijrOdQGd0XOBZ+T1tF/bY99dgiKWnevfeOpQF1W2RCRuWTI0L3zCorE1UCKtawyom7U05UEiep5RsyjcwjPZAhR7qF4D7UI1CwjZAoIaUBgRvQB1Ea16F74A551Op5YP1yBmIfD9tGEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD/SURBVFhH7VJBDsIwDOtXQNz2CQRHxDt4Fk8dyoQn16RhHWXSpFqyCnUSJ+lS6ujYM4bLaTTq/WYY7ofRqPebYfMNwOz8PI5GbAD/OaYJdEI2mxp469kdPYnmV4PfeDaUJtQcDWn+KngT1rDZBnjq2+P6YeRpnKt1q4ApImOlxf48PUMNllLrrAYKGlJKEx2ziYbqBmxlStbVJGqANa6h9TMP7305IDKJtEX1PREBCFKNdVB1Y1QfNcIABLW8Uz1swJsQv2XVmVbKVWYNeCfe8NsqlaVc75y/TgTyqVjSRJSrZyk2BBI941UFa8HrY0bTN0dpAxr3V+gGVO/o2A1egjeBYR9txYoAAAAASUVORK5CYII="]};
 GIFSPRITES.poussin={w:32,h:32,delays:[80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADdSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdxEnW5GL77FPg4ZH2E59315YzTYNBJ/freeG3w5Dw9/Oy/KyEFjishISk0nAtoOK+EBiYU3gJT3h4iZbwsBI94SElaNYq+ppwA08vvOZZ1jYByb51Rki/6y0wY7eAJTFXcc0zk8xu4ZDXvGbmO7cPh6PFPBNuoh63kynOUczJwkdIecKbf0UaUTXhIvpWU7qFGjWfXqGhV/Rz03ML3adXWkqEhStiqI/OMi+td1MKKK2HIMY589L6YPCXfAAEy6l6FEOyCAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcMgEATdRL6pIOW5hfzTRxpJDy7AReTh6KychMYIDu7k5MFI+4Fjd0FM02Dg5DFfN66dhoS/X7ftZyW0wGklJCSVhmsBFc+FwMCSwku0hIeX6AkPK+EJDylBs17R1wRvL6zLImaHgCRonxHSdfMr0JDmKu61zHznjnCIsphbZpLZPByMFvOy8BD1vF+y4hzFnCL8hFRLuPkTEhpRlnARfc3UXsGi7tsrNGwV/ZrxvIL79kpPibBwRQz10+XMa/tuagG1/RDEuGRe2x8M/pIPJ0SX5pOPPYEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZLBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMYOfO9ink4ZH2Y59315anaTDo5H49L1zbDQl/Py/L30pogd1KSEgqDdcCKp4LgYFbCi9REx5eoiU8rERPeEgJmrWKvi54e+E1z2L2E5AErTNCut70Ciwg5ioGWzPVBRi+Ze6dcZfgwWgx7wsOl/S4nbLiXEnMXeGQpdZwFfOz8BDlDaevm9xnrJX785WgYa3oV03PK3TfXmkpERauiKF+upy5td+NFWDthyDGW+bW/mBwSD58zZZMqN6kDwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZTBDcIwDEW7BFcmYDxW4M4eLMIOHYAhOBQZyVV5WHESW4VDnvQvxPnPrSqmaTAIcj0fF/62GyJ/3k/Lz5bQBXZbQiTbqFwX0PBeChSWkr5Eizx9iR552hIRecoSLOsNe6vg0wuPeZayL8FG9J4R0heQcg3F3gy7XSgvldfO0FGEl7NCjwkvWbldDmY4Z4W+DzhcSo9cQ+8KB3iRqZWzbxV6WB9ja0J/RAILW8O+ZiJvIfz0Ss8SaXJFCvWjs8q98zCewDtPQYpL5d75YPCXvACBCYoNp6cBwgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZPBDcIwDEW7BFcmYDxW4M4eLMIOHYAhOBS5kiXzMbFju4VDnvQvjfP/T9RM02CQ5Ho+LvhtNyj8eT8tPyvBBXYrQSFSHM4FWLivBAxsqbxET3h5iUh4WYlMeEkJNIsKfV3g6YnHPJPZR4AIWmcI+T10C1iAzFkYbM24CqAZ6pt574yY9YdvpbcSDA5pul0OqnBOE+ap4CZNm4VL0ADlDUdfN/gSInK9gBZo2Cv06yZzC+nTM5ESZeEMGfJPp5lb62msAGu9BDJumVvrg8Ff8gLmd6Oeo23GWAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcMgEATdRL6pIOW5hfzTRxpJDy7AReTh6KychMYIDu7k5MFI+4Fjd0FM02Dg5DFfN66dhoS/X7ftZyW0wGklJCSVhmsBFc+FwMCSwku0hIeX6AkPK+EJDylBs17R1wRvL6zLImaHgCRonxHSdfMr0JDmKu61zHznjnCIsphbZpLZPByMFvOy8BD1vF+y4hzFnCL8hFRLuPkTEhpRlnARfc3UXsGi7tsrNGwV/ZrxvIL79kpPibBwRQz10+XMa/tuagG1/RDEuGRe2x8M/pIPJ0SX5pOPPYEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADdSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdxEnW5GL77FMQkkfaT3zeXVvONA0G/879el747TAk/P28LD8roQUOKyEhqTRcC6i4LwQG5hRewhMeXqIlPKxET3hICZq1ir4m3MDTC695lrVNQLJvnRHS73oLzNgtYEnMVVzzzCSzWzjkNa+Z+c7tw+FoMc+Em6jH7WSKcxRzsvARUp7w5l+RRlRNuIi+1ZRuoUbNp1do6BX93PTcQvfplZYSYeGKGOqjs8xL692UAkrrIYhxzry0PhhYfACZyKl6D+kVxwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBCcMwEATdRL6pIOW5hfzTRxpJDy7AReThcCYHYix0J+lwCGhgP9JpdyU0TYPBv/OYrxvXTkPC36/b9rMSWuC0EhKSSsO1gIrnQmBgSeElasLDS7SEh5XoCQ8pQbNW0dcFby+syyJmh4AkaJ8R0nX3K9CQ5iru1cx8545wiPKYe2aS2TwcjBbzsvAQ9bxfsuIcxZwi/IRUTbj7ExIaUZ5wEX3dWK/gUfPtFRrWin7V9LxC9+2VlhJh4YoY6qfLmVv73VgB1n4IYlwyt/YHgxwfmFyX5uReIvQAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMxM6d7VMQkkfaj33eXVuepsHg37lfzwvXDkPC38/L8rMSWuCwEhKSSsO1gIrnQmDgnsJL1ISHl2gJDyvREx5Sgmatoq8L3l54zbOYbQKSoHVGSNebXoEFxFzFYGumugDD98y9M+4SPBgt5n3B4ZIet1NWnCuJuSscstQarmL+htw/oLzh9HbjKWHJ/flK0LBW9Kum5xW6b6+0lAgLV8RQP13O3Nrvxgqw9kMQ4z1za38wyPEBY/eYbcKtd5gAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADaSURBVFhH7ZLBDQIxDASvCb5UQHm0wJ8+aIQergCK4HHISD6FwYrPiXUIKSPtJ3F2N1GmaTD4d67n48K13ZDw5/20/KyEFtithISU0nAtoOK5FBhYU3qJSHh6iZbwtBI94SklaNYq+m6Ctxce8yxmXwFF0HtGKNebXoEFxFzFYG8mXIDhNfOtM6ESPJwl5pjwkKXb5WCKc5aY9wGHa2oJVzF3hQM8SG0Np98a6GF9xqhCn8+ChlHRL0zPK3TfXmkpkRauiKF+Osvc2+/GC/D2UxDjmrm3PxhYvAANd5Bwn9y7pAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMcNhn+xKE5JH2E59311Y8TYPBv3M9Hxd+2w0Jf95Py89KaIHdSkhIKg3XAiruC4GBOYWXqAkPL9ESHlaiJzykBM1aRV8XPL3wmGcx+whIgtYZIf3edAssIOYqBpdmXAVoRn0zr51JZv3hW+mthMIhS7fLwRTnLDHPhJssbRaeQgPKG05fN3wJLXK9gBw0rBX9qum5he7TKy0lwsIVMdSfzjIvrXdTCiithyDGOfPS+mBg8QJvjKOenI9RPAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBCcMwEATdRL6pIOW5hfzTRxpJDy7AReThcCYHYix0J+lwCGhgP9JpdyU0TYPBv/OYrxvXTkPC36/b9rMSWuC0EhKSSsO1gIrnQmBgSeElasLDS7SEh5XoCQ8pQbNW0dcFby+syyJmh4AkaJ8R0nX3K9CQ5iru1cx8545wiPKYe2aS2TwcjBbzsvAQ9bxfsuIcxZwi/IRUTbj7ExIaUZ5wEX3dWK/gUfPtFRrWin7V9LxC9+2VlhJh4YoY6qfLmVv73VgB1n4IYlwyt/YHgxwfmFyX5uReIvQAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADdSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdxEnW5GL77FPg4ZH2E59315YzTYNBJ/freeG3w5Dw9/Oy/KyEFjishISk0nAtoOK+EBiYU3gJT3h4iZbwsBI94SElaNYq+ppwA08vvOZZ1jYByb51Rki/6y0wY7eAJTFXcc0zk8xu4ZDXvGbmO7cPh6PFPBNuoh63kynOUczJwkdIecKbf0UaUTXhIvpWU7qFGjWfXqGhV/Rz03ML3adXWkqEhStiqI/OMi+td1MKKK2HIMY589L6YPCXfAAEy6l6FEOyCAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADKSURBVFhH7ZLBDUIhEERpwqsVWJ4teLcPG7EnD99s4v6QJ2F3YfP1wEvmAsvMQChlsZjkfj1vXDsMCX89L9vPSmiBw0pISC0N1wIqnkuBgT2ll4iEp5cYCU8rMROeUoJmo6Kvi4zbq9yvwIO1Sim7uBeZ+cx9wyHKY+6ZqWbbcDBbzGvCQ9TjdmqKcxRzulifMBLu/oSERpQnXERfN9YreDR8e4WGUdEvzMwrTN9eGSmRFq6IoX66lrm1P40VYO2nIMY9c2t/sfhL3uNFmEx/1Q6VAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADFSURBVFhH7ZLBDQIhFERpwqsVbHm24N0+bGR78rAGk2/0BfYDf7J64CVzgc/MQEhpMglyu5w3rh1GDn+sy/azElbgsBI55FMWbgVMPCeBgXuSl+gJl5cYCZeViIRLStBsVPRtQnF709ArsEBK6S0GeDPdBRiuUHMJHlSLeV9wuKb79VQU52pi7gsOeRoNNzG/CA9RreH0bUbxGZs/Xw0a9op+3UReIXx7Y6SELNzIhvbpSubefhgvwNuXkI33zL39yeQveQK/EaJMrlF/hAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADKSURBVFhH7ZOxDcMwDAS5RNpMkPGyQvrskUWyUwoHKijYB0KUKMJJoQO+saj/l2CJLBaTPO/Xjd9Oo4R/3rftZyW0wGklSsheGq4FVNyXAgNbSi8xEp5eIhKeVmImPKUEzaKibxcZp1eFboEFRKSKAd5MqECvee8M/Ztwc5aYY8JNll6PiynOWWLeAQ63FAlXMbfCAW6kesPpVwM9+BIiCr2APTQcFf2GmbmF6dMrkRJp4Uox1J/OMvfWp/ECvPUUinHL3FtfLP6SLy3XjJRgip+NAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZPBDcIwDEW7BFcmYDxW4M4eLMIOHYAhOBS5kiXzMbFju4VDnvQvjfP/T9RM02CQ5Ho+LvhtNyj8eT8tPyvBBXYrQSFSHM4FWLivBAxsqbxET3h5iUh4WYlMeEkJNIsKfV3g6YnHPJPZR4AIWmcI+T10C1iAzFkYbM24CqAZ6pt574yY9YdvpbcSDA5pul0OqnBOE+ap4CZNm4VL0ADlDUdfN/gSInK9gBZo2Cv06yZzC+nTM5ESZeEMGfJPp5lb62msAGu9BDJumVvrg8Ff8gLmd6Oeo23GWAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcMgEATdRL6pIOW5hfzTRxpJDy7AReTh6KychMYIDu7k5MFI+4Fjd0FM02Dg5DFfN66dhoS/X7ftZyW0wGklJCSVhmsBFc+FwMCSwku0hIeX6AkPK+EJDylBs17R1wRvL6zLImaHgCRonxHSdfMr0JDmKu61zHznjnCIsphbZpLZPByMFvOy8BD1vF+y4hzFnCL8hFRLuPkTEhpRlnARfc3UXsGi7tsrNGwV/ZrxvIL79kpPibBwRQz10+XMa/tuagG1/RDEuGRe2x8M/pIPJ0SX5pOPPYEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADdSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdxEnW5GL77FMQkkfaT3zeXVvONA0G/879el747TAk/P28LD8roQUOKyEhqTRcC6i4LwQG5hRewhMeXqIlPKxET3hICZq1ir4m3MDTC695lrVNQLJvnRHS73oLzNgtYEnMVVzzzCSzWzjkNa+Z+c7tw+FoMc+Em6jH7WSKcxRzsvARUp7w5l+RRlRNuIi+1ZRuoUbNp1do6BX93PTcQvfplZYSYeGKGOqjs8xL692UAkrrIYhxzry0PhhYfACZyKl6D+kVxwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBCcMwEATdRL6pIOW5hfzTRxpJDy7AReThcCYHYix0J+lwCGhgP9JpdyU0TYPBv/OYrxvXTkPC36/b9rMSWuC0EhKSSsO1gIrnQmBgSeElasLDS7SEh5XoCQ8pQbNW0dcFby+syyJmh4AkaJ8R0nX3K9CQ5iru1cx8545wiPKYe2aS2TwcjBbzsvAQ9bxfsuIcxZwi/IRUTbj7ExIaUZ5wEX3dWK/gUfPtFRrWin7V9LxC9+2VlhJh4YoY6qfLmVv73VgB1n4IYlwyt/YHgxwfmFyX5uReIvQAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMYOfO9ikokkfaj33eXVuepsHg6Nyv54VruyHh7+dl+VsJLbBbCQlJpeFaQMVzITBwS+ElasLDS7SEh5XoCQ8pQbNW0dcFby+85lnMfgKSoHVGSNebXoEFxFzFYGumugDDt8y9M+4SPBgt5n3B4ZIet1NWnCuJuSscstQarmJ+Fh6ivOH0dZP7jLVyf74SNKwV/arpeYXu2ystJcLCFTHUT5czt/a7sQKs/RDEeMvc2h8McnwAvI6WTAzJqWIAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADZSURBVFhH7ZPBDcIwDEW7BFcmYDxW4M4eLMIOHYAhOBQZyVV4WHHqWEVIedK/NM7/P1EzTYPBv3M9Hxd+2w0Jf95Py89KaIHdSkhIKQ3XAiruS4GBNaWX2BKeXiISnlaiJzylBM2iom8TPL3wmGcx+woogt4zQvk9dAssIOYqBnszoQKt5q0z9K/CzVlijgk3WbpdDqY4Z4l5H3C4pki4irkrHOBGqjWcfmugB19CRKEXUELDraLfZnpuofv0SqREWrgihvrTWebeejdegLeeghjXzL31wcDiBcrxjC5ymWRLAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMcNhn+xKE5JH2E59311Y8TYPBv3M9Hxd+2w0Jf95Py89KaIHdSkhIKg3XAiruC4GBOYWXqAkPL9ESHlaiJzykBM1aRV8XPL3wmGcx+whIgtYZIf3edAssIOYqBpdmXAVoRn0zr51JZv3hW+mthMIhS7fLwRTnLDHPhJssbRaeQgPKG05fN3wJLXK9gBw0rBX9qum5he7TKy0lwsIVMdSfzjIvrXdTCiithyDGOfPS+mBg8QJvjKOenI9RPAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBCcMwEATdRL6pIOW5hfzTRxpJDy7AReThcCYHYix0J+lwCGhgP9JpdyU0TYPBv/OYrxvXTkPC36/b9rMSWuC0EhKSSsO1gIrnQmBgSeElasLDS7SEh5XoCQ8pQbNW0dcFby+syyJmh4AkaJ8R0nX3K9CQ5iru1cx8545wiPKYe2aS2TwcjBbzsvAQ9bxfsuIcxZwi/IRUTbj7ExIaUZ5wEX3dWK/gUfPtFRrWin7V9LxC9+2VlhJh4YoY6qfLmVv73VgB1n4IYlwyt/YHgxwfmFyX5uReIvQAAAAASUVORK5CYII="]};
@@ -1368,19 +1423,53 @@ function gifBBox(id){
   if(x1<0)return null;
   return r.bbox={x0,y0,x1,y1,w:x1-x0+1,h:y1-y0+1};
 }
+/* Emprise d'UNE frame précise (mesurée + cachée) : sert à poser une créature qui
+   s'écrase/rebondit sur place (le blob) toujours par son propre bas, quelle que soit
+   la frame — sinon l'emprise-union la fait flotter au-dessus de son ombre. */
+function gifFrameBBox(id,fi){
+  const r=gifRT(id),g=gifData(id); if(!r||!g)return null;
+  r.fbb=r.fbb||{};
+  if(r.fbb[fi])return r.fbb[fi];
+  const im=r.imgs[fi]; if(!im||!im.complete||!im.naturalWidth)return null;
+  const c=document.createElement("canvas");c.width=g.w;c.height=g.h;
+  const cx=c.getContext("2d");cx.drawImage(im,0,0);
+  const d=cx.getImageData(0,0,g.w,g.h).data;
+  let x0=g.w,y0=g.h,x1=-1,y1=-1;
+  for(let y=0;y<g.h;y++)for(let x=0;x<g.w;x++)
+    if(d[(y*g.w+x)*4+3]>30){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  if(x1<0)return null;
+  return r.fbb[fi]={x0,y0,x1,y1,w:x1-x0+1,h:y1-y0+1};
+}
 function gifStill(id){        // 1re image, sans faire avancer l'animation (catalogue figé)
   const r=gifRT(id); if(!r)return null;
   const im=r.imgs[0];
   return (im&&im.complete&&im.naturalWidth)?im:null;
 }
-function gifFrame(id){
+function gifFrame(id,moving){
   const g=gifData(id),r=gifRT(id);if(!g||!r)return null;
+  /* certaines créatures (capybara) ont deux régimes : immobiles, elles bouclent sur
+     leurs `idleFrames` premières images ; en déplacement, l'animation complète joue. */
+  const cr=CREATURES[id]||{};
+  const nIdle=(!moving&&cr.idleFrames)?cr.idleFrames:0;
+  /* en déplacement, `walkFrames` boucle sur les N DERNIÈRES images (cycle de marche) */
+  const wLen=(moving&&cr.walkFrames)?cr.walkFrames:0;
+  const wS=wLen?g.frames.length-wLen:0;
   const now=performance.now();
   if(!r.last)r.last=now;
   const speed=now<r.boostUntil?3:1;      // clic sur la créature : ×3 pendant 2 s
   r.acc+=(now-r.last)*speed;r.last=now;
   let guard=0;
-  while(r.acc>=g.delays[r.idx]&&guard++<64){r.acc-=g.delays[r.idx];r.idx=(r.idx+1)%g.frames.length;}
+  while(r.acc>=g.delays[r.idx]&&guard++<64){r.acc-=g.delays[r.idx];
+    r.idx=nIdle?(r.idx+1)%nIdle
+         :wLen?wS+((((r.idx-wS)+1)%wLen+wLen)%wLen)
+         :(r.idx+1)%g.frames.length;}
+  const im=r.imgs[r.idx];
+  return (im&&im.complete&&im.naturalWidth)?im:null;
+}
+/* Frame courante SANS faire avancer l'animation : pour les affichages secondaires
+   (avatar du HUD quand le camp anime déjà la créature) — un seul animateur à la fois. */
+function gifPeek(id){
+  const r=gifRT(id);if(!r)return null;
   const im=r.imgs[r.idx];
   return (im&&im.complete&&im.naturalWidth)?im:null;
 }
@@ -1407,10 +1496,13 @@ function gifScaledFrame(id,im,dw,dh){
   return cv;
 }
 /* Dessine une créature dans un contexte (miniatures collection + révélation d'œuf) */
-function paintCreature(ctx,id,ox,oy,sc,mo,blink,still){
+function paintCreature(ctx,id,ox,oy,sc,mo,blink,still,moving,faceRight){
   const cr=CREATURES[id]||CREATURES.heros;
   if(cr.gif){
-    const im=still?gifStill(id):gifFrame(id); if(!im)return;
+    const im=still?gifStill(id):gifFrame(id,moving); if(!im)return;
+    /* sprite de profil (dessiné regardant à GAUCHE) : miroir quand il regarde à droite */
+    const flip=!!(cr.profile&&faceRight);
+    if(flip){ctx.save();ctx.translate(2*(ox+18*sc/2),0);ctx.scale(-1,1);}
     const g=gifData(id), bb=gifBBox(id);
     ctx.imageSmoothingEnabled=false;
     const box=18*sc;                                   // case allouée à la créature
@@ -1423,11 +1515,15 @@ function paintCreature(ctx,id,ox,oy,sc,mo,blink,still){
     if(kRaw<0.85)z=kRaw*(cr.gzoom||1);   // loin dans la scène : réduction lissée (perspective)
     const dw=Math.round(g.w*z), dh=Math.round(g.h*z);
     const zx=dw/g.w, zy=dh/g.h;                        // échelle réellement appliquée
-    const cxOff=bb?(bb.x0+bb.w/2)*zx:dw/2;             // centre horizontal du dessin
-    const basOff=bb?(bb.y1+1)*zy:dh;                   // bas du dessin → posé sur la ligne de sol
+    /* créature « au sol » (ex. le blob) : on l'ancre par le bas de SA frame courante,
+       pas par l'union — son ombre reste ainsi collée à sa base à chaque instant. */
+    const bbA=(cr.ground&&gifFrameBBox(id,still?0:(gifRT(id)||{}).idx||0))||bb;
+    const cxOff=bbA?(bbA.x0+bbA.w/2)*zx:dw/2;          // centre horizontal du dessin
+    const basOff=bbA?(bbA.y1+1)*zy:dh;                 // bas du dessin → posé sur la ligne de sol
     /* échelle entière → plus proche voisin direct ; sinon version pré-calculée stable */
     const src=(dw===g.w*Math.round(z)&&dh===g.h*Math.round(z))?im:gifScaledFrame(id,im,dw,dh);
     ctx.drawImage(src, Math.round(ox+box/2-cxOff), Math.round(oy+box*GIF_BASE-basOff), dw, dh);
+    if(flip)ctx.restore();
     return;
   }
   const skin=cr.useColor?((COLORS[S.cosmetics.color]||COLORS.bleu).hex):cr.skin;
@@ -1469,7 +1565,8 @@ function drawAvatar(mo){
   const x=c.getContext("2d"); x.clearRect(0,0,c.width,c.height);
   c.className=(FRAMES[S.cosmetics.frame]||FRAMES.none).cls;
   if(g){                                 // créature GIF : image courante, 1:1, sans déformation
-    const im=gifFrame(id);
+    /* le camp est l'animateur quand il est ouvert ; le HUD ne fait alors que lire */
+    const im=launchOpen?gifPeek(id):gifFrame(id);
     if(im){x.imageSmoothingEnabled=false;x.drawImage(im,0,0);}
     return;
   }
@@ -2292,8 +2389,9 @@ function openAvatar(){
 /* ================= Paramètres ================= */
 function applyTheme(){
   document.body.classList.toggle("theme-dark", !!(S.settings&&S.settings.theme==="dark"));
-  /* le thème pilote aussi le jour/nuit du campement */
+  /* le thème pilote aussi le jour/nuit du campement — et son ambiance sonore */
   try{ campStaticKey=""; if(launchOpen)drawHub(0); }catch(e){}
+  try{ updateAmbience(); }catch(e){}
 }
 function renderSettings(){
   const el=document.getElementById("quests");el.innerHTML="";
@@ -2303,7 +2401,7 @@ function renderSettings(){
     d.querySelector(".sw").onclick=fn; return d;
   };
   el.appendChild(row("🌙","Mode sombre","Bascule le parchemin en version nuit.",S.settings.theme==="dark",()=>{S.settings.theme=(S.settings.theme==="dark"?"light":"dark");applyTheme();save();renderSettings();}));
-  el.appendChild(row("🔊","Sons de victoire","Le petit jingle quand tu valides une quête.",S.settings.sound,()=>{S.settings.sound=!S.settings.sound;save();renderSettings();}));
+  el.appendChild(row("🔊","Sons","Jingles, cris des créatures et ambiance du camp.",S.settings.sound,()=>{S.settings.sound=!S.settings.sound;save();renderSettings();try{updateAmbience();}catch(e){}}));
   el.appendChild(row("🎉","Animations & confettis","Effets de récompense et avatar qui célèbre.",S.settings.anim,()=>{S.settings.anim=!S.settings.anim;save();renderSettings();}));
   el.appendChild(row("🏕️","Écran d'accueil","Afficher le camp au lancement de l'appli.",S.settings.splash,()=>{S.settings.splash=!S.settings.splash;save();renderSettings();}));
   const notif=document.createElement("button");notif.className="btn pix wide";notif.style.margin="12px 0 0";notif.style.cssText+=";justify-content:center;display:flex";notif.textContent="🔔 Activer les rappels";notif.onclick=askNotif;el.appendChild(notif);
@@ -2426,6 +2524,203 @@ function sfxMagic(){      // scintillement : la créature apparaît
     o2.connect(g2);g2.connect(AC.destination);o2.start(t0+.2);o2.stop(t0+.92);
   }catch(e){}
 }
+/* ---- Cris personnels des créatures (style Game Boy 8-bit) ----
+   Chaque créature a sa petite signature sonore : joué à la révélation d'un œuf
+   et quand on touche la créature déployée au camp. */
+function sfxCry(id){
+  if(!sfxOn())return;
+  try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    const t0=AC.currentTime+0.02;
+    /* V = une voix (onde, fréq départ→arrivée, départ, durée, volume, [vibrato hz,profondeur]) */
+    const V=(type,f0,f1,dt,dur,vol,vib)=>{
+      const o=AC.createOscillator(),g=AC.createGain(),t=t0+dt;
+      o.type=type;o.frequency.setValueAtTime(f0,t);
+      if(f1!==f0)o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
+      if(vib){const l=AC.createOscillator(),lg=AC.createGain();
+        l.frequency.value=vib[0];lg.gain.value=vib[1];
+        l.connect(lg);lg.connect(o.frequency);l.start(t);l.stop(t+dur+.05);}
+      g.gain.setValueAtTime(.0001,t);
+      g.gain.exponentialRampToValueAtTime(vol,t+0.012);
+      g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur+.03);
+    };
+    /* N = souffle de bruit filtré (grondements, flammes, parasites robot) */
+    const N=(dt,dur,vol,fq,type)=>{
+      const len=Math.floor(AC.sampleRate*dur),buf=AC.createBuffer(1,len,AC.sampleRate),d=buf.getChannelData(0);
+      for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.8);
+      const s=AC.createBufferSource();s.buffer=buf;
+      const f=AC.createBiquadFilter();f.type=type||"lowpass";f.frequency.value=fq;
+      const g=AC.createGain();g.gain.value=vol;
+      s.connect(f);f.connect(g);g.connect(AC.destination);s.start(t0+dt);
+    };
+    const CRIES={
+      heros:  ()=>{V("square",523,523,0,.09,.15);V("square",784,784,.10,.16,.15);},           // « ta-daa » héroïque
+      chat:   ()=>{V("square",620,980,0,.14,.12,[26,28]);V("square",980,430,.14,.20,.11);},   // miaou qui monte puis retombe
+      robot:  ()=>{V("square",880,880,0,.07,.13);V("square",440,440,.10,.09,.13);N(.21,.05,.09,3200,"highpass");}, // bip-boup-tzt
+      slime:  ()=>{V("triangle",340,150,0,.30,.17,[9,26]);V("triangle",210,120,.24,.16,.09);},// « blop » mouillé qui tremble
+      renard: ()=>{V("square",760,1350,0,.09,.12);V("square",820,1450,.13,.09,.12);},         // double jappement aigu
+      champi: ()=>{V("triangle",660,660,0,.09,.15);V("triangle",880,880,.11,.11,.15);V("triangle",1174,1174,.23,.11,.11);}, // trois bonds sautillants
+      tigre:  ()=>{V("square",190,120,0,.30,.16,[15,18]);N(0,.28,.12,900);},                  // grondement feutré
+      golem:  ()=>{V("square",95,58,0,.42,.19);N(.05,.30,.15,420);V("square",70,48,.30,.24,.12);}, // roche qui roule, très grave
+      meduse: ()=>{V("sine",700,1500,0,.42,.10,[6,40]);V("triangle",1050,2100,.12,.36,.06);}, // glissando aquatique
+      poussin:()=>{V("square",1500,1900,0,.07,.11);V("square",1500,1900,.13,.07,.11);},       // piou-piou
+      capybara:()=>{V("triangle",520,360,0,.16,.14);V("triangle",430,330,.19,.15,.09);},      // petit couinement placide
+      dragon: ()=>{V("square",240,470,0,.16,.15);V("square",470,330,.16,.14,.12);N(.27,.18,.08,2400,"bandpass");}, // cri + souffle de flamme
+      phenix: ()=>{V("triangle",620,1250,0,.24,.13,[8,30]);V("triangle",1250,900,.24,.20,.11);
+                   [1568,1976,2637].forEach((f,i)=>V("square",f,f,.40+i*.07,.09,.06));},      // chant qui s'élève + arpège doré
+    };
+    (CRIES[id]||CRIES.heros)();
+  }catch(e){}
+}
+/* ================= Ambiance sonore du camp (jour / nuit) =================
+   Un lit de vent en bruit filtré qui « respire », plus des événements espacés au
+   hasard : oiseaux et bourrasques de feuilles le jour, grillons + chouette +
+   tintements de lucioles la nuit. Ne joue que camp ouvert, sons activés, onglet
+   visible ; bascule automatiquement avec le thème jour/nuit. */
+let ambMode="",ambMaster=null,ambStops=[],ambTimers=[],ambUnlockArmed=false;
+function ambNoiseBuf(){
+  if(ambNoiseBuf.b)return ambNoiseBuf.b;
+  const len=AC.sampleRate*2,b=AC.createBuffer(1,len,AC.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+  return ambNoiseBuf.b=b;
+}
+function ambTimer(fn,ms){
+  const id=setTimeout(()=>{ambTimers=ambTimers.filter(x=>x!==id);fn();},ms);
+  ambTimers.push(id);
+}
+function ambStop(){
+  ambTimers.forEach(clearTimeout);ambTimers=[];
+  if(ambMaster){const g=ambMaster,st=ambStops;ambMaster=null;ambStops=[];
+    try{const t=AC.currentTime;
+      g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(Math.max(.0001,g.gain.value),t);
+      g.gain.exponentialRampToValueAtTime(.0001,t+.5);          // fondu de sortie
+    }catch(e){}
+    setTimeout(()=>{st.forEach(n=>{try{n.stop();}catch(e){}});try{g.disconnect();}catch(e){}},600);
+  }
+  ambMode="";
+}
+function ambStart(day){
+  try{
+    AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended"){ambNeedGesture();return;}
+    ambStop();ambMode=day?"day":"night";
+    const master=AC.createGain();master.gain.value=.0001;master.connect(AC.destination);
+    master.gain.exponentialRampToValueAtTime(1,AC.currentTime+1.4);   // fondu d'entrée
+    ambMaster=master;
+    const alive=()=>ambMaster===master;
+    /* — lit de vent : plus clair et présent le jour, plus grave et feutré la nuit — */
+    const src=AC.createBufferSource();src.buffer=ambNoiseBuf();src.loop=true;
+    const f=AC.createBiquadFilter();f.type="bandpass";
+    f.frequency.value=day?480:240;f.Q.value=day?.9:1.4;
+    const wg=AC.createGain();wg.gain.value=day?.042:.028;
+    const lfo=AC.createOscillator(),lg=AC.createGain();      // la respiration lente du vent
+    lfo.frequency.value=day?.11:.07;lg.gain.value=day?.018:.011;
+    lfo.connect(lg);lg.connect(wg.gain);
+    src.connect(f);f.connect(wg);wg.connect(master);
+    src.start();lfo.start();ambStops.push(src,lfo);
+    if(day){
+      /* — oiseaux : petits trilles triangulaires, panoramique aléatoire — */
+      const bird=()=>{if(!alive())return;
+        const t=AC.currentTime+.05,base=1500+Math.random()*900,n=2+(Math.random()*3|0);
+        const pan=AC.createStereoPanner?AC.createStereoPanner():null;
+        const out=pan||master;if(pan){pan.pan.value=Math.random()*1.6-.8;pan.connect(master);}
+        for(let i=0;i<n;i++){
+          const o=AC.createOscillator(),g=AC.createGain(),ts=t+i*(.09+Math.random()*.05);
+          o.type="triangle";
+          o.frequency.setValueAtTime(base+Math.random()*300,ts);
+          o.frequency.exponentialRampToValueAtTime(base*(1.25+Math.random()*.2),ts+.05);
+          g.gain.setValueAtTime(.0001,ts);
+          g.gain.exponentialRampToValueAtTime(.045,ts+.012);
+          g.gain.exponentialRampToValueAtTime(.0001,ts+.085);
+          o.connect(g);g.connect(out);o.start(ts);o.stop(ts+.1);
+        }
+        ambTimer(bird,2600+Math.random()*5200);
+      };
+      ambTimer(bird,900+Math.random()*2000);
+      /* — coucou lointain, deux notes descendantes — */
+      const coucou=()=>{if(!alive())return;
+        const t=AC.currentTime+.05;
+        [[740,0],[590,.34]].forEach(([fq,dt])=>{
+          const o=AC.createOscillator(),g=AC.createGain(),ts=t+dt;
+          o.type="triangle";o.frequency.value=fq;
+          g.gain.setValueAtTime(.0001,ts);
+          g.gain.linearRampToValueAtTime(.03,ts+.04);
+          g.gain.exponentialRampToValueAtTime(.0001,ts+.26);
+          o.connect(g);g.connect(master);o.start(ts);o.stop(ts+.3);});
+        ambTimer(coucou,18000+Math.random()*22000);
+      };
+      ambTimer(coucou,9000+Math.random()*12000);
+      /* — bourrasque : les feuilles frémissent — */
+      const rafale=()=>{if(!alive())return;
+        const t=AC.currentTime+.05,dur=1.6+Math.random();
+        const s2=AC.createBufferSource();s2.buffer=ambNoiseBuf();s2.loop=true;
+        const f2=AC.createBiquadFilter();f2.type="highpass";f2.frequency.value=2400;
+        const g2=AC.createGain();
+        g2.gain.setValueAtTime(.0001,t);
+        g2.gain.linearRampToValueAtTime(.016,t+dur*.45);
+        g2.gain.exponentialRampToValueAtTime(.0001,t+dur);
+        s2.connect(f2);f2.connect(g2);g2.connect(master);
+        s2.start(t);s2.stop(t+dur+.1);
+        ambTimer(rafale,11000+Math.random()*14000);
+      };
+      ambTimer(rafale,6000+Math.random()*8000);
+    }else{
+      /* — deux grillons à leur rythme propre — */
+      const grillon=(fq,period,depart)=>{const go=()=>{if(!alive())return;
+        const t=AC.currentTime+.05,np=3+(Math.random()*2|0);
+        for(let i=0;i<np;i++){
+          const o=AC.createOscillator(),g=AC.createGain(),ts=t+i*.055;
+          o.type="triangle";o.frequency.value=fq+Math.random()*60;
+          g.gain.setValueAtTime(.0001,ts);
+          g.gain.exponentialRampToValueAtTime(.024,ts+.008);
+          g.gain.exponentialRampToValueAtTime(.0001,ts+.045);
+          o.connect(g);g.connect(master);o.start(ts);o.stop(ts+.06);}
+        ambTimer(go,period+Math.random()*600);
+      };ambTimer(go,depart);};
+      grillon(4300,1150,400);grillon(3650,1750,1100);
+      /* — chouette : deux « hou » doux et espacés — */
+      const chouette=()=>{if(!alive())return;
+        const t=AC.currentTime+.05;
+        [[0,.5],[.62,.7]].forEach(([dt,dur])=>{
+          const o=AC.createOscillator(),g=AC.createGain(),ts=t+dt;
+          o.type="sine";o.frequency.setValueAtTime(340,ts);
+          o.frequency.exponentialRampToValueAtTime(285,ts+dur);
+          g.gain.setValueAtTime(.0001,ts);
+          g.gain.linearRampToValueAtTime(.045,ts+.09);
+          g.gain.exponentialRampToValueAtTime(.0001,ts+dur);
+          o.connect(g);g.connect(master);o.start(ts);o.stop(ts+dur+.05);});
+        ambTimer(chouette,16000+Math.random()*18000);
+      };
+      ambTimer(chouette,7000+Math.random()*9000);
+      /* — tintement de luciole, très discret — */
+      const luciole=()=>{if(!alive())return;
+        const t=AC.currentTime+.05,o=AC.createOscillator(),g=AC.createGain();
+        o.type="sine";o.frequency.value=2300+Math.random()*1200;
+        g.gain.setValueAtTime(.0001,t);
+        g.gain.exponentialRampToValueAtTime(.018,t+.015);
+        g.gain.exponentialRampToValueAtTime(.0001,t+.5);
+        o.connect(g);g.connect(master);o.start(t);o.stop(t+.55);
+        ambTimer(luciole,9000+Math.random()*14000);
+      };
+      ambTimer(luciole,4000+Math.random()*6000);
+    }
+  }catch(e){}
+}
+/* L'autoplay est bloqué tant que l'utilisateur n'a pas touché la page :
+   on retente au premier appui. */
+function ambNeedGesture(){
+  if(ambUnlockArmed)return;ambUnlockArmed=true;
+  const h=()=>{document.removeEventListener("pointerdown",h);ambUnlockArmed=false;
+    try{AC.resume().then(()=>updateAmbience());}catch(e){}};
+  document.addEventListener("pointerdown",h);
+}
+function updateAmbience(){
+  const want=launchOpen&&sfxOn()&&!document.hidden;
+  if(!want){ambStop();return;}
+  const m=hubDay()?"day":"night";
+  if(ambMode!==m)ambStart(hubDay());
+}
+document.addEventListener("visibilitychange",()=>{try{updateAmbience();}catch(e){}});
 
 /* ================= Toast ================= */
 let toastT;
@@ -2508,10 +2803,10 @@ function hubPal(day){
   };
 }
 let launchOpen=false, campRAF=null;
-function drawAvatarOnCamp(ctx,ox,oy,sc,t){
+function drawAvatarOnCamp(ctx,ox,oy,sc,t,moving,faceRight){
   const id=S.cosmetics.model;
   if((CREATURES[id]||{}).gif){          // créature GIF : son animation propre remplace bob/clignement
-    paintCreature(ctx,id,ox,oy,sc);
+    paintCreature(ctx,id,ox,oy,sc,null,null,false,moving,faceRight);
     return;
   }
   const skin=(COLORS[S.cosmetics.color]||COLORS.bleu).hex, dark="#0c0a17";
@@ -2653,6 +2948,22 @@ function puddlePath(px,py,rx,ry,sd){
     pts.push([px+Math.cos(a)*rx*wx, py+Math.sin(a)*ry*wy]);}
   return pts;
 }
+/* Terre battue et ombre douce SOUS la tente : dessinées à part, dans le fond statique,
+   pour rester DERRIÈRE le coffre et les créatures qui passent devant. La tente elle-même
+   (redessinée pour l'occlusion et l'effet d'appui) n'y touche plus. */
+function hubDrawTentGround(x,C,tnB){
+  const t=hubTools(x);
+  x.globalAlpha=.26;t.poly(puddlePath(100,tnB-4,76,20,23),C.dirt1);x.globalAlpha=1;
+  x.globalAlpha=.66;t.poly(puddlePath( 99,tnB-3,66,17,24),C.dirt2);x.globalAlpha=1;
+  t.poly(puddlePath(102,tnB-1,50,12,25),C.dirt3);
+  for(let i=0;i<9;i++){const px=(38+hubHash(i,71)*124)|0, py=(tnB-12+hubHash(i,72)*18)|0;
+    t.P2(px,py,C.pebL);t.P(px,py+2,C.pebD);}
+  const gS=x.createRadialGradient(102,tnB-2,3,102,tnB-2,54);
+  gS.addColorStop(0,"rgba(0,0,0,.16)");gS.addColorStop(.55,"rgba(0,0,0,.08)");
+  gS.addColorStop(1,"rgba(0,0,0,0)");
+  x.save();x.translate(102,tnB-2);x.scale(1,.22);x.translate(-102,-(tnB-2));
+  x.fillStyle=gS;x.fillRect(48,tnB-56,108,108);x.restore();
+}
 function hubDrawTent(x,C,tnA,tnB){
   /* tente canadienne en trois-quarts, toile rouge mat : grand pan gauche,
      deux rabats avant symétriques, entrée sombre et profonde */
@@ -2671,19 +2982,6 @@ function hubDrawTent(x,C,tnA,tnB){
   const seg=(a,b,c,w,al)=>{x.save();x.globalAlpha=al==null?1:al;x.strokeStyle=c;x.lineWidth=w||1;
     x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke();x.restore();};
   const mix=(a,b,k)=>[a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k];
-
-  /* ---------- terre sableuse piétinée ---------- */
-  x.globalAlpha=.26;t.poly(puddlePath(100,tnB-4,76,20,23),C.dirt1);x.globalAlpha=1;
-  x.globalAlpha=.66;t.poly(puddlePath( 99,tnB-3,66,17,24),C.dirt2);x.globalAlpha=1;
-  t.poly(puddlePath(102,tnB-1,50,12,25),C.dirt3);
-  for(let i=0;i<9;i++){const px=(38+hubHash(i,71)*124)|0, py=(tnB-12+hubHash(i,72)*18)|0;
-    t.P2(px,py,C.pebL);t.P(px,py+2,C.pebD);}
-  /* ombre portée douce et diffuse */
-  const gS=x.createRadialGradient(102,tnB-2,3,102,tnB-2,54);
-  gS.addColorStop(0,"rgba(0,0,0,.16)");gS.addColorStop(.55,"rgba(0,0,0,.08)");
-  gS.addColorStop(1,"rgba(0,0,0,0)");
-  x.save();x.translate(102,tnB-2);x.scale(1,.22);x.translate(-102,-(tnB-2));
-  x.fillStyle=gS;x.fillRect(48,tnB-56,108,108);x.restore();
 
   /* ---------- bâche de sol : trace très discrète derrière la tente ---------- */
   x.globalAlpha=.25;
@@ -2824,7 +3122,7 @@ function hubDrawNest(x,ndY){
   for(let i=0;i<10;i++){const a=i/10*6.283;
     t.P(55+Math.cos(a)*13,ndY+Math.sin(a)*4.5,"#755a3a");}
   t.ell(55,ndY-1,9,3.5,"#241a10");
-  drawEgg(x,55,ndY-11,0.95,0);          // œuf ovoïde tacheté, calé dans le nid
+  drawEgg(x,55,ndY-13,1.3,0);           // œuf ovoïde tacheté, bien gros, logé dans le creux
   t.R(49,ndY-6,12,2,"#c8b494");
 }
 function hubDrawJournal(x,jnB){
@@ -3029,8 +3327,9 @@ function buildHub(W,H,day){
   t.poly([[24,bnB-34],[41,bnB-34],[33,bnB-24],[24,bnB-28]],"#2a4a8a");
   t.R(29,bnB-53,8,9,"#d8a83a");t.P(31,bnB-51,"#2a4a8a");t.P(34,bnB-48,"#2a4a8a");
   t.dith(24,bnB-40,17,6,"#1e3a72",.4,39);
-  /* ---- tente ---- */
+  /* ---- tente (sa terre battue est peinte d'abord, tout au fond) ---- */
   const tnB=gy(406), tnA=tnB-84;
+  hubDrawTentGround(x,C,tnB);
   hubDrawTent(x,C,tnA,tnB);
   /* ---- terre battue : centrée sur le feu, extrémités très diffuses ---- */
   const fcx=165, fcy=gy(486)-2;
@@ -3051,36 +3350,63 @@ function buildHub(W,H,day){
     t.P(fcx+Math.cos(a2)*60*f, fcy+Math.sin(a2)*19*f, C.gr1);}
   /* (le sentier a été retiré : la prairie court jusqu'au bord de l'écran) */
   /* ---- feu de camp ---- */
+  /* ---- foyer : terre brûlée, lit de cendres, bûches calcinées, anneau de pierres ---- */
   const fireY=gy(486);
-  t.ell(165,fireY+2,30,9,"rgba(0,0,0,.35)");
-  for(let i=0;i<10;i++){const a=i/10*6.283;
-    const sx=165+Math.cos(a)*22, syy=fireY-2+Math.sin(a)*7;
-    t.R(sx-3,syy-2,6,4,i%2?C.stone1:C.stone2);
-    t.P(sx-2,syy-2,C.stoneHi);}
-  t.R(154,fireY-8,22,5,"#3a2a1a");t.R(158,fireY-12,15,4,"#2e2114");
+  t.ell(165,fireY+3,34,10,"rgba(0,0,0,.28)");
+  const pierre=(i,a)=>{                       // pierre taillée : face éclairée, assise sombre
+    const rx2=24+hubHash(i,86)*3, ry2=8+hubHash(i,87)*1.5;
+    const sx=165+Math.cos(a)*rx2, syy=fireY-1+Math.sin(a)*ry2;
+    const s=Math.sin(a)>0?1.18:0.88;          // celles de devant paraissent plus grosses
+    const w=(5+hubHash(i,85)*3)*s, h=(4+hubHash(i,89)*2)*s;
+    t.R(sx-w/2+1,syy+1,w,1,"rgba(0,0,0,.30)");
+    t.R(sx-w/2,syy-h,w,h,i%2?C.stone1:C.stone2);
+    t.R(sx-w/2,syy-h,w,1,C.stoneHi);t.P(sx-w/2,syy-h+1,C.stoneHi);
+    t.P(sx+w/2-1,syy-1,"rgba(0,0,0,.28)");
+  };
+  for(let i=0;i<11;i++){const a=i/11*6.283+.25;if(Math.sin(a)<=0)pierre(i,a);}  // rangée arrière
+  t.ell(165,fireY,20,6.5,day?"#4a3a2c":"#241a12");                  // terre brûlée
+  t.ell(165,fireY-1,15,5,day?"#8a8078":"#4a443c");                  // lit de cendres
+  x.globalAlpha=.6;t.ell(162,fireY-1,9,3.2,day?"#a09890":"#5a544a");x.globalAlpha=1;
+  const buche=(bx,by,len,ang,r)=>{            // bûche noircie, bout coupé rougeoyant
+    x.save();x.translate(bx,by);x.rotate(ang);
+    x.fillStyle="#241708";x.fillRect(-len/2,-r,len,r*2);
+    x.fillStyle="#382712";x.fillRect(-len/2,-r,len,r);
+    x.fillStyle="#140c04";
+    for(let i=0;i<4;i++)x.fillRect(-len/2+3+i*(len/4|0),-r+1,1.5,r*2-2);
+    x.fillStyle="#4a3826";x.beginPath();x.ellipse(len/2,0,1.8,r*.8,0,0,7);x.fill();
+    if(S.camp.fire){x.fillStyle="#e8541e";x.beginPath();x.ellipse(len/2,0,1,r*.5,0,0,7);x.fill();
+      x.fillStyle="#ffb84a";x.beginPath();x.ellipse(len/2,0,.5,r*.25,0,0,7);x.fill();}
+    x.restore();};
+  buche(157,fireY-3,22,-.30,2.6);
+  buche(173,fireY-4,22,3.50,2.6);
+  buche(165,fireY-2,26,.06,2.8);
+  if(S.camp.fire)for(let i=0;i<8;i++){        // braises éparses dans la cendre
+    const a=i/8*6.283;
+    t.P(165+Math.cos(a)*(5+hubHash(i,88)*7),fireY-1+Math.sin(a)*3,i%2?"#e8541e":"#8a2c12");}
+  for(let i=0;i<11;i++){const a=i/11*6.283+.25;if(Math.sin(a)>0)pierre(i,a);}   // rangée avant
   /* (le rondin a été retiré ; logT sert encore de repère pour la créature) */
   const logT=fireY-22;
-  /* ---- coffre à butin, à gauche de la tente (trois-quarts, même DA que le panneau) ---- */
+  /* ---- coffre à butin, à gauche de la tente (trois-quarts, côté fuyant à GAUCHE) ---- */
   const ckX=8, ckY=tnB+12;
   const ckFull=S.chest&&((S.chest.coins||0)>0||(S.chest.fish||0)>0||(S.chest.grilled||0)>0);
   t.ell(ckX+15,ckY+2,19,4.5,"rgba(0,0,0,.20)");
-  t.poly([[ckX+24,ckY-12],[ckX+29,ckY-15],[ckX+29,ckY-1],[ckX+24,ckY+2]],"#3e2814"); // côté fuyant
-  t.R(ckX,ckY-12,24,14,"#5a3a22");                                                   // face avant
-  for(let j=0;j<3;j++)t.R(ckX,ckY-10+j*4,24,1,"#4a3018");                            // lattes
-  t.R(ckX,ckY-12,24,2,"#6e4a2c");
-  t.R(ckX+10,ckY-12,4,14,"#8a6a3c");t.R(ckX+11,ckY-12,2,14,"#a8895c");               // ferrure
-  t.R(ckX+11,ckY-6,2,4,"#5e4020");t.P(ckX+11,ckY-5,"#2e1c0c");                       // serrure
+  t.poly([[ckX+6,ckY-12],[ckX+1,ckY-15],[ckX+1,ckY-1],[ckX+6,ckY+2]],"#3e2814");     // côté fuyant
+  t.R(ckX+6,ckY-12,24,14,"#5a3a22");                                                 // face avant
+  for(let j=0;j<3;j++)t.R(ckX+6,ckY-10+j*4,24,1,"#4a3018");                          // lattes
+  t.R(ckX+6,ckY-12,24,2,"#6e4a2c");
+  t.R(ckX+16,ckY-12,4,14,"#8a6a3c");t.R(ckX+17,ckY-12,2,14,"#a8895c");               // ferrure
+  t.R(ckX+17,ckY-6,2,4,"#5e4020");t.P(ckX+18,ckY-5,"#2e1c0c");                       // serrure
   const lidUp=ckFull?4:0, lY=ckY-13-lidUp;
   if(ckFull){ /* fente lumineuse entre corps et couvercle */
-    t.R(ckX,ckY-14,24,2,"#ffd873");t.R(ckX+2,ckY-14,20,1,"#fff2b0");
-    t.poly([[ckX+24,ckY-14],[ckX+29,ckY-17],[ckX+29,ckY-15],[ckX+24,ckY-12]],"#e8b64a");
+    t.R(ckX+6,ckY-14,24,2,"#ffd873");t.R(ckX+8,ckY-14,20,1,"#fff2b0");
+    t.poly([[ckX+6,ckY-14],[ckX+1,ckY-17],[ckX+1,ckY-15],[ckX+6,ckY-12]],"#e8b64a");
   }
-  t.poly([[ckX+25,lY-4],[ckX+30,lY-7],[ckX+30,lY],[ckX+25,lY+2]],"#4a3018");         // côté couvercle
-  t.R(ckX-1,lY-4,26,6,"#6e4a2c");t.R(ckX-1,lY-4,26,1,"#8a6444");                     // couvercle
-  t.R(ckX+2,lY-6,20,2,"#5e3e24");                                                    // dos bombé
-  t.R(ckX+10,lY-4,4,6,"#a8895c");t.R(ckX+11,lY+1,2,1,"#5e4020");                     // ferrure couvercle
-  /* ---- TABLEAU perché à droite ---- */
-  const pbB=gy(432), bdT=pbB-96;
+  t.poly([[ckX+5,lY-4],[ckX,lY-7],[ckX,lY],[ckX+5,lY+2]],"#4a3018");                 // côté couvercle
+  t.R(ckX+5,lY-4,26,6,"#6e4a2c");t.R(ckX+5,lY-4,26,1,"#8a6444");                     // couvercle
+  t.R(ckX+8,lY-6,20,2,"#5e3e24");                                                    // dos bombé
+  t.R(ckX+16,lY-4,4,6,"#a8895c");t.R(ckX+17,lY+1,2,1,"#5e4020");                     // ferrure couvercle
+  /* ---- TABLEAU perché à droite (pieds sur la MÊME ligne de sol que la tente : gy(406)) ---- */
+  const pbB=gy(406), bdT=pbB-96;
   hubDrawBoard(x,bdT,pbB);
   /* ---- NID (→ boutique) : passé à droite ---- */
   const ndY=gy(530);
@@ -3099,7 +3425,7 @@ function buildHub(W,H,day){
   if(S.camp.fire){
     const gW2=x.createRadialGradient(165,fireY-4,4,165,fireY-4,74);
     gW2.addColorStop(0,`rgba(200,110,40,${(.22*C.glowK*2).toFixed(3)})`);gW2.addColorStop(1,"rgba(200,110,40,0)");
-    x.fillStyle=gW2;x.fillRect(91,fireY-78,148,120);
+    x.fillStyle=gW2;x.fillRect(85,fireY-80,160,156);   /* couvre tout le rayon : plus de coupe nette en bas */
   }
   /* vignette */
   const vg=x.createRadialGradient(165,H*0.5,H*0.24,165,H*0.5,H*0.62);
@@ -3260,17 +3586,36 @@ function drawHub(t){
     gr.addColorStop(0,`rgba(255,160,60,${(.42*C.glowK).toFixed(3)})`);gr.addColorStop(1,"rgba(255,140,50,0)");
     x.fillStyle=gr;x.fillRect(-100,-100,200,200);x.restore();
     T.glow(165,P.fireY-20,62*flick,"255,150,60",.20*C.glowK);
-    const fl2=(dx,base,ph)=>{const h=base+Math.abs(Math.sin(t/5+ph))*6;
-      T.tri(165+dx-5,fy,165+dx+5,fy,165+dx+Math.sin(t/7+ph)*2,fy-h,"#e84a1e");
-      T.tri(165+dx-3.4,fy,165+dx+3.4,fy,165+dx+Math.sin(t/7+ph)*2,fy-h*.72,"#ff9a2a");
-      T.tri(165+dx-1.8,fy,165+dx+1.8,fy,165+dx+Math.sin(t/8+ph),fy-h*.42,"#ffe07a");};
-    fl2(-6,14,0);fl2(5,16,2.1);fl2(0,22,4.2);
-    T.disc(165,fy-4,2.6,"#fff2b0");
-    for(let i=0;i<7;i++){const pr=((t/26)+i*.14)%1;
-      T.P2(165+Math.sin(pr*7+i*2)*8,fy-4-pr*40,pr<.5?"#ffb84a":"#c86a2a");}
+    /* langues de flammes en goutte : 4 couches de couleur qui ondulent indépendamment */
+    const tongue=(cx0,h0,w0,ph)=>{
+      const sway=Math.sin(t/6+ph)*2.2, tip=sway+Math.sin(t/3.6+ph*1.7)*1.9;
+      [["#8a2210",1.00,1.00],["#e8541e",.80,.84],["#ff9a2a",.58,.62],["#ffd84a",.34,.40]]
+      .forEach(([col,kw,kh])=>{
+        const hw=w0*kw*.5, hh=h0*kh*(1+.10*Math.sin(t/4.6+ph*2));
+        x.fillStyle=col;x.beginPath();
+        x.moveTo(cx0-hw,fy);
+        x.bezierCurveTo(cx0-hw,fy-hh*.42, cx0-hw*.5+sway*.5,fy-hh*.72, cx0+tip,fy-hh);
+        x.bezierCurveTo(cx0+hw*.5+sway*.5,fy-hh*.72, cx0+hw,fy-hh*.42, cx0+hw,fy);
+        x.closePath();x.fill();});
+    };
+    tongue(158,16,9,0);tongue(172,18,10,2.1);tongue(165,26,13,4.2);
+    /* petites langues latérales qui lèchent les bûches */
+    if(Math.sin(t/9)>-.3)tongue(151,8,5,1.3);
+    if(Math.cos(t/11)>-.2)tongue(179,9,5,3.6);
+    /* cœur blanc qui palpite */
+    x.globalAlpha=.8+.2*Math.sin(t/3);
+    T.disc(165,fy-5,2.8,"#fff6c8");x.globalAlpha=1;
+    T.P2(163,fy-9,"#fff2b0");
+    /* braises portées par l'air chaud : trajectoire sinueuse, refroidissement progressif */
+    for(let i=0;i<9;i++){const pr=((t/26)+i*.115)%1;
+      const ex=165+Math.sin(pr*6.5+i*2.3)*(6+(i%3)*2), ey=fy-4-pr*46;
+      x.globalAlpha=1-pr*.7;
+      T.P2(ex,ey,pr<.35?"#ffd84a":pr<.62?"#ff9a2a":"#c8552a");x.globalAlpha=1;}
+    /* étincelle qui claque par instants */
+    if((t|0)%37<3)T.P(165+Math.sin(t*3.7)*10,fy-18-((t|0)%37)*6,"#fff6c8");
     for(let i=0;i<5;i++){const pr=((t/60)+i*.2)%1;
-      const sx=163+Math.sin(pr*4+i*1.7)*5+pr*12, syy=fy-28-pr*64;
-      const al=(day?.10:.18)*(1-pr), r=2+pr*5;
+      const sx=163+Math.sin(pr*4+i*1.7)*5+pr*14, syy=fy-30-pr*66;
+      const al=(day?.10:.16)*(1-pr), r=2+pr*6;
       T.R(sx-r/2,syy,r,r,`rgba(190,186,180,${al.toFixed(2)})`);}
   }else{
     /* feu éteint : braises rougeoyantes + filet de fumée froide */
@@ -3324,6 +3669,27 @@ function drawHub(t){
   }else{
   if(!hubWalk)hubWalk={fx:116,fy:P.logT+4,tx:116,ty:P.logT+4,state:"idle",wait:t+90};
   const wk=hubWalk;
+  /* Anti-blocage : une créature est coincée si elle est SUR un obstacle OU HORS de la
+     bande piétonne (ex. sous le panneau, au-dessus de la zone de marche) — là, presque
+     aucune cible n'est atteignable et elle n'en sort plus. On la glisse alors tout droit
+     vers le point dégagé le plus proche, quelle que soit la distance. */
+  const bandeHaut=gy2(P,438), bandeBas=P.H-22;
+  const enfermée=(f)=>!hubWalkFree(P,f.fx,f.fy)||f.fy<bandeHaut||f.fy>bandeBas;
+  if(!reduce && enfermée(wk)){
+    if(!hubSafe||hubSafe.H!==P.H){                     // point de secours garanti (calculé une fois)
+      hubSafe={H:P.H,x:116,y:Math.round((bandeHaut+bandeBas)/2)};
+      for(let d3=0;d3<120;d3+=6)for(const sx of [116,116-d3,116+d3])
+        if(hubWalkFree(P,sx,hubSafe.y)){hubSafe.x=sx;d3=999;break;}
+    }
+    let sortie=null,best=1e9;                           // dégagement le plus proche, portée large
+    for(let a=0;a<24;a++){const ang=a/24*6.283;
+      for(let d2=6;d2<=Math.max(P.H,320);d2+=6){
+        const tx=wk.fx+Math.cos(ang)*d2, ty=wk.fy+Math.sin(ang)*d2*.5;
+        if(tx<44||tx>288||ty<bandeHaut||ty>bandeBas)continue;
+        if(hubWalkFree(P,tx,ty)){if(d2<best){best=d2;sortie=[tx,ty];}break;}}}
+    const cible=sortie||[hubSafe.x,hubSafe.y];
+    wk.tx=cible[0];wk.ty=cible[1];wk.state="walk";wk.dir=cible[0]>wk.fx?1:-1;wk.stuck=0;
+  }
   if(!reduce){
     if(wk.state==="idle"){
       if(t>wk.wait){
@@ -3333,9 +3699,11 @@ function drawHub(t){
           if(cx2<44||cx2>288)continue;
           if(cy2<gy2(P,438)||cy2>P.H-22)continue;
           if(hubWalkFree(P,cx2,cy2)&&hubPathClear(P,wk.fx,wk.fy,cx2,cy2)){
-            wk.tx=cx2;wk.ty=cy2;wk.state="walk";break;}
+            wk.tx=cx2;wk.ty=cy2;wk.state="walk";wk.dir=cx2>wk.fx?1:-1;wk.stuck=0;break;}
         }
-        if(wk.state!=="walk")wk.wait=t+120;
+        if(wk.state!=="walk"){wk.wait=t+120;
+          if((wk.stuck=(wk.stuck||0)+1)>10){                 // 10 échecs d'affilée → il est coincé
+            wk.fx=116;wk.fy=P.logT+4;wk.stuck=0;}}           // retour au centre dégagé
       }
     }else{
       const dx=wk.tx-wk.fx, dy=wk.ty-wk.fy, d=Math.hypot(dx,dy);
@@ -3363,7 +3731,7 @@ function drawHub(t){
     const au=AURAS[S.cosmetics.aura]||AURAS.braise, sA=Math.min(S.streak/8,1);
     T.glow(ax+18,ay+18,22+sA*10,au.rgb,(0.42+0.30*sA)*(0.88+0.12*Math.sin(t/9)));
   }
-  drawAvatarOnCamp(x,ax,ay-step+jump,2,t);
+  drawAvatarOnCamp(x,ax,ay-step+jump,2,t,wk.state==="walk"||celeb,(wk.dir||-1)>0);
   if(celeb){
     for(let i=0;i<5;i++){const a=t/3+i*1.256;
       T.P2(wk.fx+Math.cos(a)*17,wk.fy-18+Math.sin(a)*11,i%2?"#ffe07a":"#fff2b0");}
@@ -3393,65 +3761,77 @@ function drawHubTasks(x,T,P,t,C){
   const nestX=272, nestY=P.ndY-4;
   const ease=k=>1-(1-k)*(1-k);
   const acts=[];                                 // emprises des acteurs, pour l'occlusion
-  const drawAs=(id,px,py,sc,bob)=>{
+  const drawAs=(id,px,py,sc,bob,mov,face)=>{
     sc=Math.round(sc*10)/10;             // paliers de 0,1 : borne le cache d'échelles des GIF
     x.save();x.translate(px,py);x.scale(1,.32);x.translate(-px,-py);
     T.glow(px,py,6*sc,"0,0,0",.24);x.restore();
-    paintCreature(x,id,Math.round(px-9*sc),Math.round(py-15*sc-(bob||0)),sc);
+    /* ancrage : les GIF posent leurs pieds à oy+13·sc, les dessinés à ~oy+15·sc —
+       on compense pour que les pieds tombent PILE sur la ligne d'ombre (py). */
+    const yOff=(CREATURES[id]||{}).gif?13:15;
+    paintCreature(x,id,Math.round(px-9*sc),Math.round(py-yOff*sc-(bob||0)),sc,null,null,false,mov,face);
     acts.push({x0:px-10*sc,y0:py-17*sc,x1:px+10*sc,y1:py+4*sc,fy:py});
   };
   /* ---- retours : la créature rapporte son butin de son poste jusqu'au coffre ---- */
   HUB_DROPS=HUB_DROPS.filter(d=>{
     const e2=(Date.now()-d.t0)/1000, D=5.5;
     if(e2>=D+0.9)return false;
-    const st=d.tal==="peche"?[P.pdX-P.pdRX-15,P.pdY+9,1.15]
-            :d.tal==="cuisine"?[136,P.fireY+3,1.8]
+    const st=d.tal==="peche"?[d.slot===1?P.pdX+P.pdRX+15:P.pdX-P.pdRX-15,P.pdY+9,1.15]
+            :d.tal==="cuisine"?[d.slot===1?196:134,P.fireY+13,1.8]
             :[244,P.HZ+5,0.62];
     const k=Math.min(1,e2/D), K=ease(k);
     if(k<1){
       const px=st[0]+(28-st[0])*K, py=st[1]+((P.tnB+9)-st[1])*K, s2=st[2]+(1.85-st[2])*K;
-      drawAs(d.id,px,py,s2,Math.round(Math.abs(Math.sin(t/3.4))*2));
+      drawAs(d.id,px,py,s2,Math.round(Math.abs(Math.sin(t/3.4))*2),true,28>st[0]);   // retour = marche
     }else{ /* dépôt : étincelles dorées au-dessus du coffre */
       const p2=(e2-D)/0.9;x.globalAlpha=1-p2;
       T.P2(18+Math.sin(t/5)*4,P.tnB-6-p2*10,"#ffd873");
       T.P2(24+Math.cos(t/6)*3,P.tnB-10-p2*8,"#fff2b0");x.globalAlpha=1;
     }
     return true;});
-  ids.forEach((id,qi)=>{
+  ids.forEach(id=>{
     const tk=S.tasks[id]; if(!tk||!CREATURES[id])return;
-    const el=(Date.now()-tk.start)/1000, TRAVEL=9;
-    const draw=(px,py,sc,bob)=>drawAs(id,px,py,sc,bob);
+    const el=(Date.now()-tk.start)/1000, TRAVEL=9, slot=tk.slot||0;   // poste attitré
+    const draw=(px,py,sc,bob,mov,face)=>drawAs(id,px,py,sc,bob,mov,face);
     if(tk.tal==="peche"){
-      const gx=P.pdX-P.pdRX-15-qi*13, gy0=P.pdY+9;
+      const droite=slot===1;                   // 1er pêcheur berge gauche, 2e berge droite
+      const gx=droite?P.pdX+P.pdRX+15:P.pdX-P.pdRX-15, gy0=P.pdY+9;
       const k=Math.min(1,el/TRAVEL);
       const px=nestX+(gx-nestX)*ease(k), py=nestY+(gy0-nestY)*ease(k);
       const sc=2+(1.15-2)*ease(k);
-      if(k>=1){ /* canne à pêche SOUS la créature : la base naît à son centre,
-                   le bâton dépasse au-dessus d'elle, le fil part de la pointe */
-        const rx0=px, ry0=py-9,               // base, cachée par le corps
-              rx1=px+12, ry1=py-30;           // pointe, bien au-dessus
+      if(k>=1){ /* canne SOUS la créature, inclinée vers la mare ; le bouchon flotte DEDANS */
+        const dir=droite?-1:1;
+        const rx0=px, ry0=py-9,                // base, cachée par le corps
+              rx1=px+12*dir, ry1=py-30;        // pointe, au-dessus, côté eau
         x.strokeStyle="#5e4028";x.lineWidth=2;
         x.beginPath();x.moveTo(rx0,ry0);x.lineTo(rx1,ry1);x.stroke();
         x.strokeStyle="#8a6a3c";x.lineWidth=1;
-        x.beginPath();x.moveTo(rx0+1,ry0);x.lineTo(rx1+1,ry1);x.stroke();
-        draw(px,py,sc,0);
-        const bx=P.pdX-14-qi*10, by=P.pdY+3+Math.round(Math.sin(t/16+qi));
+        x.beginPath();x.moveTo(rx0+dir,ry0);x.lineTo(rx1+dir,ry1);x.stroke();
+        draw(px,py,sc,0,false,!droite);            // installé : face à l'eau (berge gauche → regarde à droite)
+        const bx=P.pdX+(droite?12:-12), by=P.pdY+1+Math.round(Math.sin(t/16+slot));
         x.strokeStyle="rgba(220,230,240,.45)";x.lineWidth=1;
         x.beginPath();x.moveTo(rx1,ry1);
         x.quadraticCurveTo((rx1+bx)/2,(ry1+by)/2+8,bx,by-2);x.stroke();
         T.P2(bx-1,by-1,"#d84a3a");T.P(bx,by-2,"#f0f0e8");
-        const rp=((t+qi*30)%90)/90;
+        const rp=((t+slot*30)%90)/90;
         if(rp<.6){x.strokeStyle=`rgba(200,225,240,${(.5*(1-rp/.6)).toFixed(2)})`;
-          x.lineWidth=1;x.beginPath();x.ellipse(bx,by+1,3+rp*10,(3+rp*10)*.4,0,0,7);x.stroke();}
+          x.lineWidth=1;x.beginPath();x.ellipse(bx,by+1,3+rp*8,(3+rp*8)*.35,0,0,7);x.stroke();}
       }else{
-        draw(px,py,sc,Math.round(Math.abs(Math.sin(t/3.4))*2));
+        draw(px,py,sc,Math.round(Math.abs(Math.sin(t/3.4))*2),true,gx>nestX);   // trajet vers l'étang
       }
     }else if(tk.tal==="cuisine"){
-      const gx=136-qi*15, gy0=P.fireY+3;
+      const gx=slot===1?196:134, gy0=P.fireY+13;   // 1er cuisinier à gauche de la marmite, 2e à droite
       const k=Math.min(1,el/TRAVEL);
       const px=nestX+(gx-nestX)*ease(k), py=nestY+(gy0-nestY)*ease(k);
       const sc=2+(1.8-2)*ease(k);
-      draw(px,py,sc,k<1?Math.round(Math.abs(Math.sin(t/3.4))*2):Math.round(Math.abs(Math.sin(t/10))));
+      const fache=k>=1&&!S.camp.fire;   // fâché tant que le feu est éteint, calmé dès la reprise
+      draw(px,py,sc,k<1?Math.round(Math.abs(Math.sin(t/3.4))*2)
+        :fache?Math.round(Math.abs(Math.sin(t/2.2))*2):Math.round(Math.abs(Math.sin(t/10))),k<1||fache,k<1?gx>nestX:slot!==1);   // au gril : face à la marmite
+      if(fache){ /* 💢 : le cuisinier tape du pied, symbole rouge au-dessus de la tête */
+        const ax2=px+8,ay2=py-34+Math.round(Math.sin(t/3)*1);
+        x.fillStyle="#e33b2c";
+        x.fillRect(ax2,ay2,3,1);x.fillRect(ax2,ay2+2,3,1);
+        x.fillRect(ax2-1,ay2+1,1,1);x.fillRect(ax2+3,ay2+1,1,1);
+      }
       if(k>=1){ /* marmite posée sur les pierres du feu + vapeur */
         const mx=165,my=P.fireY-10;
         x.fillStyle="#23232c";x.beginPath();x.ellipse(mx,my,10,4.5,0,0,7);x.fill();
@@ -3472,19 +3852,19 @@ function drawHubTasks(x,T,P,t,C){
       if(k<1){
         const px=nestX+(ex-nestX)*ease(k), py=nestY+(hy-nestY)*ease(k);
         const s2=2+(sc-2)*ease(k);
-        draw(px,py,s2,Math.round(Math.abs(Math.sin(t/3.4))*2));
+        draw(px,py,s2,Math.round(Math.abs(Math.sin(t/3.4))*2),true,ex>nestX);   // montée vers l'horizon
       }else{
         const V=14, tp=el-12, W2=P.W+14;
         const d0=(W2-ex)/V, CROSS=(W2+14)/V, OFF=16;
-        let px=null;
+        let px=null, versDroite=true;
         if(tp<d0)px=ex+tp*V;                                   // première sortie à droite
         else{const cyc=(tp-d0)%((OFF+CROSS)*2);
           if(cyc<OFF)px=null;                                  // hors cadre à droite
-          else if(cyc<OFF+CROSS)px=W2-(cyc-OFF)*V;             // traverse vers la gauche
+          else if(cyc<OFF+CROSS){px=W2-(cyc-OFF)*V;versDroite=false;} // traverse vers la gauche
           else if(cyc<OFF*2+CROSS)px=null;                     // hors cadre à gauche
           else px=-14+(cyc-OFF*2-CROSS)*V;}                    // retraverse vers la droite
         if(px!=null&&px>-12&&px<P.W+12)
-          draw(px,hy,sc,Math.round(Math.abs(Math.sin(t/3.2))));
+          draw(px,hy,sc,Math.round(Math.abs(Math.sin(t/3.2))),true,versDroite);   // patrouille = marche
       }
     }
   });
@@ -3514,14 +3894,30 @@ function sfxFlame(on){
     src.connect(f);f.connect(g);g.connect(AC.destination);src.start(t);
   }catch(e){}
 }
+/* Un cuisinier au travail ne tolère pas un feu éteint : quelle que soit la façon dont
+   il s'est éteint (ou s'il était déjà froid à son arrivée), il le rallume en ~1 s. */
+let cookRelightT=null;
+function ensureCookFire(){
+  if(S.camp.fire||cookRelightT)return;
+  if(!(S.tasks&&Object.values(S.tasks).some(tk=>tk.tal==="cuisine")))return;
+  cookRelightT=setTimeout(()=>{cookRelightT=null;
+    if(!S.camp.fire&&S.tasks&&Object.values(S.tasks).some(tk=>tk.tal==="cuisine")){
+      S.camp.fire=true; save();
+      campStaticKey=""; if(launchOpen)drawHub(0);
+      sfxFlame(true);
+      const id=Object.keys(S.tasks).find(k=>S.tasks[k].tal==="cuisine");
+      toast(`💢 ${CREATURES[id].name} rallume le feu — sa cuisine d'abord !`);
+    }},1000);
+}
 function toggleFire(){
   S.camp.fire=!S.camp.fire; save();
   campStaticKey=""; if(launchOpen)drawHub(0);
   sfxFlame(S.camp.fire);
   toast(S.camp.fire?"Feu allumé 🔥":"Feu éteint 💨");
+  ensureCookFire();
 }
 /* ---- balade de la créature dans le camp ---- */
-let hubWalk=null;
+let hubWalk=null, hubSafe=null;
 function hubWalkFree(P,cx,cy){
   if(cx<40||cx>292)return false;
   const boxes=[
@@ -3540,6 +3936,7 @@ function hubPathClear(P,x0,y0,x1,y1){
 }
 let hubCelebUntil=0;
 function hubAvatarTap(){
+  sfxCry(S.cosmetics.model);                       // la créature répond de sa petite voix
   if(!reduce && !(S.settings&&!S.settings.anim)) hubCelebUntil=Date.now()+1100;
   /* créature GIF : son animation s'emballe (×3) pendant 2 secondes */
   const r=gifRT(S.cosmetics.model);
@@ -3728,15 +4125,18 @@ function openNest(){
       <div class="qm">?</div><div class="cn" style="color:#5a4a34">???</div>
       <div class="cr" style="color:${R.col}">${R.name}</div></div>`;
     const tk=(S.tasks||{})[id];
-    const rest=tk?Math.max(0,Math.ceil((tk.start+tk.dur*1000-Date.now())/60000)):0;
+    const rest=tk&&tk.dur?Math.max(0,Math.ceil((tk.start+tk.dur*1000-Date.now())/60000)):0;
     const TL=TALENTS[cr.tal];
     /* libellé du bouton selon le talent et l'état des réserves */
-    let btn;
-    if(tk)btn=`⏳ ${rest>0?rest+" min":"<1 min"}`;
-    else if(cr.tal==="peche")btn=`Pêcher · ${Math.round(taskDur(id)/60)} min → +${TASK_BASE.peche.yield} 🐟`;
-    else if(cr.tal==="cuisine")btn=`Griller · ${Math.round(taskDur(id)/60)} min (${Math.min(TASK_BASE.cuisine.batch,(S.res||{}).fish||0)} 🐟→🍢)`;
+    let btn, stop=false;
+    if(tk&&cr.tal==="cuisine"){btn=`■ Arrêter (${tk.done||0} 🍢)`;stop=true;}   // gril continu
+    else if(tk)btn=`⏳ ${rest>0?rest+" min":"<1 min"}`;
+    else if(cr.tal==="peche")btn=`🎣 Pêcher…`;
+    else if(cr.tal==="cuisine")btn=`🍲 Allumer le gril (1 🍢/${Math.round(cookPer(id)/60)} min)`;
     else btn=`Explorer… (dès ${Math.round(TASK_BASE.exploration.base/60)} min)`;
-    const dead=!tk&&((cr.tal==="cuisine"&&!((S.res||{}).fish>0))||(cr.tal==="peche"&&((S.res||{}).fish>=FISH_CAP)));
+    const talPlein=!tk&&Object.values(S.tasks||{}).filter(k=>k.tal===cr.tal).length>=MAX_TAL[cr.tal];
+    if(talPlein)btn=cr.tal==="cuisine"?"🍲 gril occupé":`${TL.ic} équipe complète`;
+    const dead=!tk&&(talPlein||(cr.tal==="cuisine"&&!((S.res||{}).fish>0)));
     return `<div class="ns-card${eq?" eq":""}" data-eq="${id}">
       <span class="rglow" style="background:${R.col}"></span>
       ${eq?'<span class="eqtag">ÉQUIPÉ</span>':""}
@@ -3745,7 +4145,7 @@ function openNest(){
       <div class="cn">${esc(cr.name)}</div>
       <div class="cr" style="color:${R.col}">${R.name}</div>
       <div class="tl">${TL.ic} ${TL.name} · Nv ${talentLvl(id)}</div>
-      <button class="ns-task${tk?" busy":""}" data-task="${id}" ${tk||dead?"disabled":""}>${btn}</button></div>`;
+      <button class="ns-task${tk&&!stop?" busy":""}${stop?" stop":""}" data-task="${id}" ${(tk&&!stop)||dead?"disabled":""}>${btn}</button></div>`;
   };
   const order=Object.keys(CREATURES).sort((a,b)=>RARITY_ORDER.indexOf(CREATURES[a].rar)-RARITY_ORDER.indexOf(CREATURES[b].rar));
   nest.innerHTML=`
@@ -3766,6 +4166,9 @@ function openNest(){
     </div>`;
   nest.style.display="block";
   nest.scrollTop=scroll0;
+  if(!nest._scrollBound){nest._scrollBound=1;   /* un re-rendu pendant une glisse casse le défilement */
+    ["scroll","touchstart","touchmove","pointerdown"].forEach(ev=>
+      nest.addEventListener(ev,()=>{window.nestTouchT=Date.now();},{passive:true}));}
   // miniature d'œuf
   const ec=document.getElementById("nsEggCv");if(ec)drawEgg(ec.getContext("2d"),13,15,1,0);
   // miniatures créatures possédées : figées, jamais animées
@@ -3776,58 +4179,72 @@ function openNest(){
   checkTasks();
   nest.querySelectorAll("[data-task]").forEach(b=>b.onclick=e=>{
     e.stopPropagation();                       // ne pas équiper en même temps
-    const id=b.dataset.task;
-    if(CREATURES[id].tal==="exploration")openExplChooser(id);
+    const id=b.dataset.task, tk2=(S.tasks||{})[id];
+    if(tk2&&CREATURES[id].tal==="cuisine"){stopCooking(id);return;}   // gril : bouton Arrêter
+    if(tk2)return;
+    const tal=CREATURES[id].tal;
+    if(tal==="exploration"||tal==="peche")openExplChooser(id);
     else{startTask(id);openNest();}});
 }
 function closeNest(){const n=document.getElementById("nest");if(n)n.style.display="none";}
-/* Choix des provisions avant une exploration : une JAUGE de poissons grillés.
-   On glisse vers le haut pour en embarquer plus, vers le bas pour en retirer ;
-   la durée et l'or estimé se mettent à jour en direct. */
+/* Molette de lancement (exploration ET pêche).
+   Exploration : le chiffre = 🍢 embarqués (icône brochette), à droite durée + or estimé.
+   Pêche : le chiffre = MINUTES de pêche (icône sablier, pas de 15 min), à droite le
+   nombre de 🐟 que ça rapportera — le niveau de talent dope ce rendement. */
 function openExplChooser(id){
   const nest=document.getElementById("nest");if(!nest)return;
   document.getElementById("nsExpl")?.remove();
-  const MAXF=TASK_BASE.exploration.maxFish;
-  const maxF=Math.min(MAXF,(S.res||{}).grilled||0);
+  const peche=CREATURES[id].tal==="peche";
+  const step=peche?TASK_BASE.peche.stepMin:1;
+  const minN=peche?TASK_BASE.peche.stepMin:0;
+  const maxN=peche?TASK_BASE.peche.maxMin:((S.res||{}).grilled||0);
   const ov=document.createElement("div");ov.id="nsExpl";ov.className="ne-ov";
   ov.innerHTML=`<div class="ne-box">
-    <div class="ne-ttl">🧭 ${esc(CREATURES[id].name)}</div>
-    <div class="ne-sub">Glisse la jauge ↑ pour embarquer des 🍢 (réserve : ${maxF})</div>
-    <div class="ne-wrap">
-      <div class="ne-jauge" id="neJauge">${Array.from({length:MAXF},(_,i)=>{
-        const s=MAXF-i;   // rendu de haut en bas, remplissage par le bas
-        return `<div class="ne-slot${s<=maxF?"":" off"}" data-s="${s}">🍢</div>`;}).join("")}</div>
-      <div class="ne-info">
-        <b id="neN">0 🍢</b>
-        <span id="neDur"></span>
-        <span id="neOr"></span>
-        <span class="ne-hint">↑ plus · moins ↓</span>
+    <div class="ne-ttl">${peche?"🎣":"🧭"} ${esc(CREATURES[id].name)}</div>
+    <div class="ne-sub">${peche
+      ?"Choisis la durée de pêche — niveau "+talentLvl(id)+" : bon rendement !"
+      :"Chaque 🍢 embarqué = +10 min d'exploration"}</div>
+    <div class="ne-mol-row">
+      <span class="ne-fic">${peche?"⏳":"🍢"}</span>
+      <div class="ne-mol" id="neMol">
+        <button class="ne-step" id="neUp">▲</button>
+        <b id="neN">${minN}</b>
+        <button class="ne-step" id="neDn">▼</button>
       </div>
+      <div class="ne-trad"><b id="neDur"></b><span id="neOr"></span></div>
     </div>
+    <div class="ne-hint2">${peche
+      ?`de ${minN} à ${maxN} min · tape ▲▼ ou glisse le chiffre`
+      :`réserve : ${maxN} 🍢 · tape ▲▼ ou glisse le chiffre`}</div>
     <div class="ne-actions">
       <button class="ne-cancel">Annuler</button>
       <button class="ne-go" id="neGo">Envoyer</button>
     </div></div>`;
   nest.appendChild(ov);
-  let n=0;
+  let n=minN;
+  const clamp=v=>Math.max(minN,Math.min(maxN,Math.round(v/step)*step));
   const maj=()=>{
-    ov.querySelectorAll(".ne-slot").forEach(s=>s.classList.toggle("on",+s.dataset.s<=n));
-    document.getElementById("neN").textContent=n+" 🍢";
-    document.getElementById("neDur").textContent=Math.round(taskDur(id,n)/60)+" min";
-    document.getElementById("neOr").textContent="~"+explGain(id,n)+" 🪙";
+    document.getElementById("neN").textContent=n;
+    if(peche){
+      document.getElementById("neDur").textContent=`≈ ${fishYield(id,n)} 🐟`;
+      document.getElementById("neOr").textContent=`en ${n} min`;
+    }else{
+      document.getElementById("neDur").textContent=Math.round(taskDur(id,n)/60)+" min";
+      document.getElementById("neOr").textContent="~"+explGain(id,n)+" 🪙";
+    }
+    document.getElementById("neUp").disabled=n>=maxN;
+    document.getElementById("neDn").disabled=n<=minN;
   };maj();
-  const jg=document.getElementById("neJauge");
-  let y0=null,n0=0,moved=false;
-  jg.addEventListener("pointerdown",e=>{y0=e.clientY;n0=n;moved=false;jg.setPointerCapture(e.pointerId);});
-  jg.addEventListener("pointermove",e=>{if(y0==null)return;
-    if(Math.abs(e.clientY-y0)>6)moved=true;
-    n=Math.max(0,Math.min(maxF,n0+Math.round((y0-e.clientY)/26)));maj();});
-  jg.addEventListener("pointerup",()=>{y0=null;});
-  jg.addEventListener("click",e=>{ if(moved){moved=false;return;}   // un appui = choisir ce cran
-    const s=e.target.closest(".ne-slot");
-    if(s&&!s.classList.contains("off")){n=(+s.dataset.s===n)?n-1:+s.dataset.s;maj();}});
-  ov.addEventListener("wheel",e=>{e.preventDefault();
-    n=Math.max(0,Math.min(maxF,n+(e.deltaY<0?1:-1)));maj();},{passive:false});
+  document.getElementById("neUp").onclick=()=>{n=clamp(n+step);maj();};
+  document.getElementById("neDn").onclick=()=>{n=clamp(n-step);maj();};
+  const mol=document.getElementById("neMol");
+  let y0=null,n0=0;
+  mol.addEventListener("pointerdown",e=>{if(e.target.tagName==="BUTTON")return;
+    y0=e.clientY;n0=n;mol.setPointerCapture(e.pointerId);});
+  mol.addEventListener("pointermove",e=>{if(y0==null)return;
+    n=clamp(n0+Math.round((y0-e.clientY)/22)*step);maj();});
+  mol.addEventListener("pointerup",()=>{y0=null;});
+  ov.addEventListener("wheel",e=>{e.preventDefault();n=clamp(n+(e.deltaY<0?step:-step));maj();},{passive:false});
   ov.querySelector(".ne-cancel").onclick=()=>ov.remove();
   ov.onclick=e=>{if(e.target===ov)ov.remove();};
   document.getElementById("neGo").onclick=()=>{startTask(id,n);ov.remove();openNest();};
@@ -3928,9 +4345,10 @@ function drawMallet(x,pivX,pivY,ang){
   R(L+hw-7,-hh+2,5,hh*2-4,"rgba(40,44,50,.45)");
   x.restore();
 }
-let hatchRAF=null, hatchResult=null;
+let hatchRAF=null, hatchResult=null, hatchSkip=false;
 function playHatch(res){
   if(hatchRAF){cancelAnimationFrame(hatchRAF);hatchRAF=null;}   // jamais deux boucles à la fois
+  hatchSkip=false;
   hatchResult=res;
   const ov=document.getElementById("hatch"), cv=document.getElementById("hatchCv");
   const card=document.getElementById("hatchCard"); card.classList.remove("show");
@@ -3946,17 +4364,19 @@ function playHatch(res){
     document.getElementById("hcMsg").textContent=res.dup
       ? `Déjà dans ta collection · +${res.refund} 🪙 remboursés`
       : "Nouvelle créature débloquée !";
-    document.getElementById("hcEquip").style.display=res.dup&&S.cosmetics.model===res.id?"none":"";
+    const rl=document.getElementById("hcRelance");
+    rl.textContent=`🥚 Relancer · ${EGG_COST}`;
+    rl.disabled=S.coins<EGG_COST;                 // grisé si plus assez de pièces
     card.classList.add("show");
   };
   if(reduce){
     x.fillStyle="#000";x.fillRect(0,0,W,H);
-    T_revealStatic(x,W,H,res,R);showCard();return;
+    T_revealStatic(x,W,H,res,R);sfxCry(res.id);showCard();return;
   }
   const cx=W/2, groundY=H*0.6, sc=3;
   const pivX=cx+MALLET_L, pivY=groundY;          // pivot : la tête retombe pile sur l'œuf
   const UP=-Math.PI/2, FLAT=-Math.PI;            // manche vertical → manche horizontal
-  const t0=performance.now();
+  let t0=performance.now();
   let sPoc=false,sThud=false,sMagic=false;
   const rings=[];                                // anneaux de choc au sol (rare et +)
   const ringDraw=(rr,al,lw,col)=>{x.strokeStyle=`rgba(${col},${al.toFixed(2)})`;x.lineWidth=lw;
@@ -3984,6 +4404,8 @@ function playHatch(res){
       x.fillStyle=i%2?R.col:"#fff";
       x.fillRect(cx+Math.cos(a)*30,groundY-8+Math.sin(a)*16,2,2);}};
   (function loop(now){
+    /* tap pendant l'animation → saute directement à la révélation */
+    if(hatchSkip&&!card.classList.contains("show")){hatchSkip=false;t0=Math.min(t0,now-3100);}
     const t=now-t0;
     x.fillStyle="#000";x.fillRect(0,0,W,H);
     /* halo de rareté : plus large et plus intense à haute rareté */
@@ -4046,7 +4468,8 @@ function playHatch(res){
       x.restore();x.globalAlpha=1;
       const pop=Math.min(1,(t-2420)/420);
       if(pop>0){
-        if(!sMagic){sMagic=true;sfxMagic();}
+        if(!sMagic){sMagic=true;sfxMagic();
+          setTimeout(()=>{try{sfxCry(res.id);}catch(e){}},450);}   // son cri personnel, juste après le scintillement
         const csc=sc*(0.5+0.5*Math.min(1,pop*1.2))*(pop<1?1+0.15*Math.sin(t/60):1);
         const bob=Math.sin(t/200)*csc*0.4;
         paintCreature(x,res.id, cx-9*csc, groundY-15*csc+bob, csc, "happy", false);
@@ -4087,6 +4510,7 @@ function showLaunch(){
   campStaticKey="";hubWalk=null;
   drawHub(0);
   placeHubSpots();updateHubPip();
+  try{updateAmbience();}catch(e){}
   if(reduce)return;
   if(campRAF)cancelAnimationFrame(campRAF);
   let t=0;(function loop(){t++;drawHub(t);campRAF=requestAnimationFrame(loop);})();
@@ -4095,6 +4519,7 @@ function hideLaunch(){
   const l=document.getElementById("launch"); if(l)l.style.display="none";
   closeTavern();closeNest();
   launchOpen=false;
+  try{ambStop();}catch(e){}
   if(campRAF){cancelAnimationFrame(campRAF);campRAF=null;}
 }
 
@@ -4103,7 +4528,8 @@ function hideLaunch(){
    et les comptes à rebours du Nid restent à jour sans re-rendu intrusif. */
 setInterval(()=>{try{checkTasks();}catch(e){}},20000);
 setInterval(()=>{const n=document.getElementById("nest");
-  if(n&&n.style.display==="block"&&!document.getElementById("nsExpl"))openNest();},30000);
+  if(n&&n.style.display==="block"&&!document.getElementById("nsExpl")
+     &&Date.now()-(window.nestTouchT||0)>1200)openNest();},30000);
 document.getElementById("fab").onclick=fabAction;
 document.getElementById("coinsBtn").onclick=openRewards;
 document.getElementById("medalBtn").onclick=()=>{cur="achievement";renderTabs();renderList();animTab();};
@@ -4131,7 +4557,15 @@ setInterval(()=>{
 // Planificateur de rappels (quand l'app est ouverte)
 checkSchedule(); setInterval(checkSchedule,20000);
 document.getElementById("hcClose").onclick=closeHatch;
-document.getElementById("hcEquip").onclick=()=>{ if(hatchResult){nestEquip(hatchResult.id);} closeHatch(); };
+document.getElementById("hcRelance").onclick=()=>{
+  if(S.coins<EGG_COST){toast("Pas assez de pièces 🪙");return;}
+  buyEgg();                                       // relance une ouverture (paie + rejoue l'animation)
+};
+/* tap n'importe où sur l'overlay (hors boutons) pendant l'animation = passer l'animation */
+document.getElementById("hatch").addEventListener("pointerdown",e=>{
+  if(e.target.closest(".hatch-card"))return;      // les boutons gardent leur action
+  if(!document.getElementById("hatchCard").classList.contains("show"))hatchSkip=true;
+});
 applyTheme();
 renderHUD();renderTabs();renderList();
 if(S.settings.splash)showLaunch();
