@@ -514,6 +514,147 @@
   .hub-gear{position:absolute;z-index:2;transform:translateX(-50%);pointer-events:none;
     font-size:12px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7));opacity:.9}
 
+  /* ======= Accueil simplifié : le camp se replie en bas, le panneau occupe le haut ======= */
+  /* Deux états, pilotés par la seule classe .camp-open sur #launch. */
+  /* ⚠️ UNE SEULE SCÈNE, jamais recomposée. Le décor est TOUJOURS rendu à sa taille réelle
+     dans #campInner ; seuls changent le CADRE (hauteur de #campClip) et la POSITION DE
+     CAMÉRA (décalage vertical de #campInner). Chaque image intermédiaire est donc une
+     vraie vue du campement : plus de fondu entre deux compositions, donc plus de
+     dédoublement, plus de sursaut, et le pixel art reste net. */
+  /* ⚠️ PLUS AUCUNE ANIMATION CSS SUR LA SCÈNE. Le cadre reste plein écran en permanence :
+     c'est le DESSIN qui change (voir hubT / hubLayout). La scène occupe une bande à
+     l'intérieur du canvas, et le ciel plat au-dessus est peint par le canvas lui-même. */
+  #campClip{position:absolute;inset:0;overflow:hidden;z-index:2;touch-action:none}
+  #campInner{position:absolute;inset:0}
+  /* pendant un glissement au doigt, le panneau suit le doigt : aucune animation */
+  .launch.drag #accueil,.launch.drag #ciel{transition:none}
+
+  /* Le +1px évite un liseré au raccord sur les densités d'écran fractionnaires ;
+     #campClip, en z-index supérieur, recouvre ce pixel de chevauchement. */
+  /* ⚠️ z-index 3 : le canvas peint désormais TOUT le ciel et couvre l'écran entier ; à
+     z-index 1 cette couche passait dessous et ses nuages devenaient invisibles. */
+  #ciel{position:absolute;top:0;left:0;right:0;width:100%;height:calc(54% + 1px);z-index:3;
+    pointer-events:none;
+    pointer-events:none;image-rendering:pixelated;object-fit:fill;
+    transition:opacity .44s cubic-bezier(.6,0,.9,.5),transform .70s cubic-bezier(.42,0,.18,1)}
+  /* couche la plus LOINTAINE : elle se déplace beaucoup moins que le panneau */
+  .launch.camp-open #ciel{opacity:0;transform:translateY(-14%)}
+
+  /* PAS de `bottom` : comme dans le prototype, le panneau flotte AU-DESSUS du camp et sa
+     dernière rangée déborde sur le ciel du canvas — c'est ce qui lui évite de défiler.
+     `max-height` n'est qu'un filet de sécurité pour les très petits écrans. */
+  #accueil{position:absolute;top:0;left:0;right:0;z-index:6;
+    padding:calc(env(safe-area-inset-top,0px) + 20px) 20px 14px;
+    max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+    transition:opacity .52s cubic-bezier(.6,0,.9,.5),transform .78s cubic-bezier(.65,0,.35,1)}
+  /* le panneau MONTE et sort par le haut du cadre ; au retour il redescend du ciel.
+     Il se déplace de toute sa hauteur quand le ciel n'en parcourt que 14 % : c'est cet
+     écart de vitesse entre les couches qui fait la parallaxe. */
+  .launch.camp-open #accueil{opacity:0;transform:translateY(-104%);pointer-events:none}
+
+  /* -- barre HUD -- */
+  .acc-hud{display:flex;gap:12px;align-items:center;padding:9px 12px;
+    background:rgba(250,244,225,.86);border:2px solid #5e3c22;box-shadow:0 2px 0 rgba(74,47,18,.18)}
+  .acc-ava{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;
+    border:2px solid #5e3c22;background:radial-gradient(circle at 50% 40%,#f7efd4,#e2d0a2)}
+  .acc-ava canvas{width:34px;height:34px;image-rendering:pixelated}
+  .acc-xp{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+  .acc-lvl{display:flex;align-items:baseline;gap:7px;font-family:var(--mono);font-size:13px;
+    font-weight:700;letter-spacing:1px;color:#8a6010}
+  .acc-lvl i{font-style:normal;font-size:10px;font-weight:400;letter-spacing:0;color:#7c5e34}
+  .acc-bar{display:block;height:11px;background:#dccb95;border:2px solid #a07b3e}
+  .acc-bar i{display:block;height:100%;width:0;
+    background:repeating-linear-gradient(90deg,#c08c18 0 5px,#8a6010 5px 7px)}
+  .acc-chip{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 5px;white-space:nowrap}
+  .acc-streak{color:#c25f1e;background:#f7e3c2;border:2px solid #c25f1e}
+  .acc-coins{color:#8a6010;background:#f7edcd;border:2px solid #b07d14}
+
+  /* -- en-tête -- */
+  /* ⚠️ Écart assumé au README : il donne #5b7f93 / #1f3a48, pensés pour son ciel pâle
+     (#84c6e8→#e8f4f6). Ici le ciel doit finir sur la 1re bande de hubPal() pour que le
+     raccord avec le canvas soit invisible — un bleu franc, sur lequel ces deux teintes
+     sont illisibles. Texte clair + ombre portée : même hiérarchie, contraste rétabli. */
+  /* marges resserrées pour absorber la citation sans faire défiler le panneau */
+  .acc-head{margin:12px 2px 8px}
+  .acc-date{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:2px;
+    text-transform:uppercase;color:#dbeaf4;text-shadow:0 1px 0 rgba(18,44,64,.5)}
+  .acc-phrase{font-family:"Segoe UI",system-ui,sans-serif;font-size:26px;line-height:1.15;
+    font-weight:600;color:#f6fbff;margin-top:6px;white-space:pre-line;text-wrap:pretty;
+    text-shadow:0 1px 2px rgba(16,40,60,.42)}
+  body.theme-dark .acc-date{color:#9fb2d8}
+  body.theme-dark .acc-phrase{color:#e6ecfb;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  /* 2 lignes maximum : la hauteur du panneau ne doit pas dépendre de la citation tirée,
+     sinon le panneau se met à défiler certains jours et le glissement change de sens */
+  .acc-quote{font-family:var(--mono);font-size:11px;line-height:1.4;color:#eff7ff;
+    text-shadow:0 1px 2px rgba(10,34,68,.55);margin-top:8px;max-width:300px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  body.theme-dark .acc-quote{color:#ffe9b0;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+
+  /* -- grille des 4 accès principaux -- */
+  .acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .acc-tile{position:relative;display:flex;flex-direction:column;gap:7px;align-items:flex-start;
+    text-align:left;min-height:44px;padding:13px 13px 12px;cursor:pointer;
+    background:linear-gradient(180deg,#fdf7e2,#f1e5bf);border:2px solid #5e3c22;
+    box-shadow:0 3px 0 rgba(74,47,18,.22)}
+  .acc-tile:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(74,47,18,.22)}
+  .acc-em{font-size:22px;line-height:1}
+  .acc-lab{font-family:var(--mono);font-size:12px;font-weight:700;text-transform:uppercase;color:#3a2a12}
+  /* une seule ligne : un sous-titre long (un titre d'événement) faisait grandir toute la
+     rangée et le panneau débordait sous le camp */
+  .acc-sub{font-family:"Segoe UI",system-ui,sans-serif;font-size:11px;color:#7c5e34;line-height:1.25;
+    max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acc-badge{position:absolute;top:-7px;right:-7px;min-width:22px;height:22px;padding:0 4px;
+    display:none;place-items:center;background:#a8362a;border:2px solid #3d2c16;color:#fff;
+    font-family:var(--mono);font-size:11px;font-weight:700}
+  .acc-badge.vert{background:#5a8a30}
+
+  /* -- rangée des 3 raccourcis -- */
+  .acc-links{display:flex;gap:8px;margin-top:10px}
+  /* ⚠️ `line-height:1` sur un emoji ne cadre pas : les fontes emoji montent à ~1,28 em,
+     le glyphe débordait de sa boîte et remontait tout le bloc d'environ 5 px. On fige une
+     boîte d'icône (18 px) et un interlignage explicite pour le libellé — sinon la hauteur
+     dépend aussi de la fonte mono réellement disponible. Fond opacifié : il repose
+     désormais sur un ciel animé. */
+  .acc-link{flex:1 1 0;min-width:0;min-height:52px;padding:10px 4px 7px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    text-align:center;line-height:1.1;white-space:nowrap;
+    background:rgba(250,244,225,.95);border:2px solid #a07b3e;
+    font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;color:#5e3c22}
+  .acc-link span{flex:0 0 auto;display:block;height:18px;font-size:15px;line-height:18px}
+  .acc-link:active{transform:translateY(2px)}
+
+  /* -- poignée de glissement (état accueil) -- */
+  .acc-handle{display:flex;flex-direction:column;align-items:center;gap:6px;
+    margin:16px auto 0;background:none;border:none;padding:8px 12px;cursor:pointer;
+    touch-action:none;animation:bobUp 2.6s ease-in-out infinite;transition:opacity .3s}
+  .acc-handle i{display:block;width:46px;height:4px;background:rgba(255,255,255,.85)}
+  .acc-handle span{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:1.5px;
+    text-transform:uppercase;color:#2c4a3a;text-shadow:0 1px 0 rgba(255,255,255,.6);
+    white-space:nowrap}
+  /* ⚠️ translateY SEUL : la poignée est en flux normal (margin auto), un translate(-50%)
+     hérité de l'ancienne version absolue la décalait d'une demi-largeur vers la gauche
+     et sortait le début du libellé de l'écran. */
+  @keyframes bobUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .launch.camp-open .acc-handle{opacity:0;pointer-events:none;animation:none}
+
+  /* -- retour à l'accueil (état camp) : une simple barre flottante en haut -- */
+  .acc-back{position:absolute;z-index:7;opacity:0;pointer-events:none;cursor:pointer;
+    top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);
+    width:88px;height:44px;padding:0;display:grid;place-items:center;
+    background:none;border:none;-webkit-tap-highlight-color:transparent;
+    transition:opacity .4s cubic-bezier(.32,.72,.2,1)}
+  .launch.camp-open .acc-back{opacity:1;pointer-events:auto}
+  .acc-back i{display:block;width:46px;height:4px;background:rgba(255,255,255,.85);
+    box-shadow:0 1px 2px rgba(20,40,60,.35);animation:bobDown 2.6s ease-in-out infinite}
+  .acc-back:active i{background:#fff}
+  /* elle flotte vers le BAS : c'est le sens du geste qui ramène à l'accueil */
+  @keyframes bobDown{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+  /* Animations réduites : plus de transition ni de flottement, les états restent nets. */
+  @media (prefers-reduced-motion:reduce){
+    #campClip,#accueil,#ciel,.acc-back,.acc-back i,.acc-handle{transition:none;animation:none}
+  }
+
   /* ======= Le Panneau de la Taverne (quêtes du jour) ======= */
   .tavern{position:fixed;inset:0;z-index:83;display:none;overflow-y:auto;
     background:
@@ -810,20 +951,82 @@
   <nav class="botnav" id="tabs" aria-label="Navigation principale"></nav>
 </div>
 
-<!-- Écran d'accueil : le campement-HUB (plein écran) -->
+<!-- Écran d'accueil : panneau simplifié + le campement-HUB replié en bas -->
 <div class="launch" id="launch">
-  <canvas id="camp" width="330" height="560"></canvas>
-  <button class="hub-spot" id="hsTableau" aria-label="Quêtes du jour" onclick="openTavern()"></button>
-  <button class="hub-spot" id="hsJournal" aria-label="Ouvrir le journal de quêtes" onclick="hubGo('journal')"></button>
-  <button class="hub-spot" id="hsNid" aria-label="Le Nid — créatures" onclick="openNest()"></button>
-  <button class="hub-spot" id="hsTente" aria-label="Réglages" onclick="hubGo('parametres')"></button>
-  <button class="hub-spot" id="hsCoffre" aria-label="Récupérer le butin du coffre" onclick="collectChest()"></button>
-  <button class="hub-spot" id="hsAvatar" aria-label="Ta créature n°1" onclick="hubAvatarTap(0)" style="z-index:1"></button>
-  <button class="hub-spot" id="hsAvatar2" aria-label="Ta créature n°2" onclick="hubAvatarTap(1)" style="z-index:1"></button>
-  <button class="hub-spot" id="hsAvatar3" aria-label="Ta créature n°3" onclick="hubAvatarTap(2)" style="z-index:1"></button>
-  <button class="hub-spot" id="hsFeu" aria-label="Allumer ou éteindre le feu" onclick="toggleFire()"></button>
-  <span class="hub-gear" id="hubGear">⚙️</span>
-  <span class="hub-pip" id="hubPip">0</span>
+  <!-- ⚠️ le canvas ET toutes les zones tactiles vivent dans le MÊME conteneur : elles sont
+       posées en % par placeHubSpots(), donc elles suivent le repliement sans rien changer -->
+  <!-- ciel du haut d'écran : transparent, il ne porte QUE les nuages et les oiseaux ;
+       le dégradé de fond, lui, est peint sur #launch par majCielAccueil() -->
+  <canvas id="ciel" width="330" height="385" aria-hidden="true"></canvas>
+
+  <!-- #campClip = le CADRE (ce que la caméra voit) ; #campInner = la SCÈNE, toujours
+       rendue à taille réelle, qui coulisse verticalement derrière ce cadre. Les zones
+       tactiles vivent dans #campInner : posées en % par placeHubSpots(), elles restent
+       donc collées au décor quelle que soit la position de caméra. -->
+  <div id="campClip">
+   <div id="campInner">
+    <canvas id="camp" width="330" height="560"></canvas>
+    <button class="hub-spot" id="hsTableau" aria-label="Quêtes du jour" onclick="openTavern()"></button>
+    <button class="hub-spot" id="hsJournal" aria-label="Ouvrir le journal de quêtes" onclick="hubGo('journal')"></button>
+    <button class="hub-spot" id="hsNid" aria-label="Le Nid — créatures" onclick="openNest()"></button>
+    <button class="hub-spot" id="hsTente" aria-label="Réglages" onclick="hubGo('parametres')"></button>
+    <button class="hub-spot" id="hsCoffre" aria-label="Récupérer le butin du coffre" onclick="collectChest()"></button>
+    <button class="hub-spot" id="hsAvatar" aria-label="Ta créature n°1" onclick="hubAvatarTap(0)" style="z-index:1"></button>
+    <button class="hub-spot" id="hsAvatar2" aria-label="Ta créature n°2" onclick="hubAvatarTap(1)" style="z-index:1"></button>
+    <button class="hub-spot" id="hsAvatar3" aria-label="Ta créature n°3" onclick="hubAvatarTap(2)" style="z-index:1"></button>
+    <button class="hub-spot" id="hsFeu" aria-label="Allumer ou éteindre le feu" onclick="toggleFire()"></button>
+    <span class="hub-gear" id="hubGear">⚙️</span>
+    <span class="hub-pip" id="hubPip">0</span>
+   </div>
+  </div>
+
+  <!-- même barre que la poignée de l'accueil, mais tout en haut et sans libellé : elle
+       flotte vers le bas pour indiquer le sens du geste qui ramène à l'accueil -->
+  <button class="acc-back" id="accBack" aria-label="Revenir à l'accueil"><i></i></button>
+
+  <div id="accueil">
+    <div class="acc-hud">
+      <span class="acc-ava"><canvas id="accAvatar" width="18" height="18"></canvas></span>
+      <span class="acc-xp">
+        <span class="acc-lvl">NIV. <b id="accLvl">1</b><i id="accXpTxt">0 / 0 XP</i></span>
+        <span class="acc-bar"><i id="accXpFill"></i></span>
+      </span>
+      <span class="acc-chip acc-streak" id="accStreak">🔥 0 J</span>
+      <span class="acc-chip acc-coins" id="accCoins">🪙 0</span>
+    </div>
+
+    <div class="acc-head">
+      <div class="acc-date" id="accDate"></div>
+      <div class="acc-phrase" id="accPhrase"></div>
+      <!-- la citation du jour : en HTML ici, en étincelles sur le canvas en mode camp -->
+      <div class="acc-quote" id="accQuote"></div>
+    </div>
+
+    <div class="acc-grid">
+      <button class="acc-tile" onclick="hubGo('journal')">
+        <span class="acc-em">⚔️</span><span class="acc-lab">Quêtes du jour</span>
+        <span class="acc-sub" id="accSubQ"></span><span class="acc-badge" id="accBadgeQ"></span></button>
+      <button class="acc-tile" onclick="hubGo('diary')">
+        <span class="acc-em">📔</span><span class="acc-lab">Carnet</span>
+        <span class="acc-sub" id="accSubC"></span><span class="acc-badge" id="accBadgeC"></span></button>
+      <button class="acc-tile" onclick="hubGo('evenement')">
+        <span class="acc-em">📅</span><span class="acc-lab">Agenda</span>
+        <span class="acc-sub" id="accSubA"></span><span class="acc-badge" id="accBadgeA"></span></button>
+      <button class="acc-tile" onclick="openNest()">
+        <span class="acc-em">🥚</span><span class="acc-lab">Le nid</span>
+        <span class="acc-sub" id="accSubN"></span><span class="acc-badge" id="accBadgeN"></span></button>
+    </div>
+
+    <div class="acc-links">
+      <button class="acc-link" onclick="hubGo('history')"><span>📜</span>Historique</button>
+      <button class="acc-link" onclick="hubGo('boutique')"><span>🛍️</span>Boutique</button>
+      <button class="acc-link" onclick="hubGo('parametres')"><span>⚙️</span>Réglages</button>
+    </div>
+
+    <!-- la poignée suit le contenu au lieu d'être calée sur un % : à hauteur fixe elle
+         chevauchait les tuiles dès que le panneau était un peu dense -->
+    <button class="acc-handle" id="accHandle" aria-label="Voir le camp"><i></i><span>Glisser pour voir le camp</span></button>
+  </div>
 </div>
 
 <!-- Le Panneau de la Taverne : quêtes du jour -->
@@ -1317,7 +1520,7 @@ const CREATURES={
   /* Renard : 4 images assises dessinées par l'utilisateur (immobile) + 8 images de
      marche construites ici (cycle diagonal, corps rigoureusement figé, aucun
      patinage : chaque pied posé recule d'exactement 2 px par image). */
-  renard:{name:"Renardeau",  rar:"rare",       skin:"#c35600", gif:true, gzoom:1.333, idleFrames:4, walkFrames:8, profile:true, tal:"exploration"},
+  renard:{name:"Renardeau",  rar:"rare",       skin:"#c35600", gif:true, gzoom:1.333, idleFrames:4, walkFrames:7, profile:true, tal:"exploration"},
   /* gzoom 0,975 = 1,3 × 0,75 : réduction de 25 % demandée (31×27 → 23×20 à l'écran).
      Il était déjà rééchantillonné avant (échelle 0,976, non entière), la netteté ne
      change donc pas — seule la taille bouge. */
@@ -1520,7 +1723,7 @@ function showLoot(got,reste){
   ov.onclick=e=>{if(e.target===ov)close();};
 }
 const GIFSPRITES={};
-GIFSPRITES.renard={w:32,h:32,delays:[100,100,100,100,90,90,90,90,90,90,90,90],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJFSURBVFhHtZUxSwNBEIVjnb8hqKhYGSxEAkFIIyhCwPQKghCrw38gFhHsrrW3EivBQuzE/3TyNr518rLZm4PLwCN3e3Pzvt2dvXQ6Eg+HnUrHlgVym+TXBop9jXxFmftyf+3Kd0UoWhbV2+latiieIQfmyM/lNgoUYtFlEDTH7Kc35+2vAIs+D2cAKozD/Ge8IgDOjiY5AcDbM+5AMY85tBLz74t/wcTe23Gr1iA4+5wUonXz3c31uT7QMS59qxC2+WjGe/zqGEFSvYDGVKnfXBTj41k3l0U4YjDhryocwbKY6Q+OQLgGxOt0EhTzyqIehBB4EbO1M06al0U0st+M96fbOE4IjFkQ9Y4BCBSDAGDNVDRGQRhzC2HGGh/Tq5hr381C8DOMQqqcObeM5hBXASCEyZoj8KKa2uvPx8sgLjv3PQWgMLXm7AHQ0hT3uhIAiHtsmo8NqeaUC0BXAGb4tVB2K+wR5CrwiCKX9VwAPAk6YyvtAwLYrUh9J9wfK54EGtqZEwDPOVv7IdKtUAAXhP0e6OzZgLrUFsKugpq7ABDsBT2OduYpA88quACQlFqFnPlKANgLuu+pwh4AbpH6LQT3kRBYiTrzOgD7TP0WggX4B2PNWUhPgZpYAL7nMkcgMVVMzTlmhXFKnzUCOBscVCf9/fASrlmQ5ikptEK4Aba3NqpBbycI1xBgWBwQdhwC5Gh4tLBtVCPzfm8vGuCa9zBBIR23MHfdbjCnkO82R2hxXtt7HYdgThCaNjJm2Bml5M1pEr/UcmMjlfILpwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJJSURBVFhHtVWxSgNBFIy1vyGoqFgZLEQCQUgjKELA9AqCoNXhH4hFBLtr7a3ESrAQO/GfTubinJPJ5u4dJA+G29t992be27d7nY7Zw0Gn8Ll5Bt82/o2GYF/DWFD6vtxfhfxDVgbNs+LtZKU2KNbgA3L41/m2MgRi0HkiSI7sx9dni68Agz4PJgIcmAf5z2hJApgdSeoAAdGeCRuCRciBpZB/n/8DJPqu84qFiWD2dXARCyff2Vib6gOfY+kjItAjCl+vTJuPZHzH0+copK4XQPj+dFu8jm8qJIVko6NJN+dZecRAwqejPIJ5NsGfOArCmCIYj6CQGXIaRcAJ2WrGSfI8q7LSOwOxGAcgOZ5zyWkQgWAABCiZg8QICmItPy+nj/Fl5RsSAOM1DNWONuQAqwAhQFiAk+r48/GiBMuu+w5TAQoVPc0oxr2DWpLi3SsBAdUeS/PxH+HkikYBXgGQ4amidCv0CLIiPKLwZbyQAJ4Ez1jhfUABXgW/J3hZ1QqA8SSQUDOnAKwzW72IKEKr4PCmnTG9Dzx7NqCXWkVoFZwc8KZNGnvBj6NmniKIVCEkgHvlVagjX4oA9oLveypwRICuO+eUcR8pApVoIncC9+VaWAAc+YNRcgbyU1AnQL9rJIfBKRXMyTmnYJap9VYCTvv7xXFvr/wAYwYkeQou2kWEBWxtrhf97nYJjAGIYQCI0HkAIoeDw5ltU4TJe93digBjvoMEQXxexdytrpbkCnwTIod5cI713ecBkFMICVsR0zSjFKI+bewX9LB4OVg3mfQAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJtSURBVFhHtZVPa1NREMXTuszXENqi4srQRSmBIGQjKELA4KKbFgqFdhX6DcRFBHfZundVXAkuxJ2IS7/Ok99Lz/NkfH8mIRk4vPvmTuacmTv3pdcL9v6kV0RfkxG7TnynkezHJJdUsZ/fXabiU1YmXcyKLy/3WpOyRwzkxLfFrmUkUtImESKn+vnV6+13QEk/jZcCIvBD/mu6IwGqTiRtQEB2ZtJGsgw52An5zzf/AIm/u9+xNRGqvg1RRCRngMHXjzfF3fy6PCbfbzSRPzl8uDIH0afWd4mQAIloFeLDJzK984w+CWmbBQS4iMZuzKbPl9O8mJVXDBI9I8oreN9iiZMg1i6iissch0QQRLVecS35YlZV5d8M5cPHnsh54gOtIhSEACeLEDHJII7tZ+/b/KKKTQnAFAR0hkKWXHnUIYQAz90oIhKrhVp//3BegjjNSRQgvxNKNKgb2NI0A6j1CY6dQICq03x4Qgnw4RTqhrWyutZDxtNF+VEoqSd0Mq4oa7+uGuj/RNCBWG1EnINYlV/f+K3oFOC3QIReuQT4mcbE+qBtJADT/3vT2WsAVT1Jf7/dX/ka+gysLcC74DcA4EOAE0AuxC5sJABr6gK+WB3Ef84ebFcAGz4LOvc4YCLPCtB+SoC64APXVH1GQJoc0yApUGt+TDIl0dl3CeCZar2MAP2YtbdRSfwY4hAKIt5IwKvRcfFi+KwMZq2EPgcRsQNRRFrAo6ODYjR4XII1QIySk8T9AJGT8enKsUWBafLh4GlFwFrvkJAg+l3Mbb+/Mjc+S53kWEyutb9HP4BcQsgjwjSxzCuqQzZmHfsLQCG80q5mNDMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJhSURBVFhHtZY/SxxRFMXXWPo1AlE0pIpYiAgi2AgJASGSwkZBELQa/AZisYLdtPZWYhVIEdKFYOnX2fCb9Yx3z857+wbWC4d58+Z6z+/9dQcDi+vNwcj7UkFun/yZQbE/B2VFlXt/dVqUXxRN0boaPX5ZyBblGzmYk5/L7RUUUtEUhMwZ/fDs2/xnQEXv9sYALvox/3f4RgAanUxyAqB0zxQHxUrM0ZuY//3+Kkzie+yPmhuERp+TQ6TMWR7k/cmQ+cfl9xP7wPs09SUQP28vyiDi5pOZ3nl6n0ByewFjAB6G53mI6nB3vJvrqjlimOjpao5gXY31Aicg2oJQPWnmTAgCWkYbR9xpXldNLop3huqplsx5ZgEIICiGAIhmLhlTFGM359uv4Umby1P5k64WuoahdvUxR5ohQFAxgJvG9u+b40aa9rjuRASIEnQWQonQypR3nwkANDrffLy7uSsLgNyMZ4SKS+FHUKeCfnJVrwhA0+cjjvJ9IADNgv5T+j2hyyoLoKMYDePIBUARrX+8iAQRZ8Hlm3YqdBRTa49kjsnTj3ctgJYi/l5w+aadingh+XGMI5cBAMhvw9QszAQgtBccoMv8+Whx/gAkaBa61l1Tj3kfgPjdPSdCADo2gLh5HH0JgL4VA8Rkn3ra8RTIPAXg39xvKkjqKqa+COQSeNf3XgBfdzZG+9ufmz+grYKp3wn6HqEdohhgdeXDaGd9rRFtBIwKABH7EZAHe1vt74Iu0GLz7fVPrQFtvWNCEe+PMJdLS415FH9TZE54cbXju/cjzAUiw17GijiiLpXm9In/OfB/ma+q6aoAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAAlhJREFUWEe9lr1KBEEQhFd9FUFFxEgjgwtNBEEQFAMTBUHQyFcQgxPMTM2NxEgwkMtEDH2dkdqjlpq6mdndY7Wh2Zuf7vp6fva2qhL2tLsQUn2p/sENInc7VSSG36/7U/9zCIppxWj/nC6FyWEM1scmjzdB3ccbgwCEFALt9/F5eL69iMDazEVbxWkQVIh5AFy0N8DnURW+jqcQDoA+j1F7e7iuhfDkb7aRw+dH9n2yGNQJ8HF/1gAADH0eSwOsQvD5Mr4qAyApksMVAgcQK8KtQR/aHk/DHAgCms4VLAKoCEHQRwiF4lzPgT7MhaDHwIsACMYSb6wu1wJ0rgieSMrEeKZyEJxz2ebBTp4hVkUAHkQGEkQFcivA1SO45pkBWF9bqd98OggIXT4eRCbVM+HVKDihtQ2PIAAA133CofG7q6ugK+CrwD6KMWdxGwAwI2iOU60AqeppCqvidIzPvMzGlwf1CcVddXECsDqKs8IokZhvh8cnC3BhOK4Ug/RJAJ52zwXTLekEQNNXqAZq9eoKoo4xAqfcdRvTreBV0kAV516nXM9LCsR1I9Nt8Ir1Nmg7515AcfnVII5r6eJ+vUquAFyJXgDcAq0011ZBfcIJwG8M10pa/VKSE+8vFa9W+30bdAVcp2g8PFqp7meuj8IO7flbjV9BmlyrcR8cAH9W/FRHgr3RVuMKh6fOg6DO5RzP38s0oY+5jbY3A7xPTKtpMiT3cbdBIVy8CwBsMIgUwL9BeNA84vjteToZPlhSgfh2zEFwzEGZK56dMX6ueRCS0x0gN5bL9Qv2Sd8bEIX1/AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAAl9JREFUWEe1lj1rFFEYhVfzV4QoQaySKsWWNkIgIBgsbBIICKbyL4QUK9ilTZ8qWAVShO1CsPTvjDyznOHM2Tt3d9b1wMvs/XrPc79mZzIp6Ob9i6ZUV6rfujC5Opz0zPj962gR/x1CZj5jyn++7DTzj32wMZpff288sr0TBhg5BOWH2Vlze3neA1ulNF1pLmHoEJsApOlogKdPk+b5ZAGRANTlGNf9z4vWiKd+q0yO7N/T788vGw8BPP447QAAoy7HSsA6hJ53s291AJKSnHAIDiAroq2hjnKOl+iDIdAKrWAVwE0EQp0gHEp9Mwd19MUwxxBVAAazxG9fv2oNFFoRniRVYp6lHAJXX5V1sItnSLMSgA6iBgrEDYZWQKsncM+zBLD3Zrd983kjEL58OohK6mciZ+PggvYy0YMAgPB94tDk3fVV8BXIVVCdzJSzug0ALBlGcKodoDR7yWHdXEH70sts9vW4PaHc1TQXgGYnc82wl8iU25HjixNIY4IrpUH+FIBOe+ZCviVrAUj+CvWBPnsPB/GgTcClSN9OvhW6Sj7QzbXXpfDzUgJJ3558G3LGfhu8PBQ5geryuzDnWqZ5Xq9aOIBWYhSAtsBnOlR2Q38SAtA3RnoV1b6U7MTnSyVn6/W5Db4C6VOVDo/P1PdzqE7GCZ35V0pfQZ7cZ5OxdQD+rPSpToIP0/0uHI6n98PQ+6pP5h+l6cG7XtJsd9F3TP+15MlInu0lJcTGIHyoJMC6EChBsn1QGCs2ScDffQl8DHynMeb62BHAPxkjJcr6mli1rRj7TLK9JN+2mvFfwqfQANpSyxEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAAmFJREFUWEe1lj+LFEEUxEfvqwgqx2GkkcGGlwjCgaAYXKIgCBr5FcRgDy671Pyi4yLB4NhMxPC+TstvlhpqantmZ5bdgkdvd79+Ve/1n52mCfw8fVB+vGwKrY/dvl6bjx8EIqMVGf3786OyetMXdhBAAJGLoP97+bFcf//UEzYHq6tvxS3ne4DQRewqIEknkQMI/7xtyt93axEpgLFck0jSyQL+vX9Y3CTg7uJDJwBhjOVa4dfl15aIVr/VJ0b6dyAowTEXwQGkItoaxujneoFquQi1N8sv4wKcREIYkwgXJd+MARiHkKrJtIWjAlhIiU+ePGoJZKoILUIkhrYWg3EIUzQ2KEBZSYAOojKVEFVnqAJePQn3OHrQugXHTx+3L59PIsLV6yAqqJ+JvBEuXKK9j/VEIADzMrFneXW8Cl6BrILGRKaYvqZahQ3CMA6VC6hlL7hYJ5cxv/GYLT+ftQeEq5LkEqDsRK4Me4EMuR25vppAEmOcaC3yVgJ0MzIW8C2ZJEDwF8wXevZuLsSNOQmuWfJ28K3QVfKFTq69rpmfl5qQ5O3BtyEz9tvg/SHLBEbL74Cca5nkeb3GzAWoErMEaAs806G+E3qLSYC+MZKrivZRshOfj0pm6+O5DV6B5BmFDo9n6vs5NCbiFJ3xt0JfQR7cs0nbuwD+rPSpToBXi+eduTha94PQfeWT8Sdj8eJZwTxo+jjm+m/FLgHn+o9CAuYGnevfgS8j/XbyKQH5i9dv98VY3/cOQCxzUvcZEqAPHKzmMxRvNjLwFOyFGCi7HB+DVzPnJiPLm/M15Hbm/H9dRsyY6WH3GQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAAlxJREFUWEe1Vj1LBDEUXPWvCCoiVlpZXGkjCIKgWNgoCIJW/gWxWMHO1t5KrAQLuU7E0r8TmT1nmZ1LstnDG3jk8jZ5M+/l41JVhqfdhXC3UwW06nvdn5j65wKSoSUZ+j+nS2F82BU2F4AARCoC/ff6PDzfXnSEDcH48Sao+fcOQKgiZhXgpEXkAAg/j6rwdTwR4QLg8zkOJy0W8H2yGNQo4OP+rBUAYfD5XOLt4bohQsvf7COGj2+BoAgOUxHYgKgIlwY+9H0+gWqpCLYv9VVegJJQCHwUoaI41mMA8IMQVaNxCbMCMBEl3lhdbghorAhaCKEYtLEY8IPQRcOSApgVBXAjMlMKYXVSFdDqUbjG4YXWTlhfW2luPv0IEaqeG5FBdU/4iVDhFK19WEcEBMC0TFgzPzpaBa2AV4E+kjGmzolWYYrQDJtKBcSyJ1SsktPwfeoyqy8Pmg2Co+LkFMDsSM4MO4EEvhw+P5qAE8OwozlJWwrgyfBYgC5JkQBCbzCdqNmrqRA1fKPgmDlvC10KHiWdqORc65jpfokJcd4OdBk8Yz0N2k+ZJ5AtvwLkOJZO7scrZyqAlRgkgEugmab6SqgtjAL4xnCuKJpLSXa8Xyqerfp9GbQCzpMFN49mquuZ8pHYRXv8XvAVpME1G7d/F4A/Kz7VEWBvtNWaikOr40CoYznG4xdhtL0ZaBrUxymGjO2FCkC/JLCO0bmD4eTArAJmEpGa3CfCv2scj5VEbrAT4F0R8zuKROBd2DeIJHxVwXLERDYuiGnJQX8goftzKInbC8/Yv8eQSuwXGYDZ1Zv/E84AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAAlxJREFUWEe1VrFKxEAUjPorgoqIlVYWV9oIgiAoFjYKgqCVvyAWEexs7a3ESrCQ60Qs/Z3I5Jgwmbxs9o67gcfe7r59M++9TS5FEeBlf6mK1qL1uQMkD3tFiwy/3w8ntnARJNOMMf87X6nGx21hCwEIQKQiMP8sL6vX+6uWsGkwfr6r1Hy/BRCqiFkFOGkWOQDC75Oi+jmdiHABWPMzDifNFvB7tlypUcDX40UjAMKw5meJj6fbmggjf3OOGO7fAEERHKYicAFREbYGa5j7eQLVUhEc38qbtAAloRCsUYSKoq/HALAOQlSNxhYmBeAgSry1vloT0FgRjBBCMRijGBROX855scM7xKwogBeRBylECaIKaPUoXON0BGxurNVvPt2ECC05LyKD6p3wbFQ4Resc1hIBATDtL3rmj45WQSvgVeAayRgz2QYI6BCa4VKpgCh7QsUqOQ37nZdZeX1U31A8Kk5OAcyO5MywFUjg7fDzYQJODMMjxEM6UgBvu8cCtCVZAgh9g+lBzV5Nhahhj4Ijc94G2gp98WhGNPY6Mr0vkRDnbUHb4Bnr06DzPvMEkuVXgByPpZP745UyFcBKTCWALdBM++ZKqCOMAviN4Vwh6peS3Hh/qXi2uu5t0Ao4TxK8PJqp9rNvjcQu2uMPgl9BGlyzcZu7APxZ8VMdAQ5GO42pOIzqB0L1pY/Hz8Jod7uiYa6B3ZeAb45fFlwAkBNcffx8NiJyYFYBUawkUoeGRET7qXgdDDl6cEVqbyhuDXwb5jjig4ZE/J0iBxjb12tgk9brJJ9zbkPEGvsf3IHWGQU2U+kAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAAldJREFUWEe1ljFLHFEUhSf6VwIaRFIllcWWNoGAEFBS2BgICFr5F8RiBTvb9FZiFbCQ7SSk9O+MnFnO8s3Zt7Ozw+6By9t35717zr33vdmpqgL+HH6oS76Sf+0Qyc1B1SLT76fvU9u4CJMxY83fTrfryY+2sI1ABCKiCM2fx7/qh+vfLWGrYHJ/VdPyeQsipIihApK0F7kgwtfjqv53MhWRAuTLPYkk7S3g/8+tmmYBL7dnMwESJl/uNf7eXTZEGv3bc8XI9TMoqILLKEIHUBVxa+TTPPcbqhZFeHwcX3QLIImFyGcRFOW1GUOQX4Sqms0t7BSgjSrx/u7HhsDmimiUEIvRWIph4V7ruQ928Qw5KwvwQfRGCyFBqQKsnoUzzpyAvU87zZuPDyWCJfdBdFCeicyGwi2ac1lLhATI2F/1LK8Oq8AKZBXsM5ljdrZBAuYIw3SoKKCUvUGxJLfp+dzLbHx+1JxQXZUktwBnZ3Jn2AoEZDtyfzGBJJbpCnkTRwvwac9YAlvSS4DBNxg3MnsahdD0zIJLlrwzsBV88TAjm3tdMp6XkpDkbYFtyIx5GzhfZJlAZ/kJketaJnlery6jAFdiJQFuATNdNCchR5kF+BsjuYpoXko48flSyWzpzzawAsnTCR8eZsp+LvKZOEVn/KXwVxCDM5u0tQvQn5U/1RXg2+jLzChOI9eJkGu9JuP3xujr59rGwLmO4Drty+e9QXL7horIOL3Ajfr3lI+Bu0TkmkEiTGxbRkqstQLpXwYT6zNPNiRGNWTjqlUqwqpXEZBtyueJdyY8wk1WF76iAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAAmBJREFUWEe1ljFrFFEUhUfzVwQNEqy0SrFlmoAgCBELGwMBwVT+BbHYQDrb9KmClWAh6UKw9O+MnFm+4czZN29nduOBy9v35r57zr3vvtlpmsDV0aP222HTavS1H69X5uv/BZBphEzzvx/22tu3Q2FzcPv9S+uWz3uIQEQuQvNfy9P2+uvZQNgmJOlGciBCF7GNgCSdLeDupGnv361EpACt5R7Hz8vzjkgjv5krRvoP8Of949YNAb8vPvYCJExruRdIrItgvFl+rgtQUAWXuQg1oCrC0WhN89wP5CNCicaoYFWAkyBEa4hwUfhmDK3JV4S5R1YVoM0q8cGzJx0BRkU0KiiBNZZiIBxf5jR2sYfICgE0IhsR4gRjFaB6CPc4awKe7z/t3nz+UCK8fDQiQb0nMhsXjmifywYiJEDm56SmybvrVfAKZBVYg4yY1WOQgDXCMHW1CyhlD1ysk2N6vvYyW35603Wo7mqSI4DsICfDQSBDHkfuLyaQxDJdKTb5iAC6PWMJfiSTBAB/hfpGz97NhbjpGYJLlrw9/Ci4Sr7RyTnrknm/lIQk7wB+DJmx3wafj1kmUC2/Q+S6lkme16tmLoBKzBLAEXimY3Mn9FGGAL4xkquI7qVkHZ8vlczW1/MYvALJUwXN45n6eY6tQZyiM/5G8BXkwT2btAcXoD8rPtUV4HjxsjcXp9H9ROi++GT8yVi8etHKPGj6OOb4TsJcAWCufxGQ7yqAGOlThf6uS+RTBOjrSuNWIvhYkc0hFUSMpfD0nYTJqgvYidhBNrleg1cvn01GljOfl5DHl8/BP5Ex1m8zTCUVAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAAmBJREFUWEe1lj9rFFEUxSf6VQIqElJpZbFlGkEQAgkpbAwEBK38CmKxgp2tvZWkCqQI6URS5uuMnFl+w5mzb97sbNYDl7fv3z3n3nff7GuawM+jvfbrq6ZV62OXb1bm4/8FkKmFTP37d4/b2+OhsDm4/fG5dcv5HiIQkYtQ/3p53v76cjEQNoUknSQHInQR2whI0tkC/pw07d/TlYgUoLHc47j6/qkjUstv+vKR6we4O3vUuiHg5tv7XoCEaSz3Aol1EbS/lx/rAuRUzmUuQgWojHA0GlM/9wOtEaFEY2SwKsBJEKIxRLgo1qYPjWmtCHOPrCpAm5Xig6f7HQFGRtTKKY7VlnwgnLX0KexiDREVAihENiLECcYyQPYQ7n7WBDx/9qT78vmkRHj6KEScek1kNC4c0d6XDURIgMzPSUWTd9ez4BnILDAGGT6rxyABa4RhqmoXUIoeuFgnxzS/9jFbfnjbVajuapIjgOggJ8KBI0MeR+4vBpDEMl0pNnmLAKo9fQl+JBsJAP4J9Y0evZsLcdMcgkuWvD38KLhKvtHJOeuSeb2UhCTvAH4MGbHfBu+PWQZQTb9D5LqWSZ7Xq2YugEzMEsAReKRjfSf0VoYA3hjJVUT3UbKKz49KRuvjeQyegeSpguLxSP08x8YgTtHpfxK8gty5R5O2cwH6s+KpLgevFy96c3FqfZ0IfS1r0v/GWLw8HDjM+YTWz90zibnOdirAHclxzpew0yykgDkiHizAN0M+JkBPOrW5bisReqzkpjFyEWOlNemnCp5qCPA5CHxsCiU/s5ER5nwJtUCEf45v21tPNZ2jAAAAAElFTkSuQmCC"]};
+GIFSPRITES.renard={w:32,h:32,delays:[100,100,100,100,80,80,80,80,80,80,80],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJFSURBVFhHtZUxSwNBEIVjnb8hqKhYGSxEAkFIIyhCwPQKghCrw38gFhHsrrW3EivBQuzE/3TyNr518rLZm4PLwCN3e3Pzvt2dvXQ6Eg+HnUrHlgVym+TXBop9jXxFmftyf+3Kd0UoWhbV2+latiieIQfmyM/lNgoUYtFlEDTH7Kc35+2vAIs+D2cAKozD/Ge8IgDOjiY5AcDbM+5AMY85tBLz74t/wcTe23Gr1iA4+5wUonXz3c31uT7QMS59qxC2+WjGe/zqGEFSvYDGVKnfXBTj41k3l0U4YjDhryocwbKY6Q+OQLgGxOt0EhTzyqIehBB4EbO1M06al0U0st+M96fbOE4IjFkQ9Y4BCBSDAGDNVDRGQRhzC2HGGh/Tq5hr381C8DOMQqqcObeM5hBXASCEyZoj8KKa2uvPx8sgLjv3PQWgMLXm7AHQ0hT3uhIAiHtsmo8NqeaUC0BXAGb4tVB2K+wR5CrwiCKX9VwAPAk6YyvtAwLYrUh9J9wfK54EGtqZEwDPOVv7IdKtUAAXhP0e6OzZgLrUFsKugpq7ABDsBT2OduYpA88quACQlFqFnPlKANgLuu+pwh4AbpH6LQT3kRBYiTrzOgD7TP0WggX4B2PNWUhPgZpYAL7nMkcgMVVMzTlmhXFKnzUCOBscVCf9/fASrlmQ5ikptEK4Aba3NqpBbycI1xBgWBwQdhwC5Gh4tLBtVCPzfm8vGuCa9zBBIR23MHfdbjCnkO82R2hxXtt7HYdgThCaNjJm2Bml5M1pEr/UcmMjlfILpwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJJSURBVFhHtVWxSgNBFIy1vyGoqFgZLEQCQUgjKELA9AqCoNXhH4hFBLtr7a3ESrAQO/GfTubinJPJ5u4dJA+G29t992be27d7nY7Zw0Gn8Ll5Bt82/o2GYF/DWFD6vtxfhfxDVgbNs+LtZKU2KNbgA3L41/m2MgRi0HkiSI7sx9dni68Agz4PJgIcmAf5z2hJApgdSeoAAdGeCRuCRciBpZB/n/8DJPqu84qFiWD2dXARCyff2Vib6gOfY+kjItAjCl+vTJuPZHzH0+copK4XQPj+dFu8jm8qJIVko6NJN+dZecRAwqejPIJ5NsGfOArCmCIYj6CQGXIaRcAJ2WrGSfI8q7LSOwOxGAcgOZ5zyWkQgWAABCiZg8QICmItPy+nj/Fl5RsSAOM1DNWONuQAqwAhQFiAk+r48/GiBMuu+w5TAQoVPc0oxr2DWpLi3SsBAdUeS/PxH+HkikYBXgGQ4amidCv0CLIiPKLwZbyQAJ4Ez1jhfUABXgW/J3hZ1QqA8SSQUDOnAKwzW72IKEKr4PCmnTG9Dzx7NqCXWkVoFZwc8KZNGnvBj6NmniKIVCEkgHvlVagjX4oA9oLveypwRICuO+eUcR8pApVoIncC9+VaWAAc+YNRcgbyU1AnQL9rJIfBKRXMyTmnYJap9VYCTvv7xXFvr/wAYwYkeQou2kWEBWxtrhf97nYJjAGIYQCI0HkAIoeDw5ltU4TJe93digBjvoMEQXxexdytrpbkCnwTIod5cI713ecBkFMICVsR0zSjFKI+bewX9LB4OVg3mfQAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJtSURBVFhHtZVPa1NREMXTuszXENqi4srQRSmBIGQjKELA4KKbFgqFdhX6DcRFBHfZundVXAkuxJ2IS7/Ok99Lz/NkfH8mIRk4vPvmTuacmTv3pdcL9v6kV0RfkxG7TnynkezHJJdUsZ/fXabiU1YmXcyKLy/3WpOyRwzkxLfFrmUkUtImESKn+vnV6+13QEk/jZcCIvBD/mu6IwGqTiRtQEB2ZtJGsgw52An5zzf/AIm/u9+xNRGqvg1RRCRngMHXjzfF3fy6PCbfbzSRPzl8uDIH0afWd4mQAIloFeLDJzK984w+CWmbBQS4iMZuzKbPl9O8mJVXDBI9I8oreN9iiZMg1i6iissch0QQRLVecS35YlZV5d8M5cPHnsh54gOtIhSEACeLEDHJII7tZ+/b/KKKTQnAFAR0hkKWXHnUIYQAz90oIhKrhVp//3BegjjNSRQgvxNKNKgb2NI0A6j1CY6dQICq03x4Qgnw4RTqhrWyutZDxtNF+VEoqSd0Mq4oa7+uGuj/RNCBWG1EnINYlV/f+K3oFOC3QIReuQT4mcbE+qBtJADT/3vT2WsAVT1Jf7/dX/ka+gysLcC74DcA4EOAE0AuxC5sJABr6gK+WB3Ef84ebFcAGz4LOvc4YCLPCtB+SoC64APXVH1GQJoc0yApUGt+TDIl0dl3CeCZar2MAP2YtbdRSfwY4hAKIt5IwKvRcfFi+KwMZq2EPgcRsQNRRFrAo6ODYjR4XII1QIySk8T9AJGT8enKsUWBafLh4GlFwFrvkJAg+l3Mbb+/Mjc+S53kWEyutb9HP4BcQsgjwjSxzCuqQzZmHfsLQCG80q5mNDMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJhSURBVFhHtZY/SxxRFMXXWPo1AlE0pIpYiAgi2AgJASGSwkZBELQa/AZisYLdtPZWYhVIEdKFYOnX2fCb9Yx3z857+wbWC4d58+Z6z+/9dQcDi+vNwcj7UkFun/yZQbE/B2VFlXt/dVqUXxRN0boaPX5ZyBblGzmYk5/L7RUUUtEUhMwZ/fDs2/xnQEXv9sYALvox/3f4RgAanUxyAqB0zxQHxUrM0ZuY//3+Kkzie+yPmhuERp+TQ6TMWR7k/cmQ+cfl9xP7wPs09SUQP28vyiDi5pOZ3nl6n0ByewFjAB6G53mI6nB3vJvrqjlimOjpao5gXY31Aicg2oJQPWnmTAgCWkYbR9xpXldNLop3huqplsx5ZgEIICiGAIhmLhlTFGM359uv4Umby1P5k64WuoahdvUxR5ohQFAxgJvG9u+b40aa9rjuRASIEnQWQonQypR3nwkANDrffLy7uSsLgNyMZ4SKS+FHUKeCfnJVrwhA0+cjjvJ9IADNgv5T+j2hyyoLoKMYDePIBUARrX+8iAQRZ8Hlm3YqdBRTa49kjsnTj3ctgJYi/l5w+aadingh+XGMI5cBAMhvw9QszAQgtBccoMv8+Whx/gAkaBa61l1Tj3kfgPjdPSdCADo2gLh5HH0JgL4VA8Rkn3ra8RTIPAXg39xvKkjqKqa+COQSeNf3XgBfdzZG+9ufmz+grYKp3wn6HqEdohhgdeXDaGd9rRFtBIwKABH7EZAHe1vt74Iu0GLz7fVPrQFtvWNCEe+PMJdLS415FH9TZE54cbXju/cjzAUiw17GijiiLpXm9In/OfB/ma+q6aoAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJxSURBVFhHtZY/axVBFMU35qsEokhIlVQWKdMIghCIpLBJICBo5VcQiyfY2aZPFVIJFpJOJGW+zsrZx+9x5uzsn2deDlxm5+7ce86dubNs01RwdbzV1nw1/8Yhkq+vmoJMz7dvlvbkIiDzijV/eL/d3p2UwtbB3Y/PrVu+X0EEInIRmv9aXLTXXy4LYVNI0klyIEIX8T8CknRtAX9Om/bvu6WIFCBfxjh+fv/UEWnkmbly5PoC92fPWjcE/P52vhIgYfJlLJBYF8F4s/g4LkBJlVzmItSA2hGORj7NMx5ojQglGmMHRwU4CULkQ4SLYm3mkE9rRZgxslEBCtYW7z3f6QgwdkSjkpJYYy0HwlnLnMau9hBVIYBGJBAhTjC0A+wewj1PT8DLF7vdl89fSoRvH41IUu+JrMaFI9rnskKEBMj8nNQ0eXd9F3wHchfwQUbO0WOQgB5hmLraBdSqBy7WyTG9733MFh/edh2qu5rkCKA6yKmwSGTI48j4agFJLNOVIshHBNDtmUvwI5klAPgn1AO9ejcX4qZ3CK5Z8q7gR8FV8kAn56xr5v1SE5K8BfwYsmK/DT4fsixgdPsdIte1TPK8XmPmAtiJtQRwBF7p0NwJfZQhgH+M5Kqi+yhZx+dHJat1fx6D70DyjILm8Ur9PId8EKfozD+J7GAS+Xm6bVwAv2EkT0L380uPiFwny/yTIKmCXQyEsowR+IF9tAABEZ4Q8iEBgt6xljHXzIbIXx8drBIdHe53NpXU102tHYSI3fCTvFzdh9Zk7GxAkgnwP6kA/piUQCN+/TfK5NdYRpUgNnPMAgIyEAFT5ILnyDz/AMTJ8oB2Vq0EAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJ4SURBVFhHtZY/a1VBEMWf8asIJohYaZUipU1AEATFIo2CIJgqXyGkeIF0tvZWYiVYSLoQLP06N5wbfo+z583dd1+IB4a9uzsz58z+uexiUeDbywdDNVaN3ztEcra/aMj0/fPVrf13EZB5xer/O3o4XL5phW2Dy68ng1vOryACEbkI9X8vPw7fTz81wjYhSTeSAxG6iLsISNKtBVy9XQzX725FpACNZYzj18XxSKSWb/rKkf4N/r7fGdwQ8Of8w0qAhGksY4HEugjaH8svfQFKquQyF6EDqBVhazSmfsYD+YhQojFWsCvASRCiMUS4KHwzh8bkK8KMkXUFKFhL/HT30UiAsSJqlZTEaqscCMeXPge7PENUhQAOIoEIcYKpFWD1EO551gQ82Xs8/vl8UiJ8+TiIJPUzkdW4cER7X9aIkACZ75MOTd5dXwVfgVwFxiAjZ3cbJGCNMEyn2gVU1QMX6+SY5td+ZsvPr8cTqrua5AigOsipsElkyO3I+LKAJJbpShHkLQI47ZlL8C2ZJQD4L9QDvXo3F+KmOQRXlrwr+FZwlTzQydnryvy8VEKSt4FvQ1bst8H7U5YFdJffIXJdyyTP69UzF8BKbCWALfBKp/pO6K0MAbwxkqvE+FOyE58/lazWx3MbfAWSpwsOj1fq+zk1BnGKzvwbwSvIk3s1aT0Bc590DXimkzwJfRxfF8Hq4Suf5NgIF+GJ1KavwJzIPU7fdxIguAh9H7x4NplI84hwARo7PHg+GVdCDxSRyRSMMZb+ABEI8fj0nYTIMSdPvwoIdJGIaD1noErWQ+Vfjc2CHiwKUptzFSp/Xl5zc6zggXODK9+pHDdq4fZ61P1WdQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJxSURBVFhHtZY/Sx1BFMWf8asIiUiwMlUKSxtBEIQEizQKQiCp8hXE4gl2tulTiVUgRbATsfTrbDgrv+Xs2ZlxX8ADl3lzZ+49Z+78ebtYBH7urXUXHxedWvfdHjyb+18FkKmFTP2nL+vd3dFY2KtABCJyEer/WZ52v87PRsJWwd31j84tx0cQoYv4XwFJOotcEOH9p0X38PlZRAqQL2MSSTpbwOPxm84NAX8vTwYBEiZfxoLfV997IrX8pq8cOX+Akiq5zEXoAKoibI186mc8ULVcBO3N8ltbgJMgRD5EuCjmZg5BfhGqahhb2BSgQJX4/buNngCjImolBDFqSznkF2GKllUFsCoEcBBZKUKoTq0CXj2Eex4etCFga/Nt//L5oES4eg4iSf1M5I1w4Yj2vmwkQgJkXibtWV4dr4JXIKuADzJyekyxChPCMB0qF1BaPXCxTo5pfPKYLb8e9gdEVyXJEcDqIGeFo0SG3I6MLy4giWU60QR5iwBuRuYSfEtmCQD+gnmgr97NhbhpDMElS94BvhVcJQ90cva6ZH5eSkKSdwTfhlyx3wbv1ywX0Cy/Q+S6lkme16tlLoBKrCSALfCV1vpO6K0MAXxjJFcR/aNkJz4flVyt+3MbvALJ0wSHx1fq+1nzQZyiM/+L4CvIk/tq0l4SsHIF9GfFp3qNGL/PE2HOk02e4TkgMdWYk7A2tza/Ca9CWs51EOfk+7s7zZgJdj9s90lqInK+Q7HEQz5bAMGeRKYxErWSEccc5suXcydI8hxvJdL3BXH67WPE1WJ7kCCDQUuYwFdWKb4VN6CVAH9LYAmtqqyElrgWanH/AEQp+Q7M0GxTAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKDSURBVFhHtZa9ahxBEIRP9qsIZGOEIilScKETg8EgsFHgRAKBQI78CsbBGZQpde7IOBI4EMqMUOjXGVF7fEtt7czeD6igmdue6a6a7pm9nc0CP9/ulO/Hs6LRfX/eL839zwLINEKm5/+fX5b7k6GwZ4EIROQi9Px3cV5+fbsYCNsE9zdfi1vODyBCF7GtgCRdi1wQ4b+Ps/LwaSkiBciXMYkkXVvA4+mL4oaAux9nvQAJky9jwe31l45II795Vo5c30NJlVzmInQAVRFaI5+eMx6oWi6C8ffialqAkyBEPkS4KNZmDkF+EapqGC2cFKBAlXj/1W5HgFERjRKCGI21HPKLMEXLmgLYFQI4iOwUIVSnVQGvHsI9Dy+0PuDN673uzeeTEuHqOYgk9TORN8KFI9qfZQMREiDzMqlneXW8Cl6BrAI+yMjpMdUqjAjDdKhcQG33wMU6Oab50ctscfmhOyC6KkmOAHYHOTscJDJkOzK+uoEklulEE+QjArgZmUvwlqwlAPgbzAN9924uxE1zCK5Z8vbwVnCVPNDJ6XXN/LzUhCTvAN6G3LHfBn9uWW5gsvwOketaJnlerylzAVRiIwG0wHfaenZCH2UI4BsjuaroXkp24vOlkrt1f7bBK5A8k+Dw+E69ny0fxCk6868EX0Ge3Mm8r6ybErBxBfgOpHdpkGrkkx4R8nkbtmoBSVsCsIyRQejkWwtwId6S2qlmXQqRjf6IVuHd/LBgSiafJ0tywdsGIb+VJ9dPwgXU/O4DtRj3teJGmB8dFFktQD7N1fwtEmJqcSOwsLZ4nbn0g1XzHfSVxEL9zjnmfW4qBuiDlzX6nfM9IKklas21/A6RYnp+Al3jF93nWC2cAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJwSURBVFhHtZaxahZBFIX/mFcRYghiZSqLlDYBQQhEUtgoCIJWvkKw+AU7W3srsQqkkHQSUvo6K2fD93vm7N1xI8mBy+zcuXPPuXdml12tCnx9ujVUvsp/6xDJxyerhkzPP55d252LgMwr1vz3y+3h4qgVdicQgYhchObn69fDt9M3jbCb4OLLh8Et1xuI0EX8r4AkXUQuiPDX8Wq4fHEtIgXIl3sSSbpYwNXJvcENAT8/vdoIkDD5ci84+/x+JNLIM3PlyPgNlFTJZS5CF1Ad4Wjk0zz3A3XLRTB+X7/rC3AShMiHCBdFbOYQ5BehuoZxhF0B2qgWP3xwfyTA6IhGCUGMxioHwollzsUu7xBVIYCLyEaEOEHVAe8ewj3PRMDe7s745fNFifCWcxFJ6nciq3HhiPa5rBEhATI/X51ZvjreBe9AdgEfZOTsHoMETAjDdKlcQFU9cLFOjml98jFbv30+3lC9KkmOAKqDnAqbRIY8jtxfFpDEMr1CbPIRAdz2zCX4kSwSAPwL5hu9ejcX4qY1BFeWvBv4UfiHxyvCOOvK/L5UQpK3gR9DVuxvg8/nLAvott8hcr2WSZ6vV89cAJ24kQCOwCudmzuhjzIE8I+RXCXGj5Ld+PyoZLXuz2PwDiRPF1wer9TPc84HcYrWpz85uuAvyJN7NWm3LkAb+FWfI8bvcSLMOGKSowuSumXS3CNUcRSTsV0cHjwe3PAf7D8asHbHX1TkvfgJIEhyX5tL6HvT10Z2sJSkWk9yfHPxEywJnovBlwJ8Lf0N9F8oU6DGXBf4m1KMRvwi1bwi/1fODRCA5TrkWOVvd7Q58f0BwYDxd65wto0AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJiSURBVFhHtZYxSxxRFIU3+leERESsYmVhmUYQhIAhhY0BIaBV/oKkWMHO1t5KrAIWsl0IKf07I2eWbzlz9s3szKgHLm/fm3fvOfe++2ZnMgncfvlQ/d6bVBp97eFwbr7+LoBMI2SaP5+sV7OvTWFDMLv5Vbnl8wVEICIXofnj9Ed1d3nWELYKSbqSHIjQRYwRkKSDBfw9nlT/vs1FpACtpY/jz/VFTaSR38wVI/c38P/7WuWGgKer04UACdNa+gKJdRGM99PzbgEKquAyF6EGVEU4Gq1pnv5Ae0Qo0RgV7BTgJAjRGiJcFHszhta0V4TpI+sUIGeVePvTRk2AURGNCkpgjaUYCGcvcxq72ENkhQAaEUeEOEFbBagewj3OkoCtzY/1m88fSoSXj0YkqPdEZuPCEe1zWUOEBMj8nNQ0eXe9Cl6BrAJrkBGz8xgkYIkwTF3tAkrZAxfr5JieL73Mpj+P6g7VXU1yBJAd5GTYCGTI40j/YgJJLNOVwslHBNDtGUvwI+klAPgr1B09ezcX4qZnCC5Z8i7gR8FVckcn56xL5v1SEpK8DfgxZMZ+G3zeZplAZ/kdIte1TPK8Xl3mAqjEIAEcgWfaNndCH2UI4BsjuYqoX0rW8flSyWx9PY/BK5A8naB5PFM/z7Y1iFN0xl8JvoI8uGeT9uYC9GfFp3obMeu+T4S5T5bxe4MP0r4BS3v3d3da96+EnA/2Pzcs95Tg+0cL8ABDyIXRAvhWkMlxDLmQAvTFlXuW4OQyDzAoCxMg4l7kbRhDLsJXC8ARAX2DePU05vPeQMDQDPwI8xl4AVKj4t9kVUkwAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJoSURBVFhHtZa/axRBHMVX868IKkFSaZXiyjSCEBCUFDYKgmAq/4WQ4gQ72/SpglUghVwnYum/s/L2+Bxv383O7m3OB4/Z+fV9b74zs0zTBK5OHrSXx02r0tt+vFrT2/8LEFOJmOp/3x20q9d9Y7tg9f1L68z+DSQgITeh+t3yQ3t98bFnbAwpOioOJOgm5hhI0Z0N/HrTtL/frk2kAbXlHMftt/NOSCXf1BUjx/fw5+xh68TAz6/vNwZkTG05F8ism6C8WX6uG1BQBRfdhA6gMsLWqE31nA80RoIyDclg1YCLYERtmHBTjM0YatNYCeYcsWpAk5XiZ08edQKQjKhUUAKrLMXAOGOpc7CLZ4hVYYCDyESMuMBQBsgexj3OloHDp4+7P593yoSnj4NIUD8TuRo3jmmviz0TMiD6PunQ5N31LHgGMgu0IUbM6jbIwJZgUKfaDZRWD9ysi0P1b/3Mlp9OuxOqu5riGGB1iLPCXiBDbkfOLy4ghUVdKSZ5iQFOe8YSfEsmGQD+C/WJvnqnG3GqD8Mlpu4GvhVcJZ/o4ux1iX5eSkZStwffhlyx3wavDzEXUE2/Q+K6lime16tGN0AmdjLAFvhKh+ou6KWIAd4YqVVE91OyE58/lVytt+c2eAZSpwoOj6/U93OoDeE0nfFHwSvIg/tqkns3wDOdvUtBRFUyFhM5Tsz4k0BgD1R7oLrpvRgQCOqlmOMA/RipGZ6El4vnLVy8OKqKCxoDfW6Om4QUhzkO+Jh7G8hANXE958SSyVkG9FghkH/nOIAB0dtnZ4AnmzgUfAzMl7jK7J8EF59roCT+D/py/j27H4+KAAAAAElFTkSuQmCC"]};
 GIFSPRITES.lapin={w:32,h:32,delays:[430,430,80,80,80,80,80,80],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZFBDoMwDATz776gV0699wn9S9QzH0nlKKnC2pAGbKOqXWkPNiEzghC+MelxS23xuWkydH4u6yUhwouAyxcRBVZ2+K5KGAxnSwERJu3cBHC2hFMYEGdLOGUB9IRn2KlwhGF/Ak4rKhOwkEC4u8A9XBOVgbaqKTGFCwf0qikg/YJuTxcoEmoiuyUakcMyhyRABu/+KCoCtXskVAWooxLqAtQRCSuBGGMu8lisBboSfwFrAeSxMAGc604qnmvOI2c17CJpxt1WR+A1b0B5uZ214C96IsMpv1gV1wAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZFBDsMgDAT5d1/Qa0+99wn9C+q5HyEygoisnRCITVs1K+3BDmFGiXO/mPC8h7L43DQR+n4tO0pChCeBIV9EFFjZ4bsqYTCcLQVEmLQbJoCzJZzCgDhbwikL4Eh4hH0UjjDsX8BpRWUCFhII/wqBajUlHu4aqAyyVU2Bm7twQK2aAl2/IEmoiXRLFCKHZQ5JgAzevSsqArk9EqoC1FYJdQFqi4SVgPc+Fnks1gJViVPAWgB5LEwA57yTiueK88hZDbtImnG31RZ4zgxIL5ezFnwCcijDKRNSZE0AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZFBDsMgDAT5d1/Qa0+99wn9C+q5HyEygoisnRCITVs1K+3BDmFGiXO/mPC8h7L43DQR+n4tO0pChCeBIV9EFFjZ4bsqYTCcLQVEmLQbJoCzJZzCgDhbwikL4Eh4hH0UjjDsX8BpRWUCFhII/wqBajUlHu4aqAyyVU2Bm7twQK2aAl2/IEmoiXRLFCKHZQ5JgAzevSsqArk9EqoC1FYJdQFqi4SVgPc+Fnks1gJViVPAWgB5LEwA57yTiueK88hZDbtImnG31RZ4zgxIL5ezFnwCcijDKRNSZE0AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADzSURBVFhH7ZMxDsMgDEW5d0/QtVP2HiF3QZ17ESojoPTjFgM2U7/0FyPyXgJx7h+FhPMIubhmmgJ+Pt7dJdGAE3ybCMK+CeE+lTRwBFsKiODaF7J84h7cDMyBmBnuXwoL4ar91hQR3AJMQTiNqI1AksD9S0H4doG7uwZqA/pVTYmbu7QASbUkuCMQV0NiSSBJLIssSyQRfO5QtCSmRVQEckclVOG5UgkTeG5P4gNuIXIewXsfi+yYArWAUyuBvgRsbGYznRJI5xbnuDZaiQClPgp2bVakdwfqcPA6UyKdZ06liOAfxM2tJHJYIFcrCRGcEXgB1+SNzPvQPLkAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADwSURBVFhHzdQxDsMgDAVQ7t0TdO2UvUfIXVDnXoSKCqP0OxDbODRf+kuI7BchJQRj0rqkVvFd1/wse794zwJ0l54FkHxtrzhPHPFSPIP3cK4o3cG9M6wFoFrQqvUKcHl+lMsWwBIszhUFl0sAOGMoz3BPuWxRr56IR7jxBZJ6IfauQFwPxBCgIIYhw4gCwbmqeCHMEBcA1YJwBeRqEe6AXA2iAjwh65JijN/iPpZdAP3ncbC0G8AhogWoZxaIBpDDFsEdsvOjagEUWoTPKSpIQeAMl4ggnQ9xS4W0QFMRZeH1EDMAlOsiZgK2+TvgsvkA7ZpYt022t3IAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADjSURBVFhH3ZRBDoMgEEW5d0/QbVfuewTvQrruRWimBQN/cFCRgfqTvxAd3iMhGvOvcfPkqLiuki/8/fpVWySBx9UQEeHwjLPVYZDo1Gy9hQQD4fO14XjrEaoCXmuL278J7OE4W52h4LREZfAWAgjfK7DcGWj8jZinuTsqA0mNYfgOvkEey8Pc+PCZLYmIpzizaxJqAtTuEvPkrLUdJbxAVqK7AKW5xCgCyF2iIYDMJInAURnpDykJjAMPG2U2KBZnDgngRn5znAmphodkT7JhUIQX5LOJRfBdLkxg5/wp6QKtzQcVwG2wkF3b0wAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADxSURBVFhH1ZVLDgIhEES5tydw62r2HmHuQlx7EUxPgEDRfEPDWEktYKDfyxhVqX+KOQ8TFp+L5oJ+P3FXSbBwK7DkjbACmT28OyUJDNeSAiyM21smgGtJOCUB4loSTomAK+EXbCscYdi7wP2byjSeXgnCaYuaCFgJPM+2VYQbVhTo7XkYrbUv8lmB6S1JvNXTUJNLsxtIRAIv9UgPSzQnsOQjoFqBCO6yRKL2jRCX2CpQg7uISbQKUEQktgq0/iS7DAm4/we8Ox0egoKyd916WAAHVoYl53sFtsIp0wUK59mE1j1wigOGxTNN8QM64KP5AUBwjMeS6/ubAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZFBDsMgDAT5d1/Qa0+99wn9C+q5HyEygoisnRCITVs1K+3BDmFGiXO/mPC8h7L43DQR+n4tO0pChCeBIV9EFFjZ4bsqYTCcLQVEmLQbJoCzJZzCgDhbwikL4Eh4hH0UjjDsX8BpRWUCFhII/wqBajUlHu4aqAyyVU2Bm7twQK2aAl2/IEmoiXRLFCKHZQ5JgAzevSsqArk9EqoC1FYJdQFqi4SVgPc+Fnks1gJViVPAWgB5LEwA57yTiueK88hZDbtImnG31RZ4zgxIL5ezFnwCcijDKRNSZE0AAAAASUVORK5CYII="]};
 GIFSPRITES.poulet={w:32,h:32,delays:[200,200,200,200],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFgSURBVFhH7VUxasNAELxOv8hTjCGviEsXcZsyVVLGXSClSYib4MIpQwj4cRdGMGY1vvOtZJ0hxAMD0t7ezqz2JIVwwQV/Da+TSbTU9aqAYAyhw7OZSIn/HwMp8bOdgdn1VSxR94wGFN8+z+PP+33L7/Vjh4hhvYoJFd9tng5Y1YQ1QMEQQsuUiWoGvlZ3exNDDfQ+L/EtREsaaZqmZR8DbIT5ubwOUgZK5yBXeJABgO/7w+00K14yoOKg68Cm5p+jvgmWKk6OamAIXQY84uheYyW6R+AVVxM6BrCXOOA1YJkzRQNucYAGjplgDg+hJcbHESLv82XROaiqdwAkfSxv9htVHDGsI49iljTCEeAatUCXAQCJ+AZYI7ZDxGjiGFGD4u4nQKRMsEsWxRpycsS6/UaoRhG2ExYj9Z4xy5PELVCAT8J2norpGLTWYKA4f1C4zsWqgmKl2KjQ33OOus+DX0rAD9Qr4TpHAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFoSURBVFhH7ZXNSkMxEIXzJD7KRfAp7NKFbl12ZZd1J3RZFN1IF7oUKfhwkRM4ZTpOkrm5PyDtgQNtMpnzdZrbhnDWf9Jz10VYr88iBMcQkmeHkOGzQ1jhpwNghc96ERdXF7FmfWY0ofnH003cvy6Tv99WR8Ya9ieB0OE/u/UfTwohARgYQki2ICYD+NreHyCGAPS6M/ElRGmCtALww/BMqTbJAqjdg1LT3gAQn/mH28tsuAdAh8OuS2vdgZwlhLYOp0cFaLELwBOOT6/X9BRgue/+CrzhEsJakwCucMgDgBr5syyN6XGCBHCHQwQoQbw/XqeGDLNMgM/NXXrthkARAnhQh2MNe4QomY8y6mEXAMTDEkSOmA2xj7qceR52T4CyIDhe2ZRGnWUG9wqneFA3ZGANYFC4FCaB/wY25mQYwtf6DjQH889Iv4cRznWC6fXBkgAyXNdBtf1myca15t66JuWaasBcXUm/MPsoHf2HqMEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFmSURBVFhH7ZUxa8MwFIS1+V/0p4RCf0UzZmjXjpnasd0CGUNKu5QM6VhKoT9O5QwXni9S9OxYhkIODhLp+d0nS7ZDuOii/6btbBatdb6qEBhD6HgyiFT4ZAC83Ro+KUAqeJLw+c1VLFmvGU1ovl8t4s/bsvX3+1PHGMN8FQgN/909H7kqhAVgYAihdQqiGsDX5uEAMRSg93mJryFaE6RpmtZ9ALgQ1ufqOkoBlM5BrvEgAIjP++PddTa8BKDhsOvApvY/Z30SrDWcHhVgiF0AnnCsXsdKdm+BN1whdBvgXuGQF8A6B0UAdzhEgFMQrOEhtMb2cQtR97m+7xxUzTsSij5ebg8XajjGMI86hlkThFuA3+gFuwAgFOIdYEHsCjFGiFNGD4a77wCVguAq2RRzqMkZ8/YdoRlF2ZWwGa3/OWZ9VrgVGvBO2JWnxnQbtNdgoTk/UPidG6sqhpXGRpV+nnPW6zz6A0FVEev5X3VKAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFrSURBVFhH7ZW9SgNBFIXHF/FRguBTaGmhjUVKKy1jJ6QUJWkkhWIlQcjDjZyBIyfXu7s3+zMgeuDAzu/59mY2k9K/fpOeZrMM2/4qQnBOqbg6hIZXh/DC/w6AF171IJ6fHucu2zWjCZu/Plzkz9VN8XZ9t2f0YXwSCBu+2yx+eFIIBWBgSqnYg5gM4ONx/g0xBOCgM5OfU1YTpC8AX4Zr2uYWeQBd56Bt04MBIH7zt5cnjeERABsOhw6tdwaarBDWNpweFaCPQwCRcLy97bNVgHU8/BNEwxXC61OAUDgUAcAc/VtWo3qsIAHC4RAB2iBe7s/KhgxT20P5trwqfWEITEIAF9pw9GGMEE3GZ8xPGfPhEADEDRRES8wNMc4gz1wPhytAeRAsM8OxKY22NcdYFZvRKS70Nm1q27m9w1VaDRpt3BfatudgcLCKF9T79VGxXloIt/NHF8P0me1qstc1KmHnTCotP5+HQHwBZiIPydxuZ/YAAAAASUVORK5CYII="]};
 GIFSPRITES.capybara={w:32,h:32,delays:[90,90,90,90,90,90,90,90,90,90],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEsSURBVFhH7Za9DoJAEIR5GhNig9pa0NhYWFj7BjaWtj45ZkgGN5v7vz0SEyaZAHLsfLsg2nWbNv2THufdBMc+ayKEvG+H6XUdlkBsP/fj7GYQ7NBnAAGsCYTs0GWcf172C4QpQCycZvemAKfhN9Yc69uj6yYJ4eM4ziZE3/eLdajPRROR4RqixFkQrvBVIQCAESOQ21UhOAFXeC1AEkRrgChEDAAvG12wxF6IGIDFBGDUiUJo83Wri5XaCwABQlv+4Fg4CCCFRdbdw1kALbqX/ymCwiLLcDgbQBdItQuc4bitzQD4NaMRxnMINwPQQSwu92U4YZLDIR+ALBayXJ/VOcWHkA+NLIbjkKvDIVwgLw4Vw7EccXU4pIuymKugXlsdTnGkct9XUJ6PraW+taEk9U6QNmYAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEuSURBVFhH7Za9DoJAEIR5GhNig9pa0NhYWFj7BjaWtj45ZkgGN5v7vz0SEyaZAHLMfHcg2nWbNv2THufdBMc+ayKUvG+H6XUdlkJsP/fj7GYQnKHPAAJYEwg5Q5dx/nnZLxCmALFymrM3BTgNv2XNsb49OjdJKB/HcTYh+r5frEt9LloRWa4hSpwF4SpfFSIEsAoEAHCPUcatFUASBFfAVW4BEIWIAeBlowNL7IWIAVisAIycKIQ2X7c6rNReAAgQ2vIHx8JBACkMsp49nAXQYvbyP0VQGGRZDmcD6IBUu8BZjtvaDIBfMxplPIdyMwBdxHC5L8sJk1wO+QBkWMhyfNbMKT6EfGhkGI5Dri6HcIG8OBSGY7nE1eWQDmWYK1CPrS6nuKRy3xcoz8fGUl9FkyU63ji34AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEsSURBVFhH7Za9DoJAEIR5GhNig9pa0NhYWFj7BjaWtj45ZkgGN5v7vz0SEyaZAHLsfLsg2nWbNv2THufdBMc+ayKEvG+H6XUdlkBsP/fj7GYQ7NBnAAGsCYTs0GWcf172C4QpQCycZvemAKfhN9Yc69uj6yYJ4eM4ziZE3/eLdajPRROR4RqixFkQrvBVIQCAESOQ21UhOAFXeC1AEkRrgChEDAAvG12wxF6IGIDFBGDUiUJo83Wri5XaCwABQlv+4Fg4CCCFRdbdw1kALbqX/ymCwiLLcDgbQBdItQuc4bitzQD4NaMRxnMINwPQQSwu92U4YZLDIR+ALBayXJ/VOcWHkA+NLIbjkKvDIVwgLw4Vw7EccXU4pIuymKugXlsdTnGkct9XUJ6PraW+taEk9U6QNmYAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEuSURBVFhH7Za9DoJAEIR5GhNig9pa0NhYWFj7BjaWtj45ZkgGN5v7vz0SEyaZAHLMfHcg2nWbNv2THufdBMc+ayKUvG+H6XUdlkJsP/fj7GYQnKHPAAJYEwg5Q5dx/nnZLxCmALFymrM3BTgNv2XNsb49OjdJKB/HcTYh+r5frEt9LloRWa4hSpwF4SpfFSIEsAoEAHCPUcatFUASBFfAVW4BEIWIAeBlowNL7IWIAVisAIycKIQ2X7c6rNReAAgQ2vIHx8JBACkMsp49nAXQYvbyP0VQGGRZDmcD6IBUu8BZjtvaDIBfMxplPIdyMwBdxHC5L8sJk1wO+QBkWMhyfNbMKT6EfGhkGI5Dri6HcIG8OBSGY7nE1eWQDmWYK1CPrS6nuKRy3xcoz8fGUl9FkyU63ji34AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEsSURBVFhH7Za9DoJAEIR5GhNig9pa0NhYWFj7BjaWtj45ZkgGN5v7vz0SEyaZAHLsfLsg2nWbNv2THufdBMc+ayKEvG+H6XUdlkBsP/fj7GYQ7NBnAAGsCYTs0GWcf172C4QpQCycZvemAKfhN9Yc69uj6yYJ4eM4ziZE3/eLdajPRROR4RqixFkQrvBVIQCAESOQ21UhOAFXeC1AEkRrgChEDAAvG12wxF6IGIDFBGDUiUJo83Wri5XaCwABQlv+4Fg4CCCFRdbdw1kALbqX/ymCwiLLcDgbQBdItQuc4bitzQD4NaMRxnMINwPQQSwu92U4YZLDIR+ALBayXJ/VOcWHkA+NLIbjkKvDIVwgLw4Vw7EccXU4pIuymKugXlsdTnGkct9XUJ6PraW+taEk9U6QNmYAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEuSURBVFhH7Za9DoJAEIR5GhNig9pa0NhYWFj7BjaWtj45ZkgGN5v7vz0SEyaZAHLMfHcg2nWbNv2THufdBMc+ayKUvG+H6XUdlkJsP/fj7GYQnKHPAAJYEwg5Q5dx/nnZLxCmALFymrM3BTgNv2XNsb49OjdJKB/HcTYh+r5frEt9LloRWa4hSpwF4SpfFSIEsAoEAHCPUcatFUASBFfAVW4BEIWIAeBlowNL7IWIAVisAIycKIQ2X7c6rNReAAgQ2vIHx8JBACkMsp49nAXQYvbyP0VQGGRZDmcD6IBUu8BZjtvaDIBfMxplPIdyMwBdxHC5L8sJk1wO+QBkWMhyfNbMKT6EfGhkGI5Dri6HcIG8OBSGY7nE1eWQDmWYK1CPrS6nuKRy3xcoz8fGUl9FkyU63ji34AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEsSURBVFhH7Za9DoJAEIR5GhNig9pa0NhYWFj7BjaWtj45ZkgGN5v7vz0SEyaZAHLsfLsg2nWbNv2THufdBMc+ayKEvG+H6XUdlkBsP/fj7GYQ7NBnAAGsCYTs0GWcf172C4QpQCycZvemAKfhN9Yc69uj6yYJ4eM4ziZE3/eLdajPRROR4RqixFkQrvBVIQCAESOQ21UhOAFXeC1AEkRrgChEDAAvG12wxF6IGIDFBGDUiUJo83Wri5XaCwABQlv+4Fg4CCCFRdbdw1kALbqX/ymCwiLLcDgbQBdItQuc4bitzQD4NaMRxnMINwPQQSwu92U4YZLDIR+ALBayXJ/VOcWHkA+NLIbjkKvDIVwgLw4Vw7EccXU4pIuymKugXlsdTnGkct9XUJ6PraW+taEk9U6QNmYAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEuSURBVFhH7Za9DoJAEIR5GhNig9pa0NhYWFj7BjaWtj45ZkgGN5v7vz0SEyaZAHLMfHcg2nWbNv2THufdBMc+ayKUvG+H6XUdlkJsP/fj7GYQnKHPAAJYEwg5Q5dx/nnZLxCmALFymrM3BTgNv2XNsb49OjdJKB/HcTYh+r5frEt9LloRWa4hSpwF4SpfFSIEsAoEAHCPUcatFUASBFfAVW4BEIWIAeBlowNL7IWIAVisAIycKIQ2X7c6rNReAAgQ2vIHx8JBACkMsp49nAXQYvbyP0VQGGRZDmcD6IBUu8BZjtvaDIBfMxplPIdyMwBdxHC5L8sJk1wO+QBkWMhyfNbMKT6EfGhkGI5Dri6HcIG8OBSGY7nE1eWQDmWYK1CPrS6nuKRy3xcoz8fGUl9FkyU63ji34AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE1SURBVFhH7ZY/C8IwFMT7aYTiUnV16OLi4ODsN3BxdPWTV65w5XlNzJ8mguLBUUiTd7+XhGrTfJMu+9UAh8aqCCH302a4HbspEM/HeTu6GgQ79BlAAKsCYTt0Ge+vh/UEURQgFE6z+6IAKMTCKdbj0bpR2nXd0Pf9aEK0bTtZQ33O2hEbrhA5ToJwhX8UAgDYYgTy+VEI7oArfClAFERtgCBECAAfGy2YYy9ECKDEDsCoE4RQ83OrxXLtBYAAobY/OCX8FoDCBHReuns4GgDBNbq3/ym8wgReGC2y1EkAuriEvUeAQetaALhXMwAMcALPiVtlF6dCueY7j4BBDCelFsu11pkBEMJag0meagtg62j+i3zhOi9GhGAd5x1QcZG9CzonRVjP8CgAyG6jvstR6Xp//YaemHdATJtHzLoAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE3SURBVFhH7Za9CsJAEIR9GiHYRG0t0thYWFj7BjaWtj55ZIQJ63jn/bgnKA4Mgcveznc/RGezb9JxMx/h1FgTIeSyX47nXT8F4nk9rO5uBsEVxgwggDWBsCsMGe9P28UE4QqQCqe5elcANGLjEuvxaN8srft+HIbhbkJ0XTdZQ2Ou2hEbrhA1LoIIhX8U4hXARyAAgDNGGJ9eAFkQ3IFQuAdAEiIFgI+NNqxxFCIF4LEDMPokIdT83GqzWkcBIECo7Q+Oh18CUCjAyr1XD2cDILjF6u1/iqhQwAujTd51EYBO9nD0CDBo3QoA9+oJAAMs4Dlxq+zkUqhQffAIGMRwUmqzWmufJwBCWGswyUttAWwfzX9QLFzrckQI9gneARUn2bugNSXCfIZnAUB2G/Vdjbz7/fUbugGzfUCRImp9pAAAAABJRU5ErkJggg=="]};
@@ -1709,9 +1912,11 @@ function drawAcc(P,dark){
     P(8,2,"#ff5d6c");P(9,2,"#ff5d6c");                          // joyau central
   }
 }
-function drawAvatar(mo){
+/* `idc` : canvas de destination — "avatar" (HUD principal) par défaut, l'accueil simplifié
+   passe le sien. Aucun appel existant ne change. */
+function drawAvatar(mo,idc){
   mo=mo||mood();
-  const c=document.getElementById("avatar"); if(!c)return;
+  const c=document.getElementById(idc||"avatar"); if(!c)return;
   const id=S.cosmetics.model, g=(CREATURES[id]||{}).gif?gifData(id):null;
   const n=g?g.w:18;                      // les créatures GIF gardent leur résolution native
   if(c.width!==n){c.width=n;c.height=n;}
@@ -2849,6 +3054,10 @@ function applyTheme(){
   document.body.classList.toggle("theme-dark", !!(S.settings&&S.settings.theme==="dark"));
   /* le thème pilote aussi le jour/nuit du campement — et son ambiance sonore */
   try{ campStaticKey=""; if(launchOpen)drawHub(0); }catch(e){}
+  /* le ciel au-dessus du camp est peint en CSS : il doit suivre la palette jour/nuit,
+     et sa couche animée aussi — sous « animations réduites » il n'y a pas de boucle
+     pour la rafraîchir, elle resterait bloquée sur les nuages du jour */
+  try{ majCielAccueil(); if(launchOpen){drawCiel(0);renderAccueil();} }catch(e){}
   try{ updateAmbience(); }catch(e){}
 }
 function renderSettings(){
@@ -3322,6 +3531,10 @@ function hubPal(day){
   };
 }
 let launchOpen=false, campRAF=null;
+let cielStops=["#43769c","#4f8bba","#5a9fd4"];   // dégradé de ciel courant (jour/nuit)
+/* ⚠️ DÉCLARÉ ICI, avant buildHub/drawHub qui le lisent : un `let` plus bas dans le fichier
+   serait dans sa zone morte si un chemin de démarrage dessinait la scène avant d'y arriver. */
+let campOuvert=false;
 function drawAvatarOnCamp(ctx,ox,oy,sc,t,moving,faceRight,idIn){
   const id=idIn||S.cosmetics.model;
   if((CREATURES[id]||{}).gif){          // créature GIF : son animation propre remplace bob/clignement
@@ -3414,8 +3627,21 @@ function hubQuote(){
   for(let i=0;i<d.length;i++)h=(h*31+d.charCodeAt(i))>>>0;
   return HUB_QUOTES[h%HUB_QUOTES.length];
 }
-/* Transforme la phrase en nuée de points (position + phase de scintillement) */
+/* ⚠️ MIS EN CACHE — c'était le poste le plus lourd de buildHub (un getImageData sur ~60 000
+   pixels + 24 fillText + 2 pré-rendus point par point : 6 à 15 ms). Il est désormais toujours
+   construit pour la géométrie du CAMP, donc la clé ne dépend que de la largeur et du jour ;
+   le dessin décale ensuite l'image verticalement selon hubT. Sans ça, redessiner 60 fois par
+   seconde était impossible. */
+let quotePixCache=null, quotePixKey="";
 function buildQuotePix(W,HZ){
+  const k=W+"x"+HZ+":"+today();
+  if(quotePixCache&&quotePixKey===k)return quotePixCache;
+  const r=buildQuotePixReel(W,HZ);
+  quotePixCache=r;quotePixKey=k;
+  return r;
+}
+/* Transforme la phrase en nuée de points (position + phase de scintillement) */
+function buildQuotePixReel(W,HZ){
   const q=hubQuote();
   const oc=document.createElement("canvas");oc.width=W;oc.height=Math.max(60,Math.round(HZ*0.55));
   const c=oc.getContext("2d");
@@ -3454,7 +3680,8 @@ function buildQuotePix(W,HZ){
       g.fillRect(p2[0],p2[1],1,1);});
     return cv;};
   const spark=pts.filter((_,i)=>i%Math.max(1,(pts.length/90)|0)===0);
-  return {pts,spark,stillD:mkStill(true),stillN:mkStill(false),text:q,cy:y0+lines.length*lh/2,shadow:sh};
+  return {pts,spark,stillD:mkStill(true),stillN:mkStill(false),text:q,y0,
+    cy:y0+lines.length*lh/2,shadow:sh};
 }
 /* ================= Construction du campement-HUB ================= */
 let hubPos=null, hubPressed=null;
@@ -3833,6 +4060,13 @@ function drawManxiety(x,T,P,t,day){
   T.glow(px,py-dh*0.45,13+2*Math.sin(t/17),"70,40,120",(day?.10:.16)*a);
   x.restore();
 }
+/* Poste de pêche : berge droite ou berge gauche de l'étang. En accueil l'étang est réduit et
+   décalé vers la droite ; le pêcheur de la berge GAUCHE se retrouverait sur la tente, dont le
+   bord droit est à x=145 — on le repousse (demi-corps ≈ 11,5 px à l'échelle 1,15, + 1,5 de jeu). */
+function hubPeche(P,droite){
+  const off=P.pdRX+15*P.fPd;
+  return droite ? P.pdX+off : (P.fPd===1 ? P.pdX-off : Math.max(P.pdX-off,158));
+}
 /* ---- Tente de l'utilisateur : ancrage, version nuit, dessin ---- */
 const TENT_CX=93;            /* centre horizontal (celui de l'ancienne tente) */
 function tentBox(tnB){
@@ -3870,27 +4104,85 @@ function drawTentImg(x,day,tnB){
   x.restore();
   return true;
 }
+/* ================= Mise en page pilotée par hubT =================
+   hubT : 0 = accueil, 1 = camp. Il ne redimensionne JAMAIS le canvas — il déplace le HAUT
+   DE LA SCÈNE à l'intérieur (skyTop). Tout le reste en découle : l'horizon, la hauteur du
+   ciel, les montagnes, le fond de vallée, le lac, la lisière, la prairie, et les gy() qui
+   placent chaque objet au sol. C'est donc le DESSIN qui change, pas une image étirée.
+
+   ⚠️ RÈGLE D'OR, appliquée sans exception : ne jamais réécrire un ratio existant, mais
+   AJOUTER un terme qui vaut exactement 0 à hubT=1. Sinon un 1-0.105 en binaire fait
+   basculer un arrondi et l'état camp bouge d'un pixel. */
+let hubT=1, hubFast=false, hubScratchCv=null;
+function hubFonce(hex,k){
+  const n=parseInt(String(hex).slice(1),16);
+  const r=Math.round((n>>16&255)*k), g=Math.round((n>>8&255)*k), b=Math.round((n&255)*k);
+  return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+const HUB_FRAC0=0.46, HUB_SKY0=0.30, HUB_SKY1=0.46, HUB_UW0=1.068;
+function hubEase(p){return p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;}
+function hubLayout(){
+  const e=hubEase(Math.max(0,Math.min(1,hubT)));
+  return {e,
+    frac:HUB_FRAC0+(1-HUB_FRAC0)*e,        // part de l'écran occupée par la scène
+    skyRatio:HUB_SKY0+(HUB_SKY1-HUB_SKY0)*e, // part de ciel DANS la scène
+    uW:HUB_UW0*(1-e)};                     // épaisseur d'eau en plus (0 au camp)
+}
+/* un seul canvas hors-écran réutilisé : la résolution ne change pas pendant une
+   transition, et allouer 2 Mo par image ferait des à-coups de ramasse-miettes */
+function hubScratch(W,H){
+  if(!hubScratchCv)hubScratchCv=document.createElement("canvas");
+  const c=hubScratchCv;
+  if(c.width!==W||c.height!==H){c.width=W;c.height=H;}
+  else c.getContext("2d").clearRect(0,0,W,H);
+  return c;
+}
 function buildHub(W,H,day){
-  const oc=document.createElement("canvas");oc.width=W;oc.height=H;
+  const oc=hubScratch(W,H);
   const x=oc.getContext("2d"), t=hubTools(x), C=hubPal(day);
-  const HZ=Math.round(H*0.46);
-  const sy=v=>Math.round(v*HZ/282);
+  x.imageSmoothingEnabled=false;
+  const LO=hubLayout();
+  const Hb=Math.round(LO.frac*H), skyTop=H-Hb;
+  const HZ=Math.round(skyTop+(H-skyTop)*LO.skyRatio);   // ≡ Math.round(H*0.46) si skyTop=0
+  const skyH=HZ-skyTop;
+  const sy=v=>skyTop+Math.round(v*skyH/282);
   const gy=v=>Math.round(HZ+(v-282)*(H-HZ)/278);
+  const dW=Math.round(LO.uW*30*skyH/282);               // remontée du rivage : 0 au camp
+  /* ⚠️ LE CIEL ET LES MONTAGNES NE CHANGENT PAS DE TAILLE. C'est un décor de hauteur FIXE
+     (celle du camp) dont la base est collée à la ligne de vallée : il SUIT l'horizon au
+     lieu de se comprimer avec lui. À l'accueil il déborde donc vers le haut, derrière le
+     panneau — c'est voulu, on l'aperçoit entre les tuiles.
+     `skyHC` = hauteur de ciel au camp ; `syF(v)` = le repère ciel de taille fixe.
+     Au camp, skyAnc vaut syC(252) et syF(v) ≡ sy(v) : rien ne bouge. */
+  const skyHC=Math.round(H*HUB_SKY1);
+  const syC=v=>Math.round(v*skyHC/282);
+  const skyAnc=sy(252)-dW;                              // ligne de vallée / haut du lac
+  const syF=v=>skyAnc-(syC(252)-syC(v));
+  const skyF0=syF(0);
+  /* au-dessus du décor fixe, le ciel se prolonge en dégradé et se raccorde EXACTEMENT
+     sur la première bande */
+  if(skyF0>0){
+    const g0=x.createLinearGradient(0,0,0,skyF0+1);
+    g0.addColorStop(0,hubFonce(C.bands[0],.74));
+    g0.addColorStop(.62,hubFonce(C.bands[0],.90));
+    g0.addColorStop(1,C.bands[0]);
+    x.fillStyle=g0;x.fillRect(0,0,W,skyF0+1);
+  }
   /* ---- ciel en bandes tramées ---- */
-  const bh=sy(252)/C.bands.length;
-  C.bands.forEach((c,i)=>{t.R(0,i*bh,W,bh+1,c);
-    if(i>0)t.dith(0,i*bh-3,W,6,c,.45,i);});
+  const bh=syC(252)/C.bands.length;
+  C.bands.forEach((c,i)=>{t.R(0,skyF0+i*bh,W,bh+1,c);
+    if(i>0&&!hubFast)t.dith(0,skyF0+i*bh-3,W,6,c,.45,i);});
   if(!day){
-    for(let i=0;i<75;i++){const sx=hubHash(i,1)*W, syy=hubHash(i,2)*sy(225);
+    for(let i=0;i<75;i++){const sx=hubHash(i,1)*W, syy=skyF0+hubHash(i,2)*syC(225);
       const b=hubHash(i,3);
       t.P(sx,syy,b>.8?"#fff6d8":b>.45?"rgba(255,255,255,.75)":"rgba(200,210,255,.45)");
       if(b>.93){t.P(sx-1,syy,"rgba(255,255,255,.35)");t.P(sx+1,syy,"rgba(255,255,255,.35)");}}
-    t.glow(294,sy(46),26,"230,228,200",.16);
-    t.disc(294,sy(46),10,"#e8e4c8");t.disc(298,sy(43),9,C.bands[2]);
-    t.P(291,sy(42),"#c8c4a8");t.P(289,sy(49),"#c8c4a8");
+    t.glow(294,syF(46),26,"230,228,200",.16);
+    t.disc(294,syF(46),10,"#e8e4c8");t.disc(298,syF(43),9,C.bands[2]);
+    t.P(291,syF(42),"#c8c4a8");t.P(289,syF(49),"#c8c4a8");
   }else{
-    t.glow(294,sy(46),34,"255,238,170",.5);
-    t.disc(294,sy(46),11,"#ffe27a");t.disc(291,sy(43),5,"#fff6c0");
+    t.glow(294,syF(46),34,"255,238,170",.5);
+    t.disc(294,syF(46),11,"#ffe27a");t.disc(291,syF(43),5,"#fff6c0");
   }
   /* ---- montagnes : l'image de l'utilisateur, ancrée au fond de vallée. FLOU
      ATMOSPHÉRIQUE : rendu net puis recouvert d'une passe floutée de plus en plus
@@ -3898,9 +4190,14 @@ function buildHub(W,H,day){
      montagnes reculent, la scène gagne en profondeur. Statique : calculé 1 fois. ---- */
   {
     const im=day?((MTN_IMG.complete&&MTN_IMG.naturalWidth)?MTN_IMG:null):mtnNightImg();
-    if(im){const mh=Math.max(1,Math.round(108*sy(252)/249)), my=sy(252)-mh;
+    if(im){
+      /* hauteur CONSTANTE (celle du camp) : les massifs ne se compriment plus, ils se
+         contentent de suivre la ligne de vallée */
+      const mh=Math.max(1,Math.round(108*syC(252)/249)), my=skyAnc-mh;
       x.drawImage(im,0,my,W,mh);
-      if("filter" in x){
+      /* la passe floutée coûte une allocation de canvas : on la saute pendant la
+         transition et on la rétablit à l'arrivée, où le camp doit être au pixel */
+      if("filter" in x && !hubFast){
         const blur=document.createElement("canvas");blur.width=W;blur.height=mh;
         const bx=blur.getContext("2d");
         bx.filter="blur(0.7px)";bx.drawImage(im,0,0,W,mh);
@@ -3913,29 +4210,37 @@ function buildHub(W,H,day){
     }
   }
   /* ---- fond de vallée ---- */
-  t.R(0,sy(248),W,HZ-sy(248)+6,C.valley);
-  t.dith(0,sy(248),W,6,C.valleyD1,.35,55);
-  t.dith(0,HZ-8,W,8,C.valleyD2,.4,56);
-  /* ---- lac sur toute la largeur, rive ondulée ---- */
-  t.poly([[0,sy(254)],[24,sy(251)],[52,sy(253)],[84,sy(250)],[112,sy(253)],[138,sy(251)],
-    [168,sy(254)],[196,sy(250)],[224,sy(253)],[252,sy(251)],[280,sy(253)],[308,sy(250)],
-    [330,sy(253)],[330,HZ-3],[0,HZ-3]],C.lake);
-  for(let i=0;i<48;i++){const lx=hubHash(i,17)*(W-8),ly=sy(255)+hubHash(i,18)*(HZ-6-sy(255));
-    t.R(lx,ly,2+hubHash(i,19)*6,1,C.lakeStreak);}
-  /* colonne de reflet de l'astre (sur l'eau libre, à gauche de l'arbre) */
-  for(let i=0;i<18;i++){const ly=sy(255)+i*1.2;
-    t.R(208+hubHash(i,20)*16-8,ly,1+hubHash(i,21)*4,1,i%3?"rgba(207,216,240,.45)":C.lakeGlint);}
-  t.dith(0,sy(251),W,4,C.valleyD1,.4,22);
+  t.R(0,syF(248),W,HZ-syF(248)+6,C.valley);
+  if(!hubFast){
+    t.dith(0,syF(248),W,6,C.valleyD1,.35,55);
+    t.dith(0,HZ-8,W,8,C.valleyD2,.4,56);
+  }
+  /* ---- lac sur toute la largeur, rive ondulée ----
+     `ond(v)` remplace sy(v) pour les sommets du rivage : à l'échelle du camp il redonne
+     exactement les mêmes valeurs, mais il garde un pas d'AU MOINS 1 px, sinon l'ondulation
+     (±2 unités de dessin) s'aplatit complètement quand le ciel devient petit. */
+  const ond=v=>skyAnc+Math.round((v-252)*Math.max(1,skyHC/282));
+  t.poly([[0,ond(254)],[24,ond(251)],[52,ond(253)],[84,ond(250)],[112,ond(253)],[138,ond(251)],
+    [168,ond(254)],[196,ond(250)],[224,ond(253)],[252,ond(251)],[280,ond(253)],[308,ond(250)],
+    [330,ond(253)],[330,HZ-3],[0,HZ-3]],C.lake);
+  {const lb=ond(255);
+   for(let i=0;i<48;i++){const lx=hubHash(i,17)*(W-8),ly=lb+hubHash(i,18)*(HZ-6-lb);
+     t.R(lx,ly,2+hubHash(i,19)*6,1,C.lakeStreak);}
+   /* colonne de reflet de l'astre (sur l'eau libre, à gauche de l'arbre) */
+   for(let i=0;i<18;i++){const ly=lb+i*1.2;
+     t.R(208+hubHash(i,20)*16-8,ly,1+hubHash(i,21)*4,1,i%3?"rgba(207,216,240,.45)":C.lakeGlint);}}
+  if(!hubFast)t.dith(0,ond(251),W,4,C.valleyD1,.4,22);
   /* ---- lisière de sapins ---- */
   for(let i=0;i<52;i++){const px=i*6.5+hubHash(i,23)*5, ph=8+hubHash(i,24)*11, py=HZ+hubHash(i,25)*4;
     t.tri(px-3.6,py,px+3.6,py,px,py-ph,hubHash(i,26)>.5?C.pine:C.pine2);}
   /* ---- profondeur atmosphérique : voile de brume vers l'horizon (les montagnes
      de l'utilisateur restent NETTES — pas de flou sur son dessin) ---- */
   {
-    const hz1=x.createLinearGradient(0,sy(150),0,HZ-2);
+    const hzT=syF(150);
+    const hz1=x.createLinearGradient(0,hzT,0,HZ-2);
     if(day){hz1.addColorStop(0,"rgba(188,214,242,0)");hz1.addColorStop(.72,"rgba(188,214,242,.16)");hz1.addColorStop(1,"rgba(198,224,247,.34)");}
     else   {hz1.addColorStop(0,"rgba(23,32,76,0)");  hz1.addColorStop(.72,"rgba(23,32,76,.20)"); hz1.addColorStop(1,"rgba(30,40,92,.40)");}
-    x.fillStyle=hz1;x.fillRect(0,sy(150),W,HZ-2-sy(150));
+    x.fillStyle=hz1;x.fillRect(0,hzT,W,HZ-2-hzT);
   }
   /* ---- prairie : l'image peinte par l'utilisateur (330×298), ancrée à la
      crête d'horizon et étirée à la hauteur de la scène ; la nuit, version
@@ -3953,25 +4258,48 @@ function buildHub(W,H,day){
     t.disc(px-3*s,py+1.4,2.6*s,C.bush3);t.P(px+1,py-3*s,C.bushHi);};
   buis(28,gy(398),1);buis(310,gy(392),1.1);buis(240,gy(318),.8);buis(14,gy(470),.9);buis(316,gy(520),1);
   /* ---- petit étang, à gauche, dans la bande de fond ----
-     (calé sur le haut de la tente : reste au-dessus d'elle à toute taille d'écran) */
-  const pdX=167, pdRX=44, pdRY=10, pdY=(gy(406)-84)-18;
+     ⚠️ L'ancrage d'origine `(gy(406)-84)-18` retranche 102 px FIXES à une bande de sol qui,
+     elle, se comprime avec la hauteur du canvas : correct au camp (43 px sous l'horizon),
+     il faisait FLOTTER l'étang 23 px AU-DESSUS de l'horizon dans l'accueil replié, en plein
+     dans le lac lointain. On le ré-ancre dans le repère du sol — gy(319) redonne exactement
+     la même valeur au camp — et on réduit l'étang du facteur de compression du sol, sans
+     quoi sa plage et ses roseaux viendraient mordre sur la tente. `fPd` vaut 1 au camp,
+     donc toutes les expressions ci-dessous s'y réduisent littéralement à l'original. */
+  /* `fPd` reste (il irrigue toute la couche animée) mais vaut désormais TOUJOURS 1 :
+     la scène n'a plus qu'une composition, donc l'ancrage d'ORIGINE redevient correct —
+     il ne dérivait que parce que la hauteur du canvas changeait d'un état à l'autre.
+     ⚠️ Ne pas le remplacer par un gy() « proportionnel » : l'équivalence dépend de la
+     hauteur de l'écran (19 px d'écart en 375×812), ce n'est pas une simple réécriture. */
+  const fPd  = 1;
+  const pdX  = 167, pdRX = 44, pdRY = 10;
+  /* ⚠️ L'ancrage d'origine retranche 102 px FIXES à une bande de sol qui, elle, se comprime
+     quand la caméra descend : l'étang finissait au-dessus de l'horizon. On rend donc ce
+     décalage PROPORTIONNEL à la bande de sol — `kSol` vaut exactement 1 au camp, où
+     l'expression se réduit littéralement à l'originale (gy(406)-102).
+     ⚠️ Ne PAS remettre une butée `Math.max(..., HZ+26)` : elle crée deux régimes de vitesse
+     (plaqué sur l'horizon, puis libre), et l'étang arrivait à sa place bien avant les autres
+     objets. Ici il avance exactement au même rythme qu'eux, et sa marge sous l'horizon est
+     la plus serrée à la toute fin, côté accueil. */
+  const kSol = (H-HZ)/Math.max(1,H-Math.round(H*HUB_SKY1));
+  const pdY  = gy(406)-Math.round(102*kSol);
   /* plage de sable en dégradé : sable humide au bord de l'eau → sable sec qui s'évanouit dans l'herbe */
   const sOut=day?"#e4d4a6":"#4d4636";
-  x.globalAlpha=.35;t.poly(puddlePath(pdX,pdY,pdRX+14,pdRY+9.5,7), sOut);x.globalAlpha=1;
-  x.globalAlpha=.7; t.poly(puddlePath(pdX,pdY,pdRX+11,pdRY+7.5,7), sOut);x.globalAlpha=1;
-  t.poly(puddlePath(pdX,pdY,pdRX+8,pdRY+6,7), sOut);
+  x.globalAlpha=.35;t.poly(puddlePath(pdX,pdY,pdRX+14*fPd,pdRY+9.5*fPd,7), sOut);x.globalAlpha=1;
+  x.globalAlpha=.7; t.poly(puddlePath(pdX,pdY,pdRX+11*fPd,pdRY+7.5*fPd,7), sOut);x.globalAlpha=1;
+  t.poly(puddlePath(pdX,pdY,pdRX+8*fPd,pdRY+6*fPd,7), sOut);
   /* la frontière se dissout : grains de sable égarés dans l'herbe, herbe qui mord sur le sable */
   for(let i=0;i<130;i++){const a2=hubHash(i,68)*6.283, f=1+hubHash(i,69)*0.5;
-    const gx2=pdX+Math.cos(a2)*(pdRX+8)*f, gy3=pdY+Math.sin(a2)*(pdRY+6)*f;
-    if(gx2<W-4)t.P(gx2,gy3,sOut);}
+    const gx2=pdX+Math.cos(a2)*(pdRX+8*fPd)*f, gy3=pdY+Math.sin(a2)*(pdRY+6*fPd)*f;
+    /* en accueil, la tente est plus près : on interdit aux grains égarés de retomber dessus */
+    if(gx2<W-4 && (fPd===1||gx2>150))t.P(gx2,gy3,sOut);}
   for(let i=0;i<95;i++){const a2=hubHash(i,71)*6.283, f=0.84+hubHash(i,72)*0.2;
-    t.P(pdX+Math.cos(a2)*(pdRX+8)*f, pdY+Math.sin(a2)*(pdRY+6)*f, day?C.gr1:C.gr2);}
-  t.poly(puddlePath(pdX,pdY,pdRX+5.5,pdRY+4,7),  day?"#d8c290":"#5c5240");
-  t.poly(puddlePath(pdX,pdY,pdRX+2.5,pdRY+1.8,7),day?"#c9ae7c":"#6b5f48");
+    t.P(pdX+Math.cos(a2)*(pdRX+8*fPd)*f, pdY+Math.sin(a2)*(pdRY+6*fPd)*f, day?C.gr1:C.gr2);}
+  t.poly(puddlePath(pdX,pdY,pdRX+5.5*fPd,pdRY+4*fPd,7),  day?"#d8c290":"#5c5240");
+  t.poly(puddlePath(pdX,pdY,pdRX+2.5*fPd,pdRY+1.8*fPd,7),day?"#c9ae7c":"#6b5f48");
   /* l'eau : posée sur le sable, sans liseré sombre — dégradé ciel réfléchi → profondeur */
   t.poly(puddlePath(pdX,pdY,pdRX,pdRY,7), C.lake);
   {x.save();
-   const wp=puddlePath(pdX,pdY,pdRX-0.5,pdRY-0.4,7);
+   const wp=puddlePath(pdX,pdY,pdRX-0.5*fPd,pdRY-0.4*fPd,7);
    x.beginPath();x.moveTo(wp[0][0],wp[0][1]);
    for(let i=1;i<wp.length;i++)x.lineTo(wp[i][0],wp[i][1]);
    x.closePath();x.clip();
@@ -3982,10 +4310,10 @@ function buildHub(W,H,day){
    /* stries horizontales : la matière de l'eau */
    for(let i=0;i<14;i++){
      const lx=pdX-pdRX+hubHash(i,62)*pdRX*2, ly=pdY-pdRY+hubHash(i,63)*pdRY*2;
-     t.R(lx,ly,3+hubHash(i,64)*8,1,i%3?"rgba(255,255,255,.10)":"rgba(255,255,255,.18)");}
+     t.R(lx,ly,(3+hubHash(i,64)*8)*fPd,1,i%3?"rgba(255,255,255,.10)":"rgba(255,255,255,.18)");}
    for(let i=0;i<7;i++){
      const lx=pdX-pdRX+hubHash(i,65)*pdRX*2, ly=pdY+hubHash(i,66)*pdRY*0.9;
-     t.R(lx,ly,4+hubHash(i,67)*7,1,"rgba(4,10,26,.20)");}
+     t.R(lx,ly,(4+hubHash(i,67)*7)*fPd,1,"rgba(4,10,26,.20)");}
    x.restore();}
   /* nénuphars (feuille échancrée + fleur pour certains) */
   const pad=(px,py,r,fl)=>{
@@ -3996,7 +4324,8 @@ function buildHub(W,H,day){
     if(fl){t.P(px-1,py-3,day?"#fbf3e2":"#b9a8d0");t.P(px+1,py-3,day?"#fbf3e2":"#b9a8d0");
       t.P(px,py-4,day?"#ffd3e0":"#9f8fc0");t.P(px,py-3,day?"#ffd24d":"#a08a4a");}
   };
-  pad(pdX-26,pdY+3,6,1);pad(pdX-5,pdY-3,5,0);pad(pdX+15,pdY+4,7,1);pad(pdX+31,pdY-2,4,0);pad(pdX-38,pdY-3,4,0);
+  pad(pdX-26*fPd,pdY+3*fPd,6*fPd,1);pad(pdX-5*fPd,pdY-3*fPd,5*fPd,0);pad(pdX+15*fPd,pdY+4*fPd,7*fPd,1);
+  pad(pdX+31*fPd,pdY-2*fPd,4*fPd,0);pad(pdX-38*fPd,pdY-3*fPd,4*fPd,0);
   /* ---- arbre à l'horizon (base au niveau de la tente) ---- */
   const trBase=gy(343), trTop=trBase-46;
   t.ell(283,trBase-1,26,6,"rgba(0,0,0,.3)");
@@ -4099,19 +4428,45 @@ function buildHub(W,H,day){
     gW2.addColorStop(0,`rgba(200,110,40,${(.22*C.glowK*2).toFixed(3)})`);gW2.addColorStop(1,"rgba(200,110,40,0)");
     x.fillStyle=gW2;x.fillRect(85,fireY-80,160,156);   /* couvre tout le rayon : plus de coupe nette en bas */
   }
-  /* vignette */
-  const vg=x.createRadialGradient(165,H*0.5,H*0.24,165,H*0.5,H*0.62);
-  vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,C.vign);
-  x.fillStyle=vg;x.fillRect(0,0,W,H);
-  hubPos={W,H,HZ,fireY,logT,tnA,tnB,bdT,pbB,ndY,jnB,bnB,trBase,cc,pdX,pdY,pdRX,pdRY,
-    quote:buildQuotePix(W,HZ)};
+  /* vignette : recentrée sur la BANDE visible, pas sur le canvas — sinon elle assombrit
+     le ciel plat du haut à l'accueil. Sautée pendant la transition (effet lent, invisible
+     à cette vitesse). */
+  if(!hubFast){
+    /* ⚠️ le remplissage couvre TOUT le canvas, pas seulement la bande : le décor de ciel
+       déborde désormais au-dessus d'elle, et s'arrêter à `skyTop` traçait une coupure
+       nette en travers des montagnes — la « zone grisée » qui apparaissait à mi-hauteur.
+       Au camp (skyTop=0, Hb=H) l'expression est identique à l'originale. */
+    const vg=x.createRadialGradient(165,skyTop+Hb*0.5,Hb*0.24,165,skyTop+Hb*0.5,Hb*0.62);
+    vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,C.vign);
+    x.fillStyle=vg;x.fillRect(0,0,W,H);
+  }
+  hubPos={W,H,HZ,fireY,logT,tnA,tnB,bdT,pbB,ndY,jnB,bnB,trBase,cc,pdX,pdY,pdRX,pdRY,fPd,
+    skyTop,skyH,Hb,dW,e:LO.e,
+    /* repères du décor de ciel à taille FIXE, pour que la couche animée le suive */
+    skyF0,skyHC,skyAnc,mtnH:Math.max(1,Math.round(108*syC(252)/249)),
+    quote:buildQuotePix(W,Math.round(H*HUB_SKY1))};
   campStatic=oc;campStaticKey=campKey(W,H,day);
 }
 /* Clé du cache de la scène statique : UNE SEULE définition, partagée entre la
-   construction et la vérification (une divergence = reconstruction à chaque frame). */
+   construction et la vérification (une divergence = reconstruction à chaque frame).
+   ⚠️ La MISE EN PAGE doit y figurer : sans ça le décor reste figé pendant la transition
+   et seule la couche animée suivrait hubT. */
 function campKey(W,H,day){
-  return W+"x"+H+":"+(day?"d":"n")+":"+(S.camp.fire?"f":"-")
+  const LO=hubLayout();
+  return W+"x"+H+":"+Math.round(LO.frac*1e4)+"/"+Math.round(LO.skyRatio*1e4)
+    +":"+(hubFast?"f":"q")+":"+(day?"d":"n")+":"+(S.camp.fire?"f":"-")
     +":"+((S.chest&&(S.chest.coins||S.chest.fish||S.chest.grilled))?"c":"-")+":"+today();
+}
+/* Nuage et oiseau : extraits TELS QUELS de drawHub pour être partagés avec la couche de
+   ciel de l'accueil (#ciel). Aucune expression n'a été retouchée. */
+function hubNuage(x,T,cx,cy,s,a){
+  x.globalAlpha=a;
+  T.R(cx,cy,26*s,5*s,"#fff");T.R(cx+5*s,cy-4*s,15*s,5*s,"#fff");T.R(cx-5*s,cy+3*s,32*s,4*s,"#fff");
+  x.globalAlpha=1;
+}
+function hubOiseau(T,bx,by){
+  T.P(bx,by,"#243040");T.P(bx+1,by-1,"#243040");T.P(bx+2,by,"#243040");
+  T.P(bx+3,by-1,"#243040");T.P(bx+4,by,"#243040");
 }
 /* ================= Rendu animé du HUB ================= */
 function drawHub(t){
@@ -4124,24 +4479,26 @@ function drawHub(t){
   x.imageSmoothingEnabled=false;
   x.clearRect(0,0,W,H);
   x.drawImage(campStatic,0,0);
+  /* ⚠️ Le ciel commence à P.skyTop et non à 0 : ces fractions étaient des LONGUEURS depuis
+     le haut du canvas, il faut les compter depuis le haut de la scène. Nuages et oiseaux
+     sont mis à l'échelle du ciel (P.kS vaut exactement 1 au camp) pour ne pas paraître
+     énormes quand il est petit. */
   if(!day){
-    for(let i=0;i<12;i++){const sx=hubHash(i,60)*W, syy=hubHash(i,61)*P.HZ*0.8;
+    for(let i=0;i<12;i++){const sx=hubHash(i,60)*W, syy=P.skyF0+hubHash(i,61)*P.skyHC*0.8;
       if((t+i*13)%80<40){T.P(sx,syy,"#fff");
         if((t+i*13)%80<10){T.P(sx-1,syy,"rgba(255,255,255,.5)");T.P(sx+1,syy,"rgba(255,255,255,.5)");}}}
   }else{
-    const cl=(cx,cy,s,a)=>{x.globalAlpha=a;T.R(cx,cy,26*s,5*s,"#fff");T.R(cx+5*s,cy-4*s,15*s,5*s,"#fff");T.R(cx-5*s,cy+3*s,32*s,4*s,"#fff");x.globalAlpha=1;};
-    cl(((t/9)%(W+80))-50,P.HZ*0.22,1,.85);
-    cl(((t/13+150)%(W+80))-50,P.HZ*0.42,.7,.7);
-    const bd=(bx,by)=>{T.P(bx,by,"#243040");T.P(bx+1,by-1,"#243040");T.P(bx+2,by,"#243040");T.P(bx+3,by-1,"#243040");T.P(bx+4,by,"#243040");};
-    bd((t/2.6)%(W+10)-5,P.HZ*0.56+Math.sin(t/14)*4);
-    bd((t/3.4+80)%(W+10)-5,P.HZ*0.36+Math.sin(t/11)*4);
+    hubNuage(x,T,((t/9)%(W+80))-50,P.skyF0+P.skyHC*0.22,1,.85);
+    hubNuage(x,T,((t/13+150)%(W+80))-50,P.skyF0+P.skyHC*0.42,.7,.7);
+    hubOiseau(T,(t/2.6)%(W+10)-5,P.skyF0+P.skyHC*0.56+Math.sin(t/14)*4);
+    hubOiseau(T,(t/3.4+80)%(W+10)-5,P.skyF0+P.skyHC*0.36+Math.sin(t/11)*4);
   }
   /* ---- atmosphère vivante : la lumière elle-même respire ---- */
-  if(!reduce){
-    const astX=294, astY=Math.round(P.HZ*46/282);
+  if(!reduce&&!hubFast){
+    const astX=294, astY=sy2(P,46);
     /* brume au pied des montagnes et entre les flancs des massifs (jour et nuit) */
     {
-      const mb=Math.round(P.HZ*252/282), rgbM=day?"215,228,246":"150,168,225";
+      const mb=P.skyAnc, rgbM=day?"215,228,246":"150,168,225";
       const wisp=(cx0,cy0,rx,al,sp,ph)=>{
         const wx=cx0+Math.sin(t/sp+ph)*12;
         x.save();x.translate(wx,cy0);x.scale(1,.30);x.translate(-wx,-cy0);
@@ -4213,7 +4570,10 @@ function drawHub(t){
   }
   /* ---- lac vivant : reflet de l'astre + scintillement + vaguelettes dispersées ----
      (limité à x<238 : à droite, l'arbre du premier plan masque l'eau) */
-  const lkT=Math.round(P.HZ*0.895), lkB=P.HZ-5, lkC=day?"rgba(255,250,225,.65)":"rgba(220,228,248,.55)";
+  /* le lac vivant doit suivre le rivage : 0.895 était une fraction de la hauteur du canvas,
+     c'est désormais une fraction du CIEL, et le rivage remonte de P.dW (0 au camp) */
+  const lkT=P.skyAnc, lkB=P.HZ-5,
+        lkC=day?"rgba(255,250,225,.65)":"rgba(220,228,248,.55)";
   for(let i=0;i<7;i++){const ly=lkT+((t/7+i*3.4)%(lkB-lkT));
     T.R(208+Math.sin(t/24+i)*7,ly,2,1,lkC);}
   for(let i=0;i<14;i++){const sx=6+hubHash(i,80)*228, syy=lkT+hubHash(i,81)*(lkB-lkT);
@@ -4227,42 +4587,50 @@ function drawHub(t){
     T.R(wx,wy,4,1,wc);T.P(wx-1,wy+1,wc);T.P(wx+4,wy+1,wc);}
   /* ---- reflets des flaques : étoiles la nuit, nuages qui passent le jour ---- */
   /* ---- la phrase du jour scintille dans le ciel ---- */
-  if(P.quote&&P.quote.pts.length){
+  if(P.quote&&P.quote.pts.length&&P.e>0.01){
     const Q=P.quote;
+    /* La citation est construite UNE fois pour la géométrie du camp (mise en cache) : on la
+       décale ici selon la position réelle du ciel. `dy` vaut exactement 0 au camp, donc on
+       retombe littéralement sur les drawImage(...,0,0) d'origine. Elle s'efface vers
+       l'accueil (P.e), où c'est le panneau qui porte la phrase en HTML. */
+    const dy=(P.skyF0+Math.max(14,Math.round(P.skyHC*0.245)))-Q.y0;
+    x.save();
+    x.globalAlpha=P.e;
     if(day){
       /* le ciel se voile juste derrière les mots, puis chaque lettre reçoit son contour d'ombre */
-      x.save();x.translate(W/2,Q.cy);x.scale(1,.36);
+      x.save();x.translate(W/2,Q.cy+dy);x.scale(1,.36);
       T.glow(0,0,300,"16,46,86",.26);
       x.restore();
-      if(Q.shadow)x.drawImage(Q.shadow,0,0);
+      if(Q.shadow)x.drawImage(Q.shadow,0,dy);
     }else{
-      x.save();x.translate(W/2,Q.cy);x.scale(1,.36);
+      x.save();x.translate(W/2,Q.cy+dy);x.scale(1,.36);
       T.glow(0,0,120,"255,224,130",.17);
       x.restore();
     }
     /* écriture pré-rendue en une image ; seule une nuée d'étincelles est animée */
-    x.drawImage(day?Q.stillD:Q.stillN,0,0);
+    x.drawImage(day?Q.stillD:Q.stillN,0,dy);
     for(let i=0;i<Q.spark.length;i++){
       const p2=Q.spark[i];
       const wv=Math.abs(Math.sin(t/18+p2[0]*.08+p2[2]*.35));
       if(wv>.62){
-        x.globalAlpha=(wv-.62)/.38;
+        x.globalAlpha=P.e*(wv-.62)/.38;
         x.fillStyle=day?"#ffffff":"#fff6d8";
-        x.fillRect(p2[0],p2[1],1,1);
+        x.fillRect(p2[0],p2[1]+dy,1,1);
       }
     }
-    x.globalAlpha=1;
+    x.globalAlpha=P.e;
     /* croix de lumière qui parcourent les lettres */
     for(let g=0;g<6;g++){
       const ph=Math.abs(Math.sin(t/22+g*1.9));
       if(ph>.72){
         const p2=Q.pts[((hubHash(g,180)*7919+((t/3)|0)*13+g*271)%Q.pts.length)|0];
-        x.globalAlpha=(ph-.72)*3;
+        x.globalAlpha=P.e*Math.min(1,(ph-.72)*3);
         x.fillStyle=day?"#fff8c8":"#fff";
-        x.fillRect(p2[0]-2,p2[1],5,1);x.fillRect(p2[0],p2[1]-2,1,5);
-        x.globalAlpha=1;
+        x.fillRect(p2[0]-2,p2[1]+dy,5,1);x.fillRect(p2[0],p2[1]-2+dy,1,5);
+        x.globalAlpha=P.e;
       }
     }
+    x.restore();
   }
   /* ---- hautes herbes de fond qui ondulent doucement ---- */
   {const g1=day?"#4f8f46":"#1c3a22", g2=day?"#6cb05c":"#2a5230";
@@ -4272,7 +4640,7 @@ function drawHub(t){
      (bx>30&&bx<156&&by>P.tnA-6)||                                   // tente
      (bx>274&&bx<300&&by>P.trBase-52)||                              // tronc de l'arbre
      (bx>202&&bx<306&&by>P.bdT+12)||                                 // panneau
-     (Math.pow((bx-P.pdX)/(P.pdRX+11),2)+Math.pow((by-P.pdY)/(P.pdRY+8),2)<1); // étang + plage
+     (Math.pow((bx-P.pdX)/(P.pdRX+11*P.fPd),2)+Math.pow((by-P.pdY)/(P.pdRY+8*P.fPd),2)<1); // étang + plage
    if(!P.blades){P.blades=[];                  // brins pré-calculés une fois par scène
      for(let i=0;i<170;i++){
        const gx=hubHash(i,120)*W, base=P.HZ+3+hubHash(i,121)*27, gh=5+hubHash(i,122)*13;
@@ -4283,16 +4651,19 @@ function drawHub(t){
    }}
   /* ---- l'étang : eau vivante + roseaux qui ondulent ---- */
   {x.save();
-   const wp=puddlePath(P.pdX,P.pdY,P.pdRX-0.5,P.pdRY-0.4,7);
+   /* ⚠️ tous les décalages en dur de l'étang sont multipliés par P.fPd (=1 au camp, donc
+      expressions d'origine) : sinon vaguelettes, reflets et roseaux gardent leur taille
+      pendant que l'étang rétrécit, et débordent sur la tente. */
+   const wp=puddlePath(P.pdX,P.pdY,P.pdRX-0.5*P.fPd,P.pdRY-0.4*P.fPd,7);
    x.beginPath();x.moveTo(wp[0][0],wp[0][1]);
    for(let i=1;i<wp.length;i++)x.lineTo(wp[i][0],wp[i][1]);
    x.closePath();x.clip();
    const wc=day?"rgba(240,248,255,.65)":"rgba(196,210,244,.5)";
    /* vaguelettes concentriques qui naissent et s'élargissent */
    for(let s2=0;s2<2;s2++){
-     const ph=((t/110)+s2*0.5)%1, ox=P.pdX+(s2?15:-17), oy=P.pdY+(s2?2:-1);
+     const ph=((t/110)+s2*0.5)%1, ox=P.pdX+(s2?15:-17)*P.fPd, oy=P.pdY+(s2?2:-1)*P.fPd;
      x.globalAlpha=(1-ph)*.45;x.strokeStyle=wc;x.lineWidth=1;
-     x.beginPath();x.ellipse(ox,oy,1.5+ph*11,(1.5+ph*11)*0.38,0,0,7);x.stroke();
+     x.beginPath();x.ellipse(ox,oy,(1.5+ph*11)*P.fPd,(1.5+ph*11)*0.38*P.fPd,0,0,7);x.stroke();
      x.globalAlpha=1;}
    /* éclats scintillants */
    for(let i=0;i<8;i++){
@@ -4302,14 +4673,16 @@ function drawHub(t){
    const rfc=day?"rgba(28,58,38,.4)":"rgba(4,10,8,.55)";
    [[-40,4],[-28,5],[24,4],[36,5]].forEach((r,i)=>{
      const sw=Math.sin(t/46+i*1.7)*1.3;
-     for(let k=0;k<r[1];k++)T.P(P.pdX+r[0]+sw*k/r[1],P.pdY-2+k,rfc);});
+     const rl=Math.max(1,Math.round(r[1]*P.fPd));
+     for(let k=0;k<rl;k++)T.P(P.pdX+r[0]*P.fPd+sw*k/rl,P.pdY-2*P.fPd+k,rfc);});
    x.restore();
    const rc=day?"#3f7a3d":"#1e4227", rt=day?"#8a5a2e":"#4a3020";
    [[-42,3],[-34,-3],[-26,4],[-18,-1],[20,3],[28,-3],[36,3],[42,-1]].forEach((r,i)=>{
-     const bx=P.pdX+r[0], by=P.pdY+r[1], h=9+((i*5)%6), sw=Math.sin(t/74+i*1.1)*2.6;
+     const bx=P.pdX+r[0]*P.fPd, by=P.pdY+r[1]*P.fPd, sw=Math.sin(t/74+i*1.1)*2.6;
+     const h=Math.max(2,Math.round((9+((i*5)%6))*P.fPd));
      for(let k=0;k<h;k++){const u=k/h;T.P(bx+sw*u*u,by-k,rc);}
      const tx=bx+sw, ty=by-h;
-     T.R(tx-1,ty-6,2,7,rt);T.P(tx-1,ty-7,rt);
+     T.R(tx-1,ty-6*P.fPd,2,Math.max(2,Math.round(7*P.fPd)),rt);T.P(tx-1,ty-7*P.fPd,rt);
    });}
   drawTentGlow(x,P,t,day);
   /* Halos pulsés des zones cliquables. Ils sont peints APRÈS le décor statique : sans
@@ -4655,7 +5028,7 @@ function drawHubTasks(x,T,P,t,C,day){
   HUB_DROPS=HUB_DROPS.filter(d=>{
     const e2=(Date.now()-d.t0)/1000, D=5.5;
     if(e2>=D+0.9)return false;
-    const st=d.tal==="peche"?[d.slot===1?P.pdX+P.pdRX+15:P.pdX-P.pdRX-15,P.pdY+9,1.15]
+    const st=d.tal==="peche"?[hubPeche(P,d.slot===1),P.pdY+9*P.fPd,1.15]
             :d.tal==="cuisine"?[d.slot===1?196:134,P.fireY+13,1.8]
             :[244,P.HZ+5,0.62];
     const k=Math.min(1,e2/D), K=ease(k);
@@ -4693,7 +5066,7 @@ function drawHubTasks(x,T,P,t,C,day){
     const draw=(px,py,sc,bob,mov,face)=>drawAs(id,px,py,sc,bob,mov,face);
     if(tk.tal==="peche"){
       const droite=slot===1;                   // 1er pêcheur berge gauche, 2e berge droite
-      const gx=droite?P.pdX+P.pdRX+15:P.pdX-P.pdRX-15, gy0=P.pdY+9;
+      const gx=hubPeche(P,droite), gy0=P.pdY+9*P.fPd;
       const k=Math.min(1,el/TRAVEL);
       const px=nestX+(gx-nestX)*ease(k), py=nestY+(gy0-nestY)*ease(k);
       const sc=2+(1.15-2)*ease(k);
@@ -4706,14 +5079,15 @@ function drawHubTasks(x,T,P,t,C,day){
         x.strokeStyle="#8a6a3c";x.lineWidth=1;
         x.beginPath();x.moveTo(rx0+dir,ry0);x.lineTo(rx1+dir,ry1);x.stroke();
         draw(px,py,sc,0,false,!droite);            // installé : face à l'eau (berge gauche → regarde à droite)
-        const bx=P.pdX+(droite?12:-12), by=P.pdY+1+Math.round(Math.sin(t/16+slot));
+        const bx=P.pdX+(droite?12:-12)*P.fPd, by=P.pdY+1+Math.round(Math.sin(t/16+slot));
         x.strokeStyle="rgba(220,230,240,.45)";x.lineWidth=1;
         x.beginPath();x.moveTo(rx1,ry1);
         x.quadraticCurveTo((rx1+bx)/2,(ry1+by)/2+8,bx,by-2);x.stroke();
         T.P2(bx-1,by-1,"#d84a3a");T.P(bx,by-2,"#f0f0e8");
         const rp=((t+slot*30)%90)/90;
         if(rp<.6){x.strokeStyle=`rgba(200,225,240,${(.5*(1-rp/.6)).toFixed(2)})`;
-          x.lineWidth=1;x.beginPath();x.ellipse(bx,by+1,3+rp*8,(3+rp*8)*.35,0,0,7);x.stroke();}
+          x.lineWidth=1;x.beginPath();
+          x.ellipse(bx,by+1,(3+rp*8)*P.fPd,(3+rp*8)*.35*P.fPd,0,0,7);x.stroke();}
       }else{
         draw(px,py,sc,0,true,gx>nestX);   // trajet : plus de sautillement
       }
@@ -4747,8 +5121,9 @@ function drawHubTasks(x,T,P,t,C,day){
          CONSTANTE, elle ne rétrécit plus, elle prend seulement de l'altitude — puis
          longe la crête au même rythme que d'habitude. */
       const vol=!!(CREATURES[id]||{}).fly;
-      const sy252=Math.round(252*P.HZ/282);                        // base des montagnes
-      const mtnH=Math.max(1,Math.round(108*sy252/249));            // leur hauteur
+      /* doit suivre EXACTEMENT la géométrie de buildHub, sinon les créatures volantes
+         croisent sous les crêtes au lieu d'être à mi-hauteur */
+      const sy252=P.skyAnc, mtnH=P.mtnH;
       const hCroisiere=vol?Math.round(sy252-mtnH/2):hy;            // milieu des montagnes
       /* durée de la montée supplémentaire = la distance restante parcourue à la même
          vitesse verticale MOYENNE que la montée depuis le nid (12 s) : la créature ne
@@ -4994,6 +5369,9 @@ function hubAvatarTap(rang){
   if(reduce)drawHub(1);
 }
 function gy2(P,v){return Math.round(P.HZ+(v-282)*(P.H-P.HZ)/278);}
+/* jumeau de gy2 pour le repère CIEL. Le décor de ciel est de taille FIXE et sa base suit
+   la ligne de vallée : on repart donc de skyF0 avec la hauteur de ciel du camp. */
+function sy2(P,v){return P.skyF0+Math.round(v*P.skyHC/282);}
 /* ---- zones tactiles + étiquettes positionnées sur la scène ---- */
 function placeHubSpots(){
   const cv=document.getElementById("camp");if(!cv||!hubPos)return;
@@ -5576,20 +5954,356 @@ function closeHatch(){
   if(hatchRAF){cancelAnimationFrame(hatchRAF);hatchRAF=null;}
   if(document.getElementById("nest").style.display==="block")openNest();
 }
+/* ================= Accueil simplifié ================= */
+/* `campOuvert` est déclaré tout en haut, avec `launchOpen` (zone morte). */
+
+/* ⚠️ Le canvas garde TOUJOURS la même résolution, plein écran, dans les deux états et
+   pendant toute la transition : c'est la condition pour que hubT puisse redessiner la
+   scène image par image sans jamais réallouer ni remettre le cache à zéro pour rien. */
+function sizeCamp(){
+  const cv=document.getElementById("camp"), cl=document.getElementById("campClip");
+  if(!cv||!cl)return;
+  const w=cl.clientWidth||innerWidth||1;
+  const nh=Math.max(480,Math.round(330*(innerHeight||1)/Math.max(1,w)));
+  if(cv.width!==330||cv.height!==nh){cv.width=330;cv.height=nh;campStaticKey="";}
+  drawHub(0);placeHubSpots();updateHubPip();
+  sizeCiel();
+}
+
+/* ---- Couche de ciel de l'accueil ----
+   Le dégradé de fond est déjà peint sur #launch et se raccorde au haut du canvas du camp
+   (majCielAccueil). Ce canvas-ci est TRANSPARENT : il n'ajoute que ce qui manquait, des
+   nuages qui traversent et quelques oiseaux, avec les mêmes dessins que le camp. */
+function sizeCiel(){
+  const cv=document.getElementById("ciel"); if(!cv)return;
+  const w=(document.getElementById("campClip")||{}).clientWidth||innerWidth||1;
+  const h=Math.round((innerHeight||1)*0.54);
+  const nh=Math.max(120,Math.round(330*h/Math.max(1,w)));
+  if(cv.width!==330||cv.height!==nh){cv.width=330;cv.height=nh;}
+  drawCiel(0);
+}
+function drawCiel(t){
+  if(campOuvert)return;
+  const cv=document.getElementById("ciel"); if(!cv)return;
+  const W=cv.width,H=cv.height,x=cv.getContext("2d"),T=hubTools(x);
+  x.imageSmoothingEnabled=false;
+  x.clearRect(0,0,W,H);
+  const f=v=>Math.round(H*v);
+  if(hubDay()){
+    /* ⚠️ OPACITÉ PLAFONNÉE À .18 : le texte du panneau passe devant ces nuages ; mesuré,
+       au-delà son contraste tombe sous 3:1 et devient illisible. Pour qu'ils se voient
+       quand même, on joue sur la TAILLE, qui ne coûte rien en lisibilité. */
+    hubNuage(x,T,((t/8)%(W+120))-70,      f(.030),1.6,.18);
+    hubNuage(x,T,((t/11+120)%(W+120))-70, f(.255),1.9,.17);
+    hubNuage(x,T,((t/15+230)%(W+120))-70, f(.335),1.3,.16);
+    hubNuage(x,T,((t/13+60)%(W+120))-70,  f(.470),1.5,.18);
+    hubOiseau(T,(t/2.9)%(W+10)-5,     f(.221)+Math.sin(t/13)*4);
+    hubOiseau(T,(t/3.6+140)%(W+10)-5, f(.377)+Math.sin(t/10)*4);
+    hubOiseau(T,(t/3.1+60)%(W+10)-5,  f(.842)+Math.sin(t/17)*3);
+  }else{
+    for(let i=0;i<40;i++){const sx=hubHash(i,201)*W, sv=hubHash(i,202)*H;
+      if((t+i*17)%90<50)T.P(sx,sv,hubHash(i,203)>.7?"#fff6d8":"rgba(255,255,255,.7)");}
+  }
+}
+
+/* Ciel au-dessus du camp : le dégradé DOIT finir exactement sur la première bande de
+   hubPal(), sinon le raccord avec le haut du canvas se voit comme un trait. On l'assombrit
+   simplement vers le haut — ça marche du même coup pour le thème nuit. */
+function majCielAccueil(){
+  const l=document.getElementById("launch"); if(!l)return;
+  const c0=(hubPal(hubDay()).bands||["#5a9fd4"])[0];
+  const fonce=(hex,k)=>{
+    const n=parseInt(String(hex).slice(1),16);
+    const r=Math.round((n>>16&255)*k), g=Math.round((n>>8&255)*k), b=Math.round((n&255)*k);
+    return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+  };
+  /* mémorisé : le calque de transition doit repeindre ce même ciel dans un canvas */
+  cielStops=[fonce(c0,.74),fonce(c0,.88),c0];
+  l.style.background="linear-gradient(180deg,"+cielStops[0]+" 0%,"+cielStops[1]+" 54%,"+cielStops[2]+" 100%)";
+}
+
+/* Au changement d'état, la bande de marche change de place : une créature garde des
+   coordonnées calculées pour l'ANCIENNE géométrie et se retrouve au-dessus de la nouvelle
+   bande — l'anti-blocage la fait alors descendre, ce qui se lit comme une arrivée par le
+   HAUT. On les repose donc au bas de la bande, d'où elles remontent naturellement.
+   ⚠️ Uniquement au changement d'état, JAMAIS sur un simple resize : sinon les créatures
+   sautent à chaque redimensionnement de la fenêtre en plein camp. */
+function hubRecaleWalks(){
+  const P=hubPos; if(!P)return;
+  const bas=P.H-22;
+  Object.keys(hubWalks).forEach((cid,i)=>{
+    const wk=hubWalks[cid]; if(!wk)return;
+    const fx=Math.min(288,Math.max(44,wk.fx));
+    wk.fx=fx; wk.tx=fx;
+    wk.fy=bas-i*5; wk.ty=wk.fy;          // légèrement étagées pour ne pas se superposer
+    wk.state="idle"; wk.wait=0; wk.stuck=0;
+  });
+}
+
+/* ================= (retiré) ancienne transition par déformation =================
+   Remplacée par un vrai déplacement de caméra : la scène n'ayant plus qu'UNE composition,
+   il n'y a plus rien à déformer ni à fondre. Le texte ci-dessous documente l'approche
+   abandonnée et pourquoi.
+
+   ---------- ancienne note ----------
+   On ne peut pas déplacer les objets du décor un par un : la scène est UN SEUL canvas.
+   On simule donc une caméra qui change de HAUTEUR et d'INCLINAISON en déformant l'image
+   rangée par rangée, chaque rangée se déplaçant selon sa PROFONDEUR :
+
+     · le haut du ciel ne bouge pas du tout (distance infinie) ;
+     · plus on descend vers l'horizon, plus le déplacement reste faible ;
+     · sous l'horizon, le sol s'ouvre : une rangée juste sous l'horizon (le lointain) bouge
+       à peine, le bas du cadre (le premier plan : feu, animaux, pupitre) bouge le plus ;
+     · un léger écartement horizontal accompagne le mouvement, maximal à mi-course, pour
+       que le premier plan s'écarte quand la caméra descend et se resserre quand elle monte.
+
+   La déformation étant CONTINUE, rien ne peut se désassembler. Et comme les deux vues sont
+   ramenées à la MÊME géométrie à chaque instant, leur fondu ne produit aucun dédoublement. */
+
+/* Reconstitue dans un canvas l'apparence ÉCRAN complète de l'état courant : le dégradé de
+   ciel, la couche de nuages, puis le camp à sa place. Renvoie aussi la ligne d'horizon. */
+function warpCapture(){
+  const l=document.getElementById("launch"), clip=document.getElementById("campClip");
+  const cvC=document.getElementById("camp"), cvS=document.getElementById("ciel");
+  if(!l||!clip||!cvC)return null;
+  const lr=l.getBoundingClientRect();
+  const W=Math.max(1,Math.round(lr.width)), H=Math.max(1,Math.round(lr.height));
+  const oc=document.createElement("canvas");oc.width=W;oc.height=H;
+  const x=oc.getContext("2d");x.imageSmoothingEnabled=false;
+  const g=x.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,cielStops[0]);g.addColorStop(.54,cielStops[1]);g.addColorStop(1,cielStops[2]);
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  const cr=clip.getBoundingClientRect();
+  const cTop=Math.round(cr.top-lr.top), cH=Math.max(1,Math.round(cr.height));
+  if(cvS&&!campOuvert&&cvS.width&&cvS.height){
+    const sr=cvS.getBoundingClientRect();
+    x.drawImage(cvS,0,Math.round(sr.top-lr.top),W,Math.max(1,Math.round(sr.height)));
+  }
+  x.drawImage(cvC,0,cTop,W,cH);
+  /* horizon à l'écran : sa position dans le canvas du camp, ramenée à la boîte affichée */
+  const P=hubPos||{HZ:1,H:2};
+  const hz=cTop+cH*(P.HZ/Math.max(1,P.H));
+  return {img:oc,W,H,hz};
+}
+
+/* Redessine une vue capturée avec la géométrie de caméra voulue.
+     hz   : où doit tomber la ligne d'horizon ;
+     sol  : hauteur qu'occupe la bande de sol (horizon → bas du cadre) ;
+     ciel : hauteur qu'occupe la bande de ciel (haut du cadre → horizon) ;
+     ecart: écartement horizontal du premier plan (0 = aucun).
+   À la géométrie native de la vue, la fonction redonne exactement l'image d'origine. */
+function warpDessine(x,src,hz,sol,ciel,ecart,courbe){
+  const W=src.W, PAS=3;
+  /* Redistribution TRANSIENTE de la profondeur : nulle aux deux extrémités (les états au
+     repos restent exacts), maximale à mi-course. Vers l'accueil elle pousse le mi-terrain
+     vers le premier plan — le lointain « remonte » et le proche gagne de la place ; vers
+     le camp elle fait l'inverse, le terrain se comprime en profondeur. */
+  const prof=u=>u+courbe*u*(1-u);
+  /* --- bande de SOL : de l'horizon vers le premier plan --- */
+  const srcSol=Math.max(1,src.H-src.hz);
+  for(let y=src.hz;y<src.H;y+=PAS){
+    const h=Math.min(PAS,src.H-y);
+    const u0=prof((y-src.hz)/srcSol), u1=prof((y+h-src.hz)/srcSol);
+    const d0=hz+u0*sol, d1=hz+u1*sol;
+    /* l'écartement croît avec la proximité : nul à l'horizon, maximal au premier plan */
+    const s=1+ecart*((u0+u1)/2);
+    const dw=W*s, dx=(W-dw)/2;
+    x.drawImage(src.img,0,y,W,h,dx,d0,dw,Math.max(.6,d1-d0));
+  }
+  /* --- bande de CIEL : de l'horizon vers le haut du cadre --- */
+  const srcCiel=Math.max(1,src.hz);
+  for(let y=src.hz;y>0;y-=PAS){
+    const h=Math.min(PAS,y);
+    const v0=(src.hz-y)/srcCiel, v1=(src.hz-(y-h))/srcCiel;
+    const d0=hz-v0*ciel, d1=hz-v1*ciel;
+    x.drawImage(src.img,0,y-h,W,h,0,d1,W,Math.max(.6,d0-d1));
+  }
+}
+
+/* Rend au canvas du camp son ancrage normal (il remplit son cadre) : appelé dès que la
+   transition est finie, et par précaution avant d'en relancer une. */
+function campFinTransition(){
+  const cv=document.getElementById("camp"); if(!cv)return;
+  cv.style.top="";cv.style.bottom="";cv.style.height="";
+}
+
+/* ---------- Basculement accueil ↔ camp ----------
+   ⚠️ Le défaut à éviter : animer la hauteur du cadre pendant que le canvas le remplit
+   revient à ÉTIRER l'image (le canvas est en object-fit:fill), ce qui se lit comme un
+   accordéon. Ici :
+     1. on fige la vue sortante dans #campFade, qui reste à sa taille écran et se fond
+        par-dessus — c'est lui qui masque le changement de composition ;
+     2. le canvas entrant reçoit tout de suite sa hauteur FINALE, ancré en bas, donc le
+        cadre s'OUVRE sur lui au lieu de le déformer ;
+     3. chaque couche a sa propre amplitude (panneau 104 % de sa hauteur, ciel 14 %,
+        décor un léger zoom) : c'est l'écart de vitesse qui fait la parallaxe. */
+/* ================= Moteur de transition : on REDESSINE, on n'étire pas =================
+   hubT est le curseur (0 accueil, 1 camp). Il est avancé par la boucle de rendu déjà en
+   place — surtout pas par une seconde boucle, qui dessinerait deux fois par image au moment
+   précis où le budget est le plus serré. `hubFast` allège le décor pendant le mouvement.
+
+   La DURÉE est pilotée par l'horloge et non par un compteur d'images : sur un appareil lent
+   la transition perd de la fluidité, jamais de la durée — elle ne peut pas se mettre à
+   traîner. */
+const HUB_DUR=620;
+let hubAnim=null, hubFini=false;
+
+function hubAvance(){
+  if(!hubAnim)return;
+  const p=Math.min(1,(performance.now()-hubAnim.t0)/hubAnim.dur);
+  hubT=hubAnim.from+(hubAnim.to-hubAnim.from)*p;   // l'adoucissement vit dans hubLayout()
+  campStaticKey="";                                 // la géométrie change : fond à refaire
+  if(p>=1){
+    hubT=hubAnim.to;hubAnim=null;
+    hubFast=false;hubFini=true;                     // dernière image en qualité pleine
+  }
+}
+/* La bande de marche se déplace avec l'horizon. Sans ça les créatures s'en retrouvent
+   dehors, l'anti-blocage se déclenche à chaque image et on les voit glisser toutes seules.
+   On les fait donc suivre le sol proportionnellement — c'est aussi ce qui est physiquement
+   juste : elles sont POSÉES dessus. */
+let hubBandeRef=null;
+function hubSuitLeSol(){
+  const P=hubPos; if(!P)return;
+  const haut=gy2(P,438), bas=P.H-22;
+  if(hubBandeRef&&(hubBandeRef[0]!==haut||hubBandeRef[1]!==bas)){
+    const h0=hubBandeRef[0], k=(bas-haut)/Math.max(1,hubBandeRef[1]-h0);
+    Object.keys(hubWalks).forEach(cid=>{
+      const w=hubWalks[cid]; if(!w)return;
+      w.fy=haut+(w.fy-h0)*k; w.ty=haut+(w.ty-h0)*k;
+    });
+  }
+  hubBandeRef=[haut,bas];
+}
+/* à appeler APRÈS le dessin : les zones tactiles se posent sur la géométrie enfin figée */
+function hubApresDessin(){
+  hubSuitLeSol();
+  if(!hubFini)return;
+  hubFini=false;
+  placeHubSpots();updateHubPip();
+}
+function animHub(vers){
+  const to=vers?1:0;
+  if(reduce){
+    hubAnim=null;hubFast=false;hubT=to;
+    campStaticKey="";drawHub(0);placeHubSpots();updateHubPip();return;
+  }
+  if(Math.abs(hubT-to)<0.002){hubT=to;hubAnim=null;return;}
+  hubFast=true;
+  hubAnim={from:hubT,to,t0:performance.now(),dur:Math.max(160,HUB_DUR*Math.abs(to-hubT))};
+}
+/* glissement au doigt : hubT suit directement le déplacement, donc chaque image affichée
+   est une vraie perspective du campement, tenue à la main et réversible */
+function hubGlisse(p){
+  hubAnim=null;hubFast=true;
+  hubT=Math.max(0,Math.min(1,p));
+  campStaticKey="";
+  drawHub(0);
+  hubSuitLeSol();
+}
+
+function setCampOuvert(v){
+  const l=document.getElementById("launch"); if(!l)return;
+  v=!!v;
+  const change=(v!==campOuvert);
+  campOuvert=v;
+  l.classList.remove("drag");
+  l.classList.toggle("camp-open",campOuvert);
+  ["accueil","ciel"].forEach(id=>{
+    const e=document.getElementById(id); if(e){e.style.opacity="";e.style.transform="";}
+  });
+  animHub(campOuvert);
+  if(change&&!campOuvert)renderAccueil();
+}
+
+/* Une seule ligne : la ligne d'ambiance (« Le camp t'attend. ») a été retirée à la demande
+   de l'utilisateur — il ne reste que le décompte, qui porte l'information. */
+function accPhraseDuJour(n){
+  const mots=["aucune","une","deux","trois","quatre","cinq","six","sept","huit","neuf","dix"];
+  const nb = n<=10 ? mots[n] : String(n);
+  return n===0 ? "Tout est accompli."
+       : n===1 ? "Une quête t'attend."
+       : nb.charAt(0).toUpperCase()+nb.slice(1)+" quêtes t'attendent.";
+}
+
+function renderAccueil(){
+  const $=id=>document.getElementById(id);
+  if(!$("accueil"))return;
+  /* --- HUD : mêmes helpers que renderHUD(), mais ses cibles DOM lui sont propres --- */
+  const li=levelInfo(S.xpTotal);
+  $("accLvl").textContent=li.level;
+  $("accXpTxt").textContent=li.cur+" / "+li.next+" XP";
+  $("accXpFill").style.width=(100*li.cur/Math.max(1,li.next))+"%";
+  $("accStreak").textContent="🔥 "+(S.streak||0)+" J";
+  $("accCoins").textContent="🪙 "+S.coins;
+  try{drawAvatar(mood(),"accAvatar");}catch(e){}
+
+  $("accDate").textContent=new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  {const q=$("accQuote"); if(q)q.textContent=hubQuote();}
+
+  /* la tuile couvre principales ET secondaires : le badge et le sous-titre doivent
+     compter la MÊME chose, sinon on lit « 6 » au-dessus de « 3 à faire » */
+  const restantes=countFor("quetes");
+  $("accPhrase").textContent=accPhraseDuJour(restantes);
+
+  /* --- sous-titres et badges, calculés depuis S au rendu (rien de persisté) --- */
+  const faites=(S.done||[]).length;
+  $("accSubQ").textContent=restantes+" à faire · "+faites+" faite"+(faites>1?"s":"");
+  const badge=(id,n,vert)=>{
+    const e=$(id); if(!e)return;
+    e.textContent=n; e.classList.toggle("vert",!!vert);
+    e.style.display=n>0?"grid":"none";
+  };
+  badge("accBadgeQ",restantes,false);
+
+  const jour=(S.diary&&S.diary.days&&S.diary.days[today()])||null;
+  const txt=((jour&&jour.t)||"").trim();
+  $("accSubC").textContent = txt ? (txt.split(/\s+/).length+" mots écrits") : "Page du jour vierge";
+  badge("accBadgeC",0,false);
+
+  const evs=S.quests.filter(q=>q.type==="evenement"&&q.date>=today())
+    .sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+  if(evs.length){
+    const e0=evs[0];
+    const quand = e0.date===today() ? "Aujourd'hui"
+      : new Date(e0.date+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short"});
+    $("accSubA").textContent=quand+" · "+e0.title;
+  } else $("accSubA").textContent="Rien de prévu";
+  badge("accBadgeA",evs.filter(e=>e.date===today()).length,false);
+
+  const missions=Object.keys(S.tasks||{}).length;
+  $("accSubN").textContent = missions ? (missions+" créature"+(missions>1?"s":"")+" en mission") : "Aucune mission";
+  badge("accBadgeN",missions,true);
+}
+
 /* ================= Ouverture / fermeture du camp ================= */
 function showLaunch(){
   const l=document.getElementById("launch"); if(!l)return;
   launchOpen=true; l.style.display="block";
-  const cv=document.getElementById("camp");
-  cv.width=330;
-  cv.height=Math.max(480,Math.round(330*innerHeight/Math.max(1,innerWidth)));
-  campStaticKey="";hubWalks={};
-  drawHub(0);
-  placeHubSpots();updateHubPip();
+  /* le lancement ouvre désormais l'ACCUEIL, plus le camp plein écran */
+  campOuvert=false; l.classList.remove("camp-open","drag");
+  hubT=0; hubAnim=null; hubFast=false; campStaticKey="";
+  ["accueil","ciel"].forEach(id=>{
+    const e=document.getElementById(id); if(e){e.style.opacity="";e.style.transform="";}
+  });
+  majCielAccueil();
+  hubWalks={};
+  sizeCamp();
+  renderAccueil();
   try{updateAmbience();}catch(e){}
   if(reduce)return;
   if(campRAF)cancelAnimationFrame(campRAF);
-  let t=0;(function loop(){t++;drawHub(t);campRAF=requestAnimationFrame(loop);})();
+  /* L'avatar de l'accueil est repeint dans la boucle, une image sur dix : au premier rendu
+     les PNG des créatures GIF ne sont pas encore décodés et la vignette restait vide. */
+  let t=0;(function loop(){
+    t++;
+    hubAvance();                 // avance la transition AVANT de dessiner
+    drawHub(t);
+    hubApresDessin();            // recale les zones tactiles une fois la scène figée
+    drawCiel(t);
+    if(!campOuvert&&t%10===0){try{drawAvatar(mood(),"accAvatar");}catch(e){}}
+    campRAF=requestAnimationFrame(loop);
+  })();
 }
 function hideLaunch(){
   const l=document.getElementById("launch"); if(l)l.style.display="none";
@@ -5598,6 +6312,99 @@ function hideLaunch(){
   try{ambStop();}catch(e){}
   if(campRAF){cancelAnimationFrame(campRAF);campRAF=null;}
 }
+
+/* ---- Glissement vertical entre l'accueil et le camp ----
+   Vers le HAUT = déplier le camp (il occupe le bas de l'écran, on le tire vers soi),
+   vers le BAS = revenir à l'accueil. Molette : descendre révèle ce qui est en dessous,
+   donc deltaY>0 ouvre aussi le camp. */
+(function accGestes(){
+  const l=document.getElementById("launch"); if(!l)return;
+  const SEUIL=55, DUREE=700, TAP=10;
+  let y0=null,t0=0,ignore=false,glisse=false;
+
+  /* COURSE = la distance de doigt qui fait un aller complet de la caméra. Le glissement
+     PILOTE la caméra en direct : à chaque instant l'écran montre une position de caméra
+     réelle, on peut s'arrêter à mi-chemin et regarder. */
+  const COURSE=()=>Math.max(140,(innerHeight||600)*0.34);
+  let p0=0, scrub=false;
+
+  l.addEventListener("pointerdown",e=>{
+    y0=e.clientY;t0=Date.now();glisse=false;scrub=false;
+    p0=campOuvert?1:0;
+    /* si le doigt part dans le panneau ET que le panneau peut défiler, on lui laisse
+       la main : sinon impossible d'atteindre le bas du contenu sur un petit écran */
+    const p=document.getElementById("accueil");
+    ignore=!!(p&&!campOuvert&&p.contains(e.target)&&p.scrollHeight>p.clientHeight+2);
+  });
+  l.addEventListener("pointermove",e=>{
+    if(y0==null||ignore||reduce)return;
+    const dy=e.clientY-y0;
+    if(!scrub){
+      if(Math.abs(dy)<=TAP)return;      // on ne prend la main qu'une fois le geste franc
+      scrub=true;glisse=true;l.classList.add("drag");
+    }
+    /* vers le HAUT (dy<0) = on ouvre la scène */
+    const p=Math.max(0,Math.min(1,p0-dy/COURSE()));
+    hubGlisse(p);
+    /* le panneau suit le même curseur, pour rester solidaire du geste */
+    const pan=document.getElementById("accueil"), ciel=document.getElementById("ciel");
+    const e2=hubEase(p);
+    if(pan){pan.style.opacity=String(1-e2);pan.style.transform="translateY("+(-104*e2)+"%)";}
+    if(ciel){ciel.style.opacity=String(1-e2);ciel.style.transform="translateY("+(-14*e2)+"%)";}
+  });
+  l.addEventListener("pointerup",e=>{
+    if(y0==null)return;
+    const dy=e.clientY-y0, dt=Date.now()-t0;
+    if(Math.abs(dy)>TAP)glisse=true;
+    if(!ignore){
+      if(scrub){
+        /* on garde l'état vers lequel on est le plus engagé — un geste vif l'emporte
+           quand même sur la distance parcourue */
+        const p=Math.max(0,Math.min(1,p0-dy/COURSE()));
+        const vif=dt<DUREE&&Math.abs(dy)>SEUIL;
+        const cible=vif ? (dy<0) : (p>=.5);
+        /* on relance TOUJOURS l'animation depuis la position tenue à la main — même si on
+           revient à l'état de départ, la scène doit rejoindre proprement sa géométrie */
+        campOuvert=!cible;
+        setCampOuvert(cible);
+      } else if(dt<DUREE){
+        if(dy<-SEUIL)setCampOuvert(true);
+        else if(dy>SEUIL)setCampOuvert(false);
+      }
+    }
+    y0=null;scrub=false;
+  });
+  l.addEventListener("pointercancel",()=>{
+    if(scrub){const c=campOuvert;campOuvert=!c;setCampOuvert(c);}
+    y0=null;scrub=false;
+  });
+
+  /* un glissement ne doit pas déclencher la zone tactile sous le doigt (même garde que
+     tvDragged pour le panneau de la taverne) */
+  l.addEventListener("click",e=>{
+    if(glisse){glisse=false;e.stopPropagation();e.preventDefault();}
+  },true);
+
+  l.addEventListener("wheel",e=>{
+    if(e.deltaY>12)setCampOuvert(true);
+    else if(e.deltaY<-12)setCampOuvert(false);
+  },{passive:true});
+
+  const h=document.getElementById("accHandle");
+  if(h)h.addEventListener("click",()=>setCampOuvert(true));
+  const b=document.getElementById("accBack");
+  if(b)b.addEventListener("click",()=>setCampOuvert(false));
+
+  /* la hauteur réelle n'est connue qu'à la fin de la transition : on recale alors le canvas */
+  const cl=document.getElementById("campClip");
+  /* Plus rien à recaler en fin de transition : la scène ne change ni de résolution ni de
+     composition d'un état à l'autre, seul le cadrage bouge. */
+
+  addEventListener("keydown",e=>{
+    if(e.key==="Escape"&&launchOpen&&campOuvert){setCampOuvert(false);}
+  });
+  addEventListener("resize",()=>{if(launchOpen)sizeCamp();});
+})();
 
 /* ================= Boot ================= */
 /* Les tâches aboutissent même quand le camp n'est pas affiché (dépôt au coffre + toast),
