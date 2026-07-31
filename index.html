@@ -145,6 +145,57 @@
   .chip.blue{color:var(--blue);border-color:var(--blue)}
   .chip.plum{color:var(--plum);border-color:var(--plum)}
   .q-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  /* Titre à gauche, HEURE à droite : c'est l'information qu'on cherche en balayant la
+     liste, elle doit tomber toujours au même endroit. `flex:0 0 auto` pour qu'un titre
+     long la pousse jamais hors du billet. */
+  .q-line{display:flex;align-items:flex-start;gap:8px;margin-bottom:3px}
+  .q-line .q-title{flex:1;min-width:0;margin-bottom:0}
+  .q-hour{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;
+    font-family:var(--mono);white-space:nowrap;padding:3px 7px;
+    color:var(--gold);background:var(--bg2);border:2px solid var(--gold-deep);
+    font-variant-numeric:tabular-nums}
+  .q-hour b{font-size:14px;font-weight:700;line-height:1.05}
+  .q-hour i{font-style:normal;font-size:11px;line-height:1.05;color:var(--ink-dim)}
+  /* dernière demi-heure avant l'expiration automatique */
+  .q-hour.urgent{color:var(--red);border-color:var(--red);background:#f3d9d4;
+    animation:hourPulse 1.6s ease-in-out infinite}
+  .q-hour.urgent i{color:var(--red)}
+  @keyframes hourPulse{0%,100%{opacity:1}50%{opacity:.62}}
+  @media (prefers-reduced-motion:reduce){.q-hour.urgent{animation:none}}
+  /* Actions secondaires : repliées par défaut (un seul bouton visible par billet), on les
+     déplie par le « ⋯ » ou par un appui long sur le billet. */
+  .q-more{display:none;flex-wrap:wrap;gap:6px;margin-top:8px;padding-top:8px;
+    border-top:2px dotted var(--border)}
+  .quest.open .q-more{display:flex}
+  /* Quête « plaisir » : une récompense réelle replacée dans le programme. Cadre doré,
+     pour qu'on la repère au premier coup d'œil au milieu des corvées. */
+  .quest.plaisir{background:linear-gradient(180deg,#fbf0cf,var(--panel));
+    border-color:var(--gold);box-shadow:inset 0 0 0 2px var(--gold-deep),0 2px 0 var(--drop)}
+  .quest.plaisir .q-ic{border-color:var(--gold-deep);
+    background:linear-gradient(180deg,#fff6d8,#e8cf8e)}
+  /* Étoiles retouchables du tiroir « Faites aujourd'hui » : discrètes, sans libellé et
+     sans rien à valider — on tape une étoile, l'XP s'ajuste. */
+  .sc-stars{display:inline-flex;gap:1px;cursor:pointer;font-size:13px;line-height:1;
+    color:var(--gold);letter-spacing:-1px}
+  .sc-stars b{font-weight:400;opacity:.32}
+  .sc-stars b.on{opacity:1}
+  /* Objectif du jour : la barre des 3 quêtes qui font monter la série. */
+  .obj{margin:0 0 10px;padding:9px 11px;background:var(--panel-hi);
+    border:2px solid var(--border);box-shadow:0 2px 0 var(--drop)}
+  .obj-top{display:flex;align-items:baseline;gap:8px;font-family:var(--mono);
+    font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+    color:var(--ink-dim)}
+  .obj-top b{margin-left:auto;font-size:12px;color:var(--gold)}
+  .obj-bar{display:block;height:10px;margin-top:6px;background:var(--inset);
+    border:2px solid var(--border);box-shadow:inset 0 2px 3px rgba(58,38,12,.22)}
+  .obj-bar i{display:block;height:100%;width:0;transition:width .35s ease;
+    background:repeating-linear-gradient(90deg,var(--green) 0 5px,var(--green-deep) 5px 7px)}
+  .obj.done{border-color:var(--gold)}
+  .obj.done .obj-bar i{background:repeating-linear-gradient(90deg,#e0b93c 0 5px,var(--gold) 5px 7px)}
+  /* le trophée en vol : au-dessus de tout sauf du butin, et transparent au clic */
+  .troph-vol{position:fixed;z-index:95;pointer-events:none;font-size:27px;line-height:1;
+    will-change:transform,opacity;filter:drop-shadow(0 2px 3px rgba(40,24,8,.55))}
+  .obj.done .obj-top{color:var(--gold)}
 
   .btn{
     font-family:var(--mono);font-weight:700;font-size:11px;text-transform:uppercase;
@@ -170,8 +221,12 @@
   .countdown{font-family:var(--mono);font-weight:700;color:var(--blue);font-size:12px}
 
   /* ======= Modale ======= */
+  /* ⚠️ z-index 94, pas 40 : les modales s'ouvrent DÉSORMAIS depuis le camp et l'écran
+     d'accueil (jauge du feu, récompenses, mise au programme d'un plaisir), qui vivent
+     dans `.launch` (z 80) et `.nest` (z 83). À 40 elles s'affichaient derrière, et le
+     clic semblait ne rien faire. Reste sous `.loot-ov` (96), qui doit couvrir le tout. */
   .overlay{
-    position:fixed;inset:0;background:rgba(6,4,12,.82);z-index:40;
+    position:fixed;inset:0;background:rgba(6,4,12,.82);z-index:94;
     display:none;align-items:center;justify-content:center;padding:16px;
     backdrop-filter:blur(1px);
   }
@@ -415,6 +470,12 @@
     font-size:11px;padding:3px 8px;cursor:pointer;box-shadow:2px 2px 0 var(--shadow)}
   .coins-btn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--shadow)}
   .coins-cta{font-size:13px;line-height:1}
+  /* Les deux bourses tiennent sur une seule ligne, même sur un écran étroit : le bloc
+     est insécable et l'XP à gauche absorbe la place restante. */
+  .hud-money{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+  .hud-money .fish-chip{margin-right:0;font-size:11px;padding:3px 6px}
+  .hud-money .coins-btn{gap:3px;padding:3px 6px}
+  .coins-btn.jet{border-color:var(--plum);color:var(--plum)}
 
   /* ======= Dock : navigation basse + FAB ======= */
   .app{padding-top:calc(108px + env(safe-area-inset-top,0px))}
@@ -568,6 +629,28 @@
   .acc-chip{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 5px;white-space:nowrap}
   .acc-streak{color:#c25f1e;background:#f7e3c2;border:2px solid #c25f1e}
   .acc-coins{color:#8a6010;background:#f7edcd;border:2px solid #b07d14}
+  /* Série et objectif du jour empilés : la pastille trophée passe SOUS la flamme, et
+     l'accueil retrouve exactement la hauteur qu'il avait. */
+  .acc-serie{display:flex;flex-direction:column;gap:3px;flex:0 0 auto}
+  .acc-troph{color:#8a6010;background:#f7edcd;border:2px solid #b07d14;text-align:center}
+  .acc-troph.done{color:#3f6c22;background:#e2f2cf;border-color:#5a8a30}
+
+  /* -- porte vers les récompenses réelles, en tête de la boutique -- */
+  .shop-recomp{width:100%;margin:0 0 14px;padding:11px 12px;cursor:pointer;
+    display:flex;align-items:center;gap:10px;text-align:left;
+    background:linear-gradient(180deg,#fbf0cf,#f1e0b0);border:2px solid var(--gold);
+    box-shadow:inset 0 0 0 2px var(--gold-deep),0 3px 0 var(--drop)}
+  .shop-recomp:active{transform:translateY(2px);box-shadow:inset 0 0 0 2px var(--gold-deep),0 1px 0 var(--drop)}
+  .shop-rec-em{flex:0 0 auto;font-size:22px;line-height:1}
+  .shop-rec-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .shop-rec-txt b{font-family:var(--mono);font-size:12px;font-weight:700;
+    text-transform:uppercase;color:var(--ink)}
+  .shop-rec-txt i{font-style:normal;font-family:var(--sans);font-size:11px;color:var(--ink-dim);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .shop-rec-j{flex:0 0 auto;font-family:var(--mono);font-size:11px;font-weight:700;
+    color:var(--plum);background:#f6e2ef;border:2px solid var(--plum);padding:3px 6px}
+  .shop-rec-go{flex:0 0 auto;font-family:var(--mono);font-size:17px;font-weight:700;
+    color:var(--gold);line-height:1}
 
   /* -- en-tête -- */
   /* ⚠️ Écart assumé au README : il donne #5b7f93 / #1f3a48, pensés pour son ciel pâle
@@ -927,8 +1010,15 @@
       <div class="xpbar"><div class="xpfill" id="xpfill"></div></div>
       <div class="hud-top">
         <div class="xp-num"><span id="xpCur">0</span>/<span id="xpNext">120</span> XP</div>
-        <span class="fish-chip" id="hudFish">🍢 0</span>
-        <button class="coins-btn" id="coinsBtn" aria-label="Ouvrir les récompenses">🪙 <span id="coins">0</span> <span class="coins-cta">🎁</span></button>
+        <!-- deux bourses distinctes : 🪙 pour le camp (œufs, boutique), 🎟️ pour les
+             récompenses bien réelles. Mélangées, le gacha raflait tout. -->
+        <span class="hud-money">
+          <!-- la réserve de bûches : celles qui attendent leur tour d'être jetées au feu -->
+          <span class="fish-chip" id="hudBois" title="Bûches en réserve">🪵 0</span>
+          <span class="fish-chip" id="hudFish">🍢 0</span>
+          <button class="coins-btn" id="coinsBtn" aria-label="Boutique du camp">🪙 <span id="coins">0</span></button>
+          <button class="coins-btn jet" id="jetonsBtn" aria-label="Mes récompenses">🎟️ <span id="jetons">0</span><span class="coins-cta">🎁</span></button>
+        </span>
       </div>
     </div>
   </div>
@@ -974,7 +1064,7 @@
     <button class="hub-spot" id="hsAvatar" aria-label="Ta créature n°1" onclick="hubAvatarTap(0)" style="z-index:1"></button>
     <button class="hub-spot" id="hsAvatar2" aria-label="Ta créature n°2" onclick="hubAvatarTap(1)" style="z-index:1"></button>
     <button class="hub-spot" id="hsAvatar3" aria-label="Ta créature n°3" onclick="hubAvatarTap(2)" style="z-index:1"></button>
-    <button class="hub-spot" id="hsFeu" aria-label="Allumer ou éteindre le feu" onclick="toggleFire()"></button>
+    <button class="hub-spot" id="hsFeu" aria-label="Voir le combustible du feu" onclick="ouvrirJauge()"></button>
     <span class="hub-gear" id="hubGear">⚙️</span>
     <span class="hub-pip" id="hubPip">0</span>
    </div>
@@ -991,7 +1081,12 @@
         <span class="acc-lvl">NIV. <b id="accLvl">1</b><i id="accXpTxt">0 / 0 XP</i></span>
         <span class="acc-bar"><i id="accXpFill"></i></span>
       </span>
-      <span class="acc-chip acc-streak" id="accStreak">🔥 0 J</span>
+      <!-- L'objectif du jour tient dans une pastille sous la flamme. La grande barre
+           mangeait le camp replié : elle reste dans le journal, là où on agit. -->
+      <span class="acc-serie">
+        <span class="acc-chip acc-streak" id="accStreak">🔥 0 J</span>
+        <span class="acc-chip acc-troph" id="accTroph">🏆 0/3</span>
+      </span>
       <span class="acc-chip acc-coins" id="accCoins">🪙 0</span>
     </div>
 
@@ -1061,6 +1156,11 @@ const TYPES={
   principale:{label:"Principale",base:50,chip:"gold"},
   secondaire:{label:"Secondaire",base:25,chip:"plum"},
   evenement:{label:"Événement",base:40,chip:"blue"},
+  /* « Plaisir » : une récompense ACHETÉE avec des jetons, replacée dans le programme
+     comme une quête à part entière. Elle ne rapporte rien (elle EST le gain), ne donne
+     pas de bûche et ne compte pas dans l'objectif du jour — sinon on se paierait sa
+     propre série. `base:0` fait que `award()` n'accorde ni XP ni pièce. */
+  plaisir:{label:"Plaisir",base:0,chip:"gold"},
 };
 const TABS=[
   {id:"quetes",ic:"⚔️",name:"Quêtes",title:"",sub:""},
@@ -1140,7 +1240,14 @@ function defaultAchievements(){
 }
 function seed(){
   return {
-    xpTotal:0, coins:0, streak:0, best:0, totalDone:0, lastDay:today(),
+    xpTotal:0, coins:0, jetons:0, streak:0, best:0, totalDone:0, lastDay:today(),
+    /* La SÉRIE compte des JOURS, plus des quêtes (voir majSerie). `streak` reste le
+       nombre affiché et lu partout ailleurs ; `serie` n'en porte que la comptabilité. */
+    serie:{pardon:1, semaine:null, veille:0, avis:null},
+    /* Combustible du feu, en millisecondes qui s'écoulent en temps réel. Une quête
+       accomplie = une bûche. `camp.fire` n'est plus qu'un MIROIR de `feu.reste>0`,
+       pour que tout le rendu existant continue de le lire sans rien changer. */
+    feu:{reste:24*3600*1000, maj:Date.now()},
     cosmetics:defaultCosmetics(),
     creatures:{owned:["heros"], counts:{heros:1}},
     camp:{fire:true},
@@ -1148,7 +1255,7 @@ function seed(){
     res:{fish:0,grilled:0},
     chest:{coins:0,fish:0,grilled:0},
     achievements:defaultAchievements(),
-    settings:{theme:"light",sound:true,anim:true,splash:true},
+    settings:{theme:"light",sound:true,anim:true,splash:true,expire:true},
     history:{},
     rewards:[
       rw("Un carré de chocolat","🍫",60),
@@ -1227,12 +1334,22 @@ function load(){
       s.cosmetics.owned=s.cosmetics.owned||[];
       if(!s.cosmetics.owned.includes("aura:braise"))s.cosmetics.owned.push("aura:braise");}
     if(!s.achievements)s.achievements=defaultAchievements();
-    if(!s.settings)s.settings={theme:"light",sound:true,anim:true,splash:true};
-    ["sound","anim","splash"].forEach(k=>{if(s.settings[k]==null)s.settings[k]=true;});
+    if(!s.settings)s.settings={theme:"light",sound:true,anim:true,splash:true,expire:true};
+    ["sound","anim","splash","expire"].forEach(k=>{if(s.settings[k]==null)s.settings[k]=true;});
     if(!s.settings.theme)s.settings.theme="light";
     if(!s.history)s.history={};
     if(!s.diary)s.diary={days:{}};
     if(!s.manx)s.manx={last:Date.now(),refus:0};
+    if(s.jetons==null)s.jetons=0;
+    if(!s.serie)s.serie={pardon:1,semaine:null,veille:0,avis:null};
+    /* Migration de la série : l'ancienne comptait des QUÊTES (+1 par validation, remise
+       à zéro au moindre refus) et pouvait donc valoir 40 après une bonne journée. La
+       convertir telle quelle offrirait 40 jours de série. On la ramène donc à une valeur
+       plausible en jours — au plus 7 — pour ne pas offrir le multiplicateur maximal. */
+    if(!s.serie.migre){ s.streak=Math.min(7,Math.floor((s.streak||0)/3)); s.serie.migre=1; }
+    if(!s.feu)s.feu={reste:24*3600*1000,maj:Date.now()};
+    if(s.feu.reste==null)s.feu.reste=0;
+    if(s.feu.maj==null)s.feu.maj=Date.now();
     /* NB : la liste des créatures déployées (`cosmetics.models`) n'est PAS migrée ici.
        `load()` tourne AVANT la déclaration de CREATURES et de MAX_DEPLOY : y toucher
        lèverait une ReferenceError que le try/catch avalerait en silence, faisant sauter
@@ -1250,6 +1367,9 @@ function load(){
         if(x.days==null)x.days=[0,1,2,3,4,5,6];
         if(x.time==null)x.time="";
         if(x.dur==null)x.dur=0;
+        /* l'heure de fin remplace la durée saisie : on la reconstitue pour les quêtes
+           créées avant, à partir de leur heure de début et de leur durée */
+        if(x.fin==null)x.fin=finDe(x);
         if(x.notifDay==null)x.notifDay=false;
         if(x.abandonedToday==null)x.abandonedToday=false;
         if(x.rec==="quotidienne"||x.rec==="hebdomadaire")x.rec="tous";
@@ -1292,15 +1412,65 @@ function dayRollover(s){
      supprimé : le 1er du mois, tout l'historique du mois précédent disparaissait d'un coup. */
   const limite=addDays(-HIST_JOURS);
   Object.keys(s.history).forEach(k=>{ if(k<limite) delete s.history[k]; });
+  /* La série se joue ICI, au passage de minuit : on sait enfin ce que la veille a donné.
+     Les quêtes « plaisir » sont écartées du décompte — ce sont des récompenses, pas du
+     travail. Appelé AVANT que `lastDay` n'avance : majSerie a besoin de la veille. */
+  majSerie(s, doneDay.filter(d=>d.type!=="plaisir").length, veille);
   s.done=doneApres;
   const dejaFaites=new Set(doneApres.map(d=>d.title));   // faites après minuit : restent cochées
   s.quests.forEach(x=>{
     if((x.type==="principale"||x.type==="secondaire")&&x.rec!=="oneshot"&&!dejaFaites.has(x.title))x.doneToday=false;
-    x.abandonedToday=false; x.notifDay=false; x.snoozeDay=null;
+    x.abandonedToday=false; x.notifDay=false; x.snoozeDay=null; x.snoozeT=null;
   });
+  /* Un plaisir acheté mais non pris ne se perd pas : il glisse au jour suivant. Des
+     jetons payés puis évaporés parce qu'on a manqué la date seraient une punition. */
+  s.quests.forEach(x=>{ if(x.type==="plaisir"&&x.date&&x.date<today())x.date=today(); });
   s.lastDay=today();
   return true;
 }
+/* ================= La série, en JOURS =================
+   Ancienne règle : +1 par quête validée, remise à zéro au moindre « Refuser », jamais
+   touchée par le changement de jour. Elle affichait « 12 J » sans compter un seul jour,
+   et surtout elle punissait le refus HONNÊTE tout en laissant l'évitement silencieux
+   impuni — exactement l'inverse de ce qu'il faut.
+
+   Nouvelle règle, décidée avec l'utilisateur :
+     • journée à 3 quêtes ou plus  → la série MONTE d'un cran
+     • journée à 1 ou 2 quêtes     → la série TIENT (ni montée, ni casse)
+     • journée à zéro              → les bonus sautent (série remise à zéro)
+   Avec un JETON DE PARDON par semaine civile, qui absorbe UNE journée vide. Sans lui,
+   un seul jour raté suffirait à faire abandonner l'application — le contraire du but.
+
+   Constantes LOCALES, comme HIST_JOURS : `majSerie` est appelée depuis `load()`, donc
+   avant l'évaluation des `const` de portée globale, qui seraient dans leur zone morte. */
+function majSerie(s,nVeille,veille){
+  const OBJ=3;                                  // le seuil qui fait monter la série
+  s.serie=s.serie||{pardon:1,semaine:null};
+  /* le jeton se recharge au changement de semaine civile (lundi) */
+  const lundi=isoOf(mondayOf(new Date()));
+  if(s.serie.semaine!==lundi){s.serie.semaine=lundi;s.serie.pardon=1;}
+  s.serie.avis=null;
+  if(nVeille>=OBJ){s.streak=(s.streak||0)+1;s.best=Math.max(s.best||0,s.streak);s.serie.avis="monte";}
+  /* Journées vides : la veille si elle est à zéro, PLUS les jours entièrement sautés.
+     `dayRollover` ne connaît que `lastDay` : une absence de cinq jours n'archive qu'une
+     seule journée, les quatre autres ne seraient jamais comptées sans ce calcul. */
+  const valide=/^\d{4}-\d\d-\d\d$/.test(String(veille));
+  const trou=valide?Math.max(0,Math.round((new Date(today()+"T12:00")-new Date(veille+"T12:00"))/864e5)-1):0;
+  const vides=trou+(nVeille===0?1:0);
+  if(vides>0){
+    /* Le jeton ne se dépense QUE s'il a quelque chose à sauver : une série déjà à zéro
+       le consommait pour rien, et il manquait le jour où elle comptait vraiment. */
+    if(s.streak<=0)s.serie.avis=null;
+    else if(vides===1&&(s.serie.pardon||0)>0){s.serie.pardon--;s.serie.avis="pardon";}
+    else {s.streak=0;s.serie.avis="casse";}
+  }
+  s.serie.veille=nVeille;
+}
+/* Quêtes accomplies aujourd'hui qui comptent pour l'objectif (les plaisirs sont exclus). */
+function questesDuJour(){return (S.done||[]).filter(d=>d.type!=="plaisir").length;}
+const OBJ_JOUR=3;
+function objAtteint(){return questesDuJour()>=OBJ_JOUR;}
+
 /* `save()` n'avance PLUS `lastDay` : c'était lui qui masquait le changement de journée
    (il suffisait d'une sauvegarde après minuit pour que l'archivage soit sauté à jamais).
    Seul `dayRollover` déplace ce repère, une fois la journée bel et bien archivée. */
@@ -1315,6 +1485,71 @@ function levelInfo(total){
 }
 function multiplier(){return 1+Math.min(S.streak,10)*0.1} // jusqu'à x2
 
+/* ================= Le feu, alimenté par la vraie vie =================
+   C'est ce qui ferme la boucle : accomplir une quête RÉELLE donne une bûche, la bûche
+   fait vivre le feu, et le feu est la condition pour que les créatures partent en
+   mission. Sans quêtes, le camp s'éteint tout seul.
+
+   Une bûche brûle 4 h. Le FOYER en contient 12 au maximum — c'est là qu'il atteint sa
+   vivacité maximale — soit 48 h de flamme. Tout ce qui dépasse part en RÉSERVE, et dès
+   qu'une bûche a fini de brûler la réserve en remet une automatiquement : le foyer reste
+   plein tant qu'il y a du stock, sans qu'on ait à y penser.
+
+   `S.feu.reste` porte le stock TOTAL en millisecondes (foyer + réserve). Le compte à
+   rebours court en temps RÉEL, application ouverte ou fermée : on ne décrémente pas au
+   fil des images, on relit l'horloge. Compter séparément le foyer et la réserve aurait
+   laissé la réserve intacte pendant une absence — un joueur parti trois jours serait
+   revenu à un feu plein. `S.camp.fire` n'est plus une décision du joueur mais un simple
+   MIROIR de `reste>0` : tout le rendu déjà écrit continue de le lire sans modification. */
+const BOIS_DUREE=4*3600*1000;         // ce qu'une bûche fait brûler
+const BOIS_FOYER=12;                  // bûches que le foyer peut contenir (vivacité max)
+const BOIS_MAX=BOIS_FOYER*BOIS_DUREE; // 48 h de flamme à foyer plein
+function feuMaj(){
+  S.feu=S.feu||{reste:0,maj:Date.now()};
+  const now=Date.now();
+  const d=Math.max(0,now-(S.feu.maj||now));
+  S.feu.maj=now;
+  if(S.feu.reste>0)S.feu.reste=Math.max(0,S.feu.reste-d);
+  const vif=S.feu.reste>0;
+  if(!S.camp)S.camp={};
+  if(S.camp.fire!==vif){S.camp.fire=vif;campStaticKey="";}   // le décor doit se refaire
+  return S.feu.reste;
+}
+function feuAllume(){return feuMaj()>0;}
+/* Ce qui brûle réellement dans le foyer, plafonné à 12 bûches. */
+function feuFoyer(){return Math.min(feuMaj(),BOIS_MAX);}
+/* La réserve, en bûches entières : ce qui attend son tour d'être jeté au feu. */
+function feuReserve(){return Math.ceil(Math.max(0,feuMaj()-BOIS_MAX)/BOIS_DUREE);}
+/* Vivacité de la flamme, de 0,25 à 1, maximale à 12 bûches. Racine carrée plutôt que
+   proportion directe : à six bûches le feu doit encore paraître franc, ce n'est qu'en
+   approchant du vide qu'il doit visiblement mourir. */
+function feuForce(){
+  const b=feuFoyer()/BOIS_MAX;
+  return b<=0?0:Math.max(.25,Math.min(1,.25+.75*Math.sqrt(b)));
+}
+function feuHeures(){return feuMaj()/3600000;}
+function feuBuches(){return feuMaj()/BOIS_DUREE;}
+/* File d'attente des bûches à faire tomber dans le feu : une quête validée depuis le
+   journal ne peut pas s'animer tout de suite (le camp n'est pas à l'écran). On empile,
+   et `drawHub` vide la file au moment où le camp redevient visible. */
+let BOIS_VOL=[];
+function feuAjoute(n){
+  feuMaj();
+  const avant=S.feu.reste;
+  /* Aucun plafond sur le stock total : une bûche vient d'une quête accomplie pour de
+     vrai, la perdre parce que le foyer est plein serait punir une bonne semaine. Le
+     surplus attend simplement en réserve. */
+  S.feu.reste=avant+n*BOIS_DUREE;
+  const rallume=avant<=0&&S.feu.reste>0;
+  /* Constaté APRÈS l'ajout, pas avant : `feuMaj()` vient de retrancher les quelques
+     millisecondes écoulées, donc un foyer plein teste `avant >= BOIS_MAX` à faux. */
+  const enReserve=S.feu.reste>BOIS_MAX;
+  BOIS_VOL.push({n,t0:0});                     // t0=0 → démarre à la première image visible
+  campStaticKey="";
+  if(rallume){try{sfxFlame(true);}catch(e){}}
+  return {rallume,enReserve};
+}
+
 /* ================= Rendu HUD ================= */
 function renderHUD(){
   const li=levelInfo(S.xpTotal);
@@ -1322,7 +1557,10 @@ function renderHUD(){
   document.getElementById("xpCur").textContent=li.cur;
   document.getElementById("xpNext").textContent=li.next;
   document.getElementById("coins").textContent=S.coins;
+  {const j=document.getElementById("jetons");if(j)j.textContent=S.jetons||0;}
   const hf=document.getElementById("hudFish");if(hf)hf.textContent="🍢 "+((S.res||{}).grilled||0);
+  {const hb=document.getElementById("hudBois");
+   if(hb){const r=feuReserve();hb.textContent="🪵 "+r;hb.style.opacity=r?"1":".55";}}
   document.getElementById("xpfill").style.width=(100*li.cur/li.next)+"%";
 
   const m=multiplier();
@@ -1557,6 +1795,25 @@ const CREATURES={
      pile entière (aucun rééchantillonnage) ; en dessous, plus aucune valeur ne l'est,
      le sprite est donc redimensionné en douceur — comme le Tigre et le Phénix. */
   lapin: {name:"Lapin",      rar:"commun",     skin:"#ffe2d8", gif:true, gzoom:1.133, idleFrames:2, walkFrames:6, profile:true, tal:"exploration"},
+  /* Minos : 23 images dessinées par l'utilisateur. `idleFrames:7` = les 7 premières (il
+     souffle sur place), `walkFrames:16` = les 16 DERNIÈRES, soit les images 8 à 23,
+     conformément à la convention « walkFrames boucle sur la FIN du module ». Le cycle de
+     marche y est dessiné deux fois de suite — la boucle en profite, sans rien retoucher.
+     Source retournée à la construction : le minotaure regardait à DROITE, et `profile:true`
+     remet le miroir quand il se déplace vers la droite.
+     `gzoom:2.6653` = 2/0,750375 : l'emprise union fait 32 px de haut, donc kRaw = 0,750 —
+     sous le seuil de 0,85, donc branche lissée — et ce facteur porte l'échelle à
+     EXACTEMENT 2,000. Un multiple entier : le doublement reste au pixel près, sans
+     rééchantillonnage. Il fait donc 64 px de haut dans le camp, deux fois les autres.
+     ⚠️ `gzoom` n'agit QUE dans `paintCreature`, c'est-à-dire dans le camp. La vignette du
+     Nid (`paintStill`) et l'avatar du HUD (`drawAvatar`) dessinent l'image en 1:1 à sa
+     résolution native : le doublement ne les fait pas déborder de leur cadre.
+     `walkSpeed:2` accélère le seul cycle de MARCHE (voir gifFrame) : les délais du module
+     restent ceux du dessin, c'est l'horloge de lecture qui va deux fois plus vite. La
+     respiration immobile garde, elle, son rythme d'origine.
+     Pas de `ground:true` : ses pieds touchent y=31 sur les 23 images, l'ancrage par
+     l'emprise union suffit. */
+  minos: {name:"Minos",      rar:"legendaire", skin:"#604917", gif:true, gzoom:2.6653, idleFrames:7, walkFrames:16, walkSpeed:2, profile:true, tal:"cuisine"},
 };
 /* ================= Talents & tâches des créatures =================
    Chaque créature a un talent (cuisine / pêche / exploration). Sa stat de talent =
@@ -1607,6 +1864,12 @@ function explGain(id,fish){
 function startTask(id,param){
   S.tasks=S.tasks||{};S.res=S.res||{fish:0,grilled:0};
   if(S.tasks[id])return;
+  /* La boucle se referme ICI : sans feu, personne ne part. Et le feu ne tient que par
+     les quêtes accomplies dans la vraie vie. */
+  if(!feuAllume()){
+    toast("Le feu est éteint 💨 — accomplis une quête pour lui donner du bois 🪵");
+    return;
+  }
   const tal=CREATURES[id].tal, tk={start:Date.now(),tal};
   const pris=Object.values(S.tasks).filter(k=>k.tal===tal);
   if(pris.length>=MAX_TAL[tal]){
@@ -1753,7 +2016,8 @@ GIFSPRITES.dragon={w:32,h:32,delays:[80,80,80,80],frames:["data:image/png;base64
 GIFSPRITES.golem={w:32,h:32,delays:[170,170,170,170,170,170,170,170,170,170,170,170,170,170],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGFSURBVFhH1VU7TsQwFMyRtthiFaEU2+xKEVtQ0HIYLsBR9hJIXIGCIyDRURqN0Vgvw7N3k9gCRnpyYjtv5n3sdN1/wX4Ygs79Ku5Pp1Cy2+OxnWAl8mzf920FKKEa9jQRAcc3223YbTaRiM98by6CAj5CNxGAdy8zTQR4RLn5qgJsuq1xHiOsmQDWOdZ2GH5Eq4Y9VQUA0em15C0E0LlXbxrKAOLq5ARKcTeO0RhlGlsSK3L/B6Zf56si1fiC2f1TDytA51p7rwn129UYD4dEbn9K1qwA9Iv6WAySYySZ7lERvKx03yKAGMboOf/0FkJ3Dum9ehZYS00/5h5ePsPzewgYo5CMgMU9gbNOYj5bAY+v3+SXMsA7A99PCEqw5Bg9AQqvBzDPAGZlgoReBlQEiUmuGWAAswVoFqKDvp+IUGJLrgLoQ7lc2LrxoyQicxEpsS0BjD6VaxZsV+ds9dHLgeoZnUbblPzPwJ6MOWtVYDuZds1aFXhHkvUurVWDTa82XGmthC9Pp6LU+0yX8AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGISURBVFhH7VU7TgMxEN0jpUiBVmiLNIm0IgUFbQ7DBXKUXAKJK1BwBCQ6ykFj9KzZx9jZ3YwlCp705Kw/855nbKfr/rECT8ej1PhwOAivuQm7YcgBWcjjru9jDVjUhEGd08SEBr7fbuVus0lC+I3v5iZg4FO6iQH99jLTxIAnVOoPNWDTbYl+bZXNDKDOqbbD8Gu3TJ0TakCRgs4Vb2EAwb16g1oGFQ4XB7QUj+OYiF3mtqWwB/tCWqAE3B+KXOcr5HUhQHCuv3cQ7ZpplJUY9/ssbv+YLK0BPTMcYzUgri3EeA6bwIPF81ZBhUErfn4X6S6Sv8OzgPpx+rXv9PolLx8i2iYjBQN8JmZD7zuE8dsaeH77Eb+WAbwbun4iUIMV19YzwPDOgPZjA4syAUEvA2wCwhDnDGADiw1wFlKAvp+YYGErzgYQg7Vc2LphUTZReIhY2JZAiZistQj2VJd489UrAe6xO95tU/E/A3szloyFwJ5kcM5YCLwriXrXxsJg08sHrjZWwzdXfqLQlxVzowAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGISURBVFhH7VU7TgMxEN0jpUiBVmiLNIm0IgUFLYfhAhyFSyBxBQqOgERHafQMz5p92GY/4wLEk0aOx555zzNep+v+8Rtxcz6Hml2dTkFjNuMwDDGpEuXs0Pf+AogaMQ17mohA4sv9PlzsdpGIvzlvLoIC3kI3EYB5rjJNBOSISn5XAbbc1ujHCGsmgH2OvR2Gb6dVwx5XAUBMOpe8hQAmz/WbhjaA2J2cQCuuxzEaT5lG2lcFNNYVqcw/mMa5gMm1/Ll7oLGbMR6Pidz+L1izAtAyxLmIITlGkukeFcH3QvetAohplvz+JYTuIaR5qQqboRWA7/bpPTy+hoAxCikI2NQCBuPTAzn7D9/d8yf5nAqsEkFSBOcEKHJ3AH6+G4jXmCIsOUYrQEWQmORaAR6AvilTASS0ImKCvp+IUGJLTgE8wGIBtgrwJRGFh0iJ2QJbwUUC7MnhY2JLlDP99OhnTru2CjydJeRcyf8e7MVcsuYCe5Foc9ZcoO+C7XdtzQ22vHrhams1fAABPaEP/qUfVQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF6SURBVFhH7VQ7TsQwFMyRttgCRSjFNrtSxBYUtHsYLrBH2UsgcQUKjoBER2k0RhNNBjtKsrYQiJGeHD9/ZjzPcdP84zdi13XBcz+Ch+MxTMXd4VBPqBOlYte2dQU4oQfmVBGBjW+323Cz2UQifrNfXQQFvIdmJAD9lDNVBKSIcvmiAtRuDebRIqoJYJ1jbbvu22k9MKeoACBuOpe8hgBunqo3A2UAcXFyAqW47/sYPOXQMmo92XNKwDm+9mr0+/1Ars+xhgqAU77HapAcLcl8jovgb1rEDRAzlPz8GkJzCUO/mgvuAHKn54/w9BYC2igkI+AqB7gYN94deHz5Ip/jwCoRJMVifvMC+lwgdQeQ5++K9b4mCyVHqwJcBIlJ7g7wAMyNmTJQyykibtC2IxFOrOQUwAMsFqAuIDeIyDxETswSqIOLBOjJkePGSpQK//WY5546tgr6wJCQfSf/e9CLuWSsCPQiMeaMFYG/C1rvqbFiUHv9wk2NTeETWreN7Lxbh4sAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGDSURBVFhH7VUxagMxELwnuXARjnCFGxuOuEiR1o/JB/wUfyKQL6TIEwLpUm4YhRF7E0m580kEQgYWWSutZnZXJ3fdPxZiNwymvl/Fw/FoJbs7HNoJVqKU7fq+rQAlVMOeJiJw8O12azebTSDib86bi6CAd+smAjBPVaaJgBRRzl9VgC+3N/oxwpoJYJ9Db4fhW7Zq2FNVABAOnUveQgAPT/WbhjaAuDo5gVbcj2MwZhnHlsRALO0PpnFVwMO15Knea+xqjPt9JPf/Bd68ALQJcVXEkBwjyXSPiuAbofuuAohhzJ7+86tZd7E4z1VhNbT88J2eP+zpzQxjEJIRsKoFDMbnphV4fPkin1OBq0SQFMEpAYrUHYCfbwXiNSYLT47RC1ARJCa5VoAJ0DdlyoCEXkQ4oO8nIpTYk1MAE1gswFcBvigi8xApMVvgK7hIgM+cfpa0ZPrp0c8z/doiMJjZeULOlfzvwV/MJWtV4C8Sbc5aFei74PtdWqsGX169cKW1Ej4Bu92dnfrKznkAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGGSURBVFhH7VU7TgMxEN0jpUiBVmiLNIm0IgUFbQ7DBTgKl0DiChQcAYmO0ugZPWv2Zdb7s6HhSSNnx/a8NzO20zT/WIBD1wX1PZzPIWd3p9PVnmJQIs8ObVtXgBKqYU0VEQh8u9+Hm90uEvE3v6uLoIDP0AwE4NurTBUBHtGYv6gAW25r9GOEVRPAPsfedt1VtmpYU1QAEIPOJa8hgMG9ftPQBhAXJyfQivu+j8Ys01iTmPCeZoBlV39RpN5OmF0/jLABDK499w6f7t2M/nhM5PbPyJoVgHOiMVaD5BhJpmtUBB8pXbcKIIYxe/qf3kNonkP6Ll4F9lLLD9/l9Su8fISAMQoZEbD6TOCOk5i/rYDHtx/yqQrwrcD+AUEOlhyjJ0DhnQH4mcCiSpDQq4CKIDHJtQJMYLEArUIM0LYDEUpsyVUAYyiXC9s3bkoiRh4iJbYtgDGmcs0GA1sizzZfvSkwO832V8j/HPZmLJkrAnuSaXPmisC7kux3bq4YbHn1wOXmcvgGzmOi1HBPJ3oAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGFSURBVFhH1VUxTsQwEMyTrrgCRSjFNXdSxBUUtPcYPsBT+AQSX6DgCUh0lEZjNNZm2Fx8js2JkUZOnM3OeNdOuu6/YTcMQeeuiofjMZzj3eHQzrAKedz1fVsDKqhETBMTSHy73YabzSYK8Zr3zU3QwGfoJgZw71WmiQFPaG6+qgFbbkvOYwSbGWCfY2+H4ddqlYipagCISXPFWxhgcq/fJNoA4eriBFpxP46RXGUaWwoTc/8Fll3nqyL1doE2fpphBZhce+5tPn13Ncb9Ponbn5GlNYB9ojmKQXGMFNMYNcGPlMYVAcKkFX96D6F7Dum+ehXYSy0/5k6vX+HlIwSM0ciMgeI9gTNOYV5bA49vP+JLFeC3Au9PBM7BimP0DCi8PYB5LuCiSlDQq4CaoDDFtQJcwMUGtAoxQd9PTKiwFVcDzKFaLmzf+FIyMfMhUmHbApA5VSsbTGyFPK4+ekvg6nS1fyJ+NdgToc+InJgi2B1MlsQUwTuK2uecmGLYss5ttJwYD9+ngaLQx0WqfAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGFSURBVFhHzZUxTgMxEEX3SClSRBHaIk0irUhBQcthuABHySWQuAIFR0Cioxz0jb41+dib3awH+NLIsdfx+57xertupnZ9bzr2p7o/Hm0sbg+HOMMKKsVuu401oEANzAkxgYVv1mvbrFYJxN/sh5uggQ/rzgygX8pMiIESqDbe1IBPtw+Oo0WEGWCdU237/sduNTCnqQEoLToVHmGAi5fqzUAZAG4Op1CKu2FIwV3mNhL8b1T7MLHuOt5U+XBdCD//fIUF4uJ66EqnX/+7WMN+n+H+a+jDG8BB1TWuFuFoCdM5aoK3pM6bJaYSYIaHP72ZdSfL/VoWrioJ3nG/c59+PH94+bTndzO0yUjFAO8KrKGMqhTOvjfw+PoNv5QBtPnCmpoJAmmiZEBVOgMY5wZmG/BZ8AbUBMGEawZ8BmcZYPp9izvem1Cwh9MAf3NNZU1WNlG5iBS8+BVU6Y5q0Rys4u50t78CH5N/a/RZM9Ug/pQz/PMmqkH00gopxRjEZyXsLERAvgC3AqETr/r2CQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGCSURBVFhH1VUxTsNAEPSTUqRAFnKRJpEsUlDQ8hg+wFP4BBJfoOAJSHSUi+bQWOthHSf2LYiRRmef1juzu2e7af4Tdl1nuvenuDse7RRvDoc8wyoUcde2uQZUUImYFBNIfL3d2tVmU4R4zft0EzTwYc3IAO6jzqQYiISm9qsa8O325D5WMM0A51xm23U/qlUipqoBoCQ9VzzDAJNH8yYxBghXFycwitu+L2SVw5op7DH1b2Drdb8qhvnO0MePM6wAk+vcowOoz65Gv98P4v6H5OkN4KxojsWgOFaKaYya4IdK4xYBwqQXf3wza55suK/eBc5S24+9+5dPe343w1qMTBhYfCbwnlOY197Aw+u3+FwH+L3A8yOBU/DiWCMDiugMYJ8FXNQJCkYdUBMUprh2gAVcbEC7UBK07ciECntxNcAcqhXCz40PDSYmPkQq7EcAMqdqnQ0m9kIRV796c2B1XtCfF41Ph58vqTFVEb0duOaaOgKt1pvhWNIM/Hq1itrVfgGRA5woocZQ6AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF+SURBVFhH7VW7TsNAEPQnpUiBLOQiTSJZpKCgzcfwA3wKP4HEL1DwCUh0lIfm0JzGw5nEjxUUjLS6eLO3M7t7PjfNPyZi13XJfb+Ku+Mx/WQ3h0OcYCeq2a5tYwU4oRtiQkQg8fV2m642m0zE33wOF0EB76kZCMBzrTMhAmpEY/5VBWi71ejHCgsTwDnn2Xbdt2rdELOqACAnvZQ8QgCT1+ZNwxhAvDo5gVHc9n02VlnWSGKgtPaMafwwwwIwube8Nnvfuxj9fl/I9VugpgIwJs8xGyTHSjKPcRG8IzxuFkBMU/KH15Sax1Sew7rg7Yfv9PyRnt5SwpqFjAhYdB64Ga8bRKiA+5cv8ks6MEsESbG5JsBROwPw867Aft8zCiXHqgJcBIlJ7h1gAfQNmUZAQhWRE7TtQIQTKzkFsIDJArQL8BURIxeRE3ME2sFJArRy+LQiFePmrx79zKn/TYZW4tXWyFeFH8xwQoe2Xite3NY5qI3CY8LwZ0fhcefwCXDDjgq9UIjAAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGLSURBVFhH3VUxTsQwEMyTrrjiFKEU19xJEVdQ0PIYPsBT7hNIfIGCJyDRURqN0USTwQafEwvBSCvHm/XOeNdxuu4vYT8MwX2/itvTKXxn18djO8FOlLJ937cV4IRuiGkiAomvttuw22wiEZ85by6CAt5CNxOAeaoyTQSkiHL+VQVoudXoxwhrJoB9jr0dhi+7dUPMqgKAmLSUvIUAJk/1m4Y2gHh1cgKtuBnHaNzlNLYkVuT+DSy9+1fF1N8fTOPnGRaAyb3vqQPoaxdjPBwmcv0hqakAnBXPUQ2SYySZx7gIXlQeVwUQ05T84SWE7hymebMqePnhu3t6D4+vIWCMQjICFp0HLsY3DxEq4P75k7ykAlUiSIrFKQGO1BmAnxcW1vuaLJQcowpwESQmuVeAG6BvzpQBCVVETND3MxFOrOQUwA1cLECrAN8kInMROTFboBW8SIDuHD4mVqKU+adHP3Pquypwd0rIuZP/H+iB9HdESUwV9ADRamKq4PdBqs8lMdXQsuYOWklMCh/hc6LQnUt3twAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF9SURBVFhH7ZUxTsQwEEVzpC22QBFKsc2uFLEFBS2H4QIchUsgcQUKjoBER2n0jb41+UySTeKBhi+NnHided8zTrZp/rVQh65LOvenujuf01TcnE5xhhXkxaFtYw0oUANrQkwg8fV+n652uwziNe/DTdDAR2oGBnDvVSbEgAcam69qwJbbBucxIsIMsM+5t133Y7caWFPVAJSTXgqPMMDkXr8ZaAPA1eEUWnHb9zm4yzJGgqFS2pmw64cZNojJteRe7/XZzeqPxwK3/wU2rAG0SXOsFuEYCdM1aoLfCF23SgAzLPzxLaXmKZX76lVgL7X8mLt/+UzP7ylhzEZGDKw+E3jFCOa1NfDw+g2fqwBfVTw/AEzJwjF6BlTeGcA8N7CoEgR6FVATBBOuFeAGFhvQKuQEbTswoWALVwPMoSxXtm98qJgY+RAp2LYAwZzKulhMbEFebH715sTd6W5/BT4le2j1t2oag9hDxrC/V9EYxHtbqrdiCmKrEnYWIiBfoWydmXFdlssAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGCSURBVFhH1VU7TgMxFNwjpUiBIrRFmkRakYKCNofhAhyFSyBxBQqOgERHaTSLxpoMNtnN+oEY6cmfvLyZ957t7br/hm3fJ9/7U9wdDuknu9nv4wQ7Ucm2m02sACd0g0+ICAS+Xq/T1Wo1EnHOdbgICnhP3YkArEuVCRFQIqrtNxWg5VbjPkZYmAD2eext33/L1g0+TQUAY9Cp5BECGLzUbxraAOLm5ARacTsMozHLPEYSE7XvAsvu+02Re3vG1P80wgIwuPe8dPj8v4sx7HaZXD9GaioA58RjXAySYySZ+7gIPlLuNwssJYhpSv7wmlL3mPK6VoWLWoIrpplr+fH78fkjPb2lhHEUUhHAq4oYzlGFk3OtAu5fvsjPVQBjfi+mVoKEFFES4CidAewzgdkCtAoqwEWQmOReAa3gLAEsv454YlWEEys5BXDOmM41GVlE5SFy4sVX0OEZ1aw5sYPZKaEeWPcPhx4wmvs0Rel6Ys4xtAWerYphW8IE/Hq2jtbZfgKtj5prz0aJOAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAF9SURBVFhH1VW7TsNAEPQnpUiBLOQiTSJZpKCgzcfwA3wKP4HEL1DwCUh0lIvm0JzWw9pO7DseI43OPq13ZnfPdtP8J+y6znTvV3F3PNoUbw6HeoZVKOKubesaUEElYqqYQOLr7dauNpskxGveVzdBA+/WDAzgPupMFQOR0Nh+UQO+3Z7cxwpWM8A5p9l23bdqlYgpagBISc8Vr2GAyaN5kxgDhIuLExjFbd8nssq81hT2GPs3sPW6XxR5vjP08cMMK8DkOvfoAOqzq9Hv91nc/5A8vQGcFc2xGBTHSjGNURP8UGncIkCY9OIPr2bNo+X74l3gLLX92Ds9f9jTmxnWZGTEwOIzgfecwrz2Bu5fvsTnOsDvBZ4fCEzBi2ONDCiiM4B9FnBRJygYdUBNUJji2gEWcLEB7UJK0LYDEyrsxdUAc6hWCD83PpRNjHyIVNiPAGRO1TobviJvRrn61ZuCb6VW+6PiXKsKKnzrfcWr5roU0Sg0phr+7Cg0bg6ff9mTQX5cQ7kAAAAASUVORK5CYII="]};
 GIFSPRITES.slime={w:32,h:32,delays:[60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADiSURBVFhH7ZE9CgIxEIVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYiTCk/DI/mTGgMU8eOxPkvk+dkPwKDLdNJIr7/t5AFpex9lWE2Hw4tRkW0VkCJibivC8ogDOgPVj8i2vsYhaogt+k6Pc5SyH16qOBMPTXwCBi+xk+5z3ChRLtMHTd0N/gUqCBXA4XkMIn/JwtGvdJMCA2X6UbTUBBjC4bd0swABt1QLxnoeVNs4wCaQSeO4r7y8SiMlJaFsMR+IBq4QajqQSmprgCCQ0NcMR/rRDy3M8Ho/H85d5A0ANrwotenabAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADsSURBVFhH7ZE7CgIxFEWzh8Haxg3YCVauwMJFWNpaausmRKxsXYDgnmzE4skTrmQumZl8QSEXLhPyO4eJMTX/mummEbu8XiwALq/jVouLMHhxalotJjIE5mYV6QKvH5NvWcAlwvd6BXC+WKE3OcpdznJ4rXolIBIswXD7L0DgIjvZPueDAsESXXB7zucJuN4SLIDD+jXGfMqXo33rSQIMmO1HzhYVsAEMZgEd8/koAR0zJLR6R5KASwLz3K590QK2RGyDn0CjG3NIRMGRVIkkOMISoU2CI7ESWeAIJEKaDY7wGw+Vz9fU1NT8bN6X1LsimQW9PwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADxSURBVFhH7ZIxCgIxEEVzh8XaxgvYCVaewMJDWNpaausllsXK1gMI3slGLEYijEw+2ZhMErDIhwe7m+z8R3aNaWlRZr7rSILr1cKF6+vUoboIFq+GzqGqSKgYkSI4RxUulyXbx+wLCkiRbImx8hv1dKcznV6behKyXB4/C1zoQPvnMiiglvCVy5OI+QRqCd+x870x5gMWMKH1aAmfgK9gcZw44DpSVADLmaoCWPYLfF8lYK9xcCp2RnEB+9wH7isiIAdj4Ri4Xy0gJbQk/wM2dmMJCVU5J1ciq5yDEqlklXNYQkN2OQePNxac09LS8pd5A6a/6IKv82rXAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD9SURBVFhH7ZIxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQCswyfRJNJVizy4cFuEvJfsutcS0tLQaabjhgcHzxSvLyOPT8V0cWLU+fRIri+WvSppRgZ7Dbw1OvHpCckUfU28NRceqMj3elMh9cqKKFvA/fLij65Pj0LXGhH2+c8KlAsgeV4C7FPgJgk8Nrl2TnnkfHZfuSRd5w3SWC5RhdIuZaICWRJpAhguTCYABalUkUAN82lSAA30/A6Dc6jhEkgVoLj3+bNAgJumIrpH+CEJFJlcH12OeeTgIVsAU4tCVO5RCRKMJdL8Bvngvu1tPxd3hrs1o6rQaF6AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEUSURBVFhH7ZIxCsJAFET3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYuUHRn7G3Zj9iQFxB4aEbPbP20mcy8rK+mWNV4UX8/P/EE7fWwsIQeD8PKy4FxAdPDsUFWsQ3tda+tQczO4cInTq5W30MgPoNvSM6tSGCp1aQi9+76/+6HePRRQCIDyzsXS4bgAAJ7/x6/u0FgB7TQ2E/nTnXOnYJ8B6awCuHvccMNkOStcBmCAYIBbwFYBYuA5AMDsGkAQBALliMwc1NfbrmZz3Jt0AD7Ta3AAP0pZ1bV7nd5MBUF0ohJ9/Wjc1oL9fGyf/hCJ5sQsIU7iIAVJBeF8ygCgGkWpTOASINjaHQ1xvqnleFusJoIDmAghUiesAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEESURBVFhH7ZI9CgIxEIVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQCI8MzWTPZXf/Ig49lN5m8l5l1rqioqOiXNVxUxOD3/9RX3vRjIxDj6bHveWsQbTzZVR4dBPe3KjEXY6TTEK/M60Lgu1loPr8MHmCAWIhshcxPtKUz7Wlzm3UbQv9wEkICHGhFy+s4GqBxCDRnnHOe2AhkvXEILtCtlycajNY9T0oAUwice51ByrqpC3j7GHJ77EIIUxdC5miWSigE+j1JB8ADc8kKwE88SCMtFXAd92YFQGLmKevJAVi6oA1M5iwp4tnhYVZM89fiAi5sA7O5CG+TC56rdQfRa5p4Pd4eUgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADeSURBVFhH7ZIxCsJAEEX3DsHaxgvYCak8gYWHsLS11NZLBLGy9QCCd7IRi5FZGBl/JuJml5XgfvgkJNl5L5s4V1JSUlIy5EzXFXHx+v/kpzvA4MV57JtFQkMEPj9UvtkkOAjPKiHw1W3yajYJDb9QQ1c60v6xzCOht10ETrSlzb1uCVgSUUL6bxdA1yf4JNErFjykURLW3+6c8+Xz2W70VrwfJWHBNQDhUksgWALhCAltsIQI8BGH9a2eibxW9MNYHNxVXJdMIKbDE0gpoechz4xelKpfwyX4FrHF+ZInoYxZdgjM46IAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADmSURBVFhH7ZM9CgIxEIVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQCb4lPF/Ozm2oefCybncx7STbOmUwmk8lkKtB004jC41Wkxsvr2FM9BMwXp8ZTJQQM9Ll+TFqqh1DTmxzlLmc5vFb1QmDbEeAiO9k+5x8BBgvBZ/7rCAYJgWsWmseCEIB7/xWMc8zDEFm70bVq55xnth95MI53fOd5ySG0mJvngj7RAbB6fXKzXMKe7PelsJjhxl3wvN4ClJAcAOfWB0k/ohaF14+bpQLz6AAqLcSkvog2h3glpXB/6A2FUjeuX7lb2QAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADwSURBVFhH7ZExCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQWZhm+2WyyE6zmw2chyfz/NgnB5XK5XC5Xpua7hnDt72KIHOOcWRK8vk+zXBVEF68uTevta9ZZ1rQ1COYVScp1OJc+6ExPutLps+mFEJDRELpc34AA3OhA+/cyCWCCiL25hA49gRkArx6fodRFEFLOXwwKIbTG9aF9nYl9P9KHF8dJVkFqnzNMANpY2GecGw0gxsAYDO5LsdgEkAKJGeeqAVhcDMDXiiFjzVlFAOxaELqcjX1RyWEerOGichH+idWYL/oCj9abOtz2zHAAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD2SURBVFhH7ZE9CgIxFIRzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzE4sksPHk7xpC/RsjAEJa8zHzJOtfU1NTU1NT0r5puOrHm/ariMnh5HQ/M+1WgfpWtH5OPF6euN89YKM6Nki3XEhilNznKXc5yeK0GEOxsCC7XG1mAi+xk+5wHAbIhfOX2JXy/IGSF4B6vfM+u38653lygDu1HQygAVg4JFYT2bSb3fUmHZ/tRbw5LteYkA2DVwzkg9mzWC2BV27AU24wiAIWIgbGzRQB4Rg7JNbKiASAM1oJILocwjEOlEFqeDABZiFInl6v4RrnmXKs3XM+TV7hyGgEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADuSURBVFhH7ZKxDcIwEEW9Q0RNwwJ0SFRMQMEQlLSU0LIEQlS0DIDETjSI4tAhXWQ+JvGdbWj8pS8nPvv+S2znqqqqqqqqEjReNYRzf9HPQTgwZFyXXRI0Pw+DLgaCwbNDE3QRkJhgtA+C/VSScAxY3katsYYgZoiu8Avt6UpH2j0WZSAw3D8CATjRhtb3aS+AGuJbuD8XewQmCASQzTw6517G5uKuehJATEBfXQ0w2Q7eGvC7BPBzyH4d96oBeMSAFJsAckH4PTHvQwiAIJY5EwCfHTaxWnUJWbww9BesVoWLZGMOq8NF+CVWY19fT620pMa5GggLAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhHY2AYBaNgFIyCUTAKRsFQA4b5wv/xYXT1VAHIFvhvkseLqe4YdEsdFwrjxeiOQTePJACzHN2S9C8qcIwuh+4Ysh2Bz/J9/+f/P/h/8f+u38G0cQS65cjBD3PAyv8N/yt+WhN0AMmOwGU5shixUUCWI9AdANOMbiCpmCIHwDADAwMYWzSKYsUweXR9FDsA3QJ0i3HJU+QAEI1uAbkY2Ux0+zDAoHIAOkY2EBvGJ08VB1CCSXYAKOGgG0IuJikRggBIIUgDNTHRlsMAui8oxejmwwAAwMWffAsLYBEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADSSURBVFhH7ZI9CsJAEIX3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmQCL6wPzCYzWgTmwUd+djPvI0lKkUgkEolEhpDpphILPMcUHbS8jk24JVC+OFUfrB+TBl7LcUm0ld/kKHc5y+G1+o8El+OV5gIX2cn2OS8K9Jb4Vp7f6/oJTBIsgIf1mFKq4eGgbd0l0KWgtO4SmO1HNSjANcPrbgEusDJcAT1XMAjXJXi/WSCXsNL7H9Doxl9ImMoRlrBiKkcg4cFcjvBr7QvP47wB0bakRBDoz0UAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADxSURBVFhH7ZMxCsJAEEX3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfEn6+7MxkLYDw9DNjv/JTEh1NTU1NTU/GPGq4YQvKb36LL5edjiZ0JdpbND0yImhPNM0cVYmEKL4NysSDkOZpa30RtcQ1wSqfIL7elKR9o9Fv1LdJXr1yACJ9rQ+j7NEjBJoID+Y8k5yysoFpDN/BtCeIHDhW/rRQI5Bal1l8BkO/hACvgYC3Bd05uAF7cAHzM4MBfZXyygwRIErzcLcEQCB3kxlXNkU+wpWDDfvYQ3xD5HC65yiUiU4C6X4CO1gvMwT8B40+IZg3y0AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADbSURBVFhH7ZIxCgJBDEXnDou1jRewE6w8gYWHsLS11NZLiFjZegDBO9mIRWSEyPJhM5NkLIR8eLCQ2fzHzqYUiUQikci/ZbrpSALPN0m/YHkdizSXwdLFqRNBGdynCpdjSS0uCal8/Zh8wRlikiiV3+hIdzrT4bX6jQQK9O+fBS60o+1z3l5gqDyTUvowdAU8RwGVBArwy6WC0twlUFNQmpsFZvuRC5dAfsaFWvIOl4BHgt93CyBYhIWIWUCSqEX9D+Tkgy0kTOUclLBiKuewhAdzOQc/qxbch3kDw3XdWE0Rx9EAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADWSURBVFhH7ZI9CsJAEIX3DsHaxgvYCVaewMJDWNpaauslQrCy9QCCd7IRi5EVRoaHZmdnYiHMB4/8bHbeR5KUgiAIgiCoYLppSBPc54YHL89jVQYVkcWLrlFFiuC8KrgcC9a3yTu4hiJmib7yC7V0pSMdHqvfSGC5/AQscKIdbe/zokC1xLdyeU/7CUwSKMCb8zGl9AoO5/StuwQ0BaV1l8BsPzLFLYADrflfgXyew4P4uhR83iwgJawx/wNDSMhytUDmk4Q11eWMlPCmupzBV2oNzpU8AUUnyyLv4mryAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADfSURBVFhH7ZMxCsJAEEX3DsHaxgvYCVaewMJDWNpaauslQrCy9QCCd7IRi5ERRsYPSWZn124+PLJks/MfCUkpEolEIpFIRua7hizgueLI4PV1aqKqiC5edY0JLYLzsiLlWLB9zL7gHoq4JYbKb9TSnc50em3+I4Hl+hOIwIUOtH8uRwWyJfrK9T3rJ3BJoIAc5mtK6QMOF4b2iwQsBWP7LoHFcfKDFPAaC3BfU03Ai1uA1wwOtCLniwU0WILg89UFPLgFakjIHLMAhx/s+xU9ZJVLRKIG2eUSfJ1ecK7OGyjyxjbiQdqfAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADjSURBVFhH7ZIxCsJAEEX3DsHaxgvYCVaewMJDWNpamtZLiFjZegDBO9mIxcgIE5aPbHZmthHmwyMhu5n/yCalSCQSiUT+LfNdRyVwf7NIwfo2LdJcBItX565IUxFNMZKL4NyqSDkOZrbP2QCuISaJsfI7nehBFzq+N+0lfpXnxyACVzrQ/rWsElBJoICU5880R+AWkJf5mlL6gsOF0rpLoKZgbN0ssOgnA1KQPxtbdwnwPZZo4RkuAY+EvO8WQLAICxGzQEmiFvU/wOGNLSRM5RKUsGIql4iEB3O5BD+rFpyH+QBpMN30OsKV8AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADgSURBVFhH7ZI7CgIxFEWzh8Haxg3YCVauwMJFWNpaausmRKxsXYDgnmzE4kkG7hAucSZ5L1MIuXCZTz7nMBnnampqampq/jHzXSOx8rziAWh9n0Y7mgiDV5cm2lFEUsDcUIT3ywrgDNi+Zl15jEXUEn3wh5zlKVc5fTbjSDA8PAII3OQg+/dyUCBb4hc8fJd6BCoJFsBif3XOteXN0b5xk0AKYGjcJLA4TtoCgGcuj5sF/D1Dcuv3MAlYJLDeLGCtWqCERPY/4OMnlpBQwRGW0FYFRyBhqRqO8GfNLe/H+QI76sJ2m7AChgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADjSURBVFhH7ZMxCsJAEEX3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSECeuHbDKzYyHMh0dCdnf+IyEpRSKRSCTyb5luGiqB+90iBcvruIi7CBYvTk0RVxFNMZKL4NxBkXIczKwfkxZcQ0wSfeU3OtKdznR4rX4jgQL5ZxCBC+1o+5z7C3SV5880n0AtgQJymK8ppQ84XCitVwkMKehbNwnM9qMvpACf962bBfgeh2nhGVUCNRJyvlogB0sQ3O8uYEElwOGNXhLqcgkf6PodNZjKJSJRg7lcgq9UC87DvAEBCdjs4LLzGwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADjSURBVFhH7ZI9CgIxEIVzh8XaxgvYCVaewMJDWNpauq2XELGy9QCCd7IRi5EIs4RHzM/MphDmwWOX/H0fm3XOYrFYLJZ/zHzXUay4bvQwaH2bRttMBMGrcxdtE5ESMDYUwfOqwnAEbJ+zoTiHImKJFPxOJ3rQhY7vTRsJhIdXwAJXOtD+tcwKVEv8godjpVcgkkAB3uyfzrlv8XBual4lUALIzYsFFv1kKAPCsdy8SsC/I6S2/gyVgEaC96sFsAhCIFYskJIobfU/4OMXjiEhgnNQQloRnMMSmorhHPystcXzMB+vAMLKvnVgyQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADlSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfjJbjKTpBDy4bHLJpn/2GWda2lpaWlp+cdMNx2FwH3FI0XL6zhINREsXpy6IFVEUooRXwTnqSLlWLB+TL7gGoqYJYbKb3SkO53p8FrVkcBy/xOIwIV2tH3OowJqib5y/1nqJzBJoIAc5qtz7gMOF4bWswRSCmLrJoHZfvSDFODz2LpZgO9xmBaekSWQIyHnswV8sATB/cUFLKgEOLyxlIS6XMIH+n5HDaZyiUjkYC6X4CvVgvMwb+Fpwaqbe8DgAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADlSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfjJbjKTpBDy4bHLJpn/2GWda2lpaWlp+cdMNx2FwH3FI0XL6zhINREsXpy6IFVEUooRXwTnqSLlWLB+TL7gGoqYJYbKb3SkO53p8FrVkcBy/xOIwIV2tH3OowJqib5y/1nqJzBJoIAc5qtz7gMOF4bWswRSCmLrJoHZfvSDFODz2LpZgO9xmBaekSWQIyHnswV8sATB/cUFLKgEOLyxlIS6XMIH+n5HDaZyiUjkYC6X4CvVgvMwb+Fpwaqbe8DgAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADlSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfjJbjKTpBDy4bHLJpn/2GWda2lpaWlp+cdMNx2FwH3FI0XL6zhINREsXpy6IFVEUooRXwTnqSLlWLB+TL7gGoqYJYbKb3SkO53p8FrVkcBy/xOIwIV2tH3OowJqib5y/1nqJzBJoIAc5qtz7gMOF4bWswRSCmLrJoHZfvSDFODz2LpZgO9xmBaekSWQIyHnswV8sATB/cUFLKgEOLyxlIS6XMIH+n5HDaZyiUjkYC6X4CvVgvMwb+Fpwaqbe8DgAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADlSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkfjJbjKTpBDy4bHLJpn/2GWda2lpaWlp+cdMNx2FwH3FI0XL6zhINREsXpy6IFVEUooRXwTnqSLlWLB+TL7gGoqYJYbKb3SkO53p8FrVkcBy/xOIwIV2tH3OowJqib5y/1nqJzBJoIAc5qtz7gMOF4bWswRSCmLrJoHZfvSDFODz2LpZgO9xmBaekSWQIyHnswV8sATB/cUFLKgEOLyxlIS6XMIH+n5HDaZyiUjkYC6X4CvVgvMwb+Fpwaqbe8DgAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhHY2AYBaNgFIyCUTAKRsEoIBIY5gv/JwWj6ycbwAz03yRPEqbYIegWOy4UhuP0LypwjCyOjClyCC6LYZbv+z///8H/i/93/Q7G6wh0h6DbgxXALMdmCLIDVv5v+F/x05qgA5DNIOgIfJYjixMTBdgwQUdgcwBMI4hmYGAAY3R5GCYkT7YDiLWAkDxJDrBoFMXAMAvQxYmRJ8kBsKyDbgi5GGbe0HMAtTHRDoAlGnQDyMVEJ0IQACnAlxPIxURZDgMwR1ATE205DKAHI6UY3XwYAAAKxLYaSAVBCwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADQSURBVFhH7ZMxCsJAEEX3DsHaxgvYCak8gYWHsLS1NK2XELGy9QCCd7IRi5Fd+GGcTHQzroUwD16xs2H+JyQhOI7jOI7jOBlM1xVZlHsGg0WL87h1dZvQhfZ0pSPtHst05vdccxEtODo/VG2BE21pc6/TOc41TUV4MF+CM0pAGarJi8i8FxCuLZAzi29L9IVzQwhJOc+9j/aW4AVmzUgVAXKee59dAB+NXGAV+wYXKO3/FPhFieyP8NOf8I3YrxaIoC0eLC32y9wO8vWVUuZEnrMDjYPRbz0RAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACxSURBVFhHY2AYBaNgFIyCUTAKRsEoGAWDGRjmC/+nBkY3lyCAafTfJI+CHRcK/0//ovJ/3//5/1f+b/hf8dMazAeJY8MwfSQ5BNliZENgfJgjYBjdUmwY2SHo9qEAmOXYDEAXIwfjdQQuy6mNcToC2QEWjaJYMQMDAxijGwrDMHl0fTBMtANgiQbdAHIxzDySHUBtPHQcQAtHwMwl2gG0wgQdQA+M1QEggB5stMLIdgIAood8JAru7eMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACxSURBVFhHY2AYBaNgFIyCUTAKRsEoGAWDGRjmC/+nBkY3lyCAafTfJI+CHRcK/0//ovJ/3//5/1f+b/hf8dMazAeJY8MwfSQ5BNliZENgfJgjYBjdUmwY2SHo9qEAmOXYDEAXIwfjdQQuy6mNcToC2QEWjaJYMQMDAxijGwrDMHl0fTBMtANgiQbdAHIxzDySHUBtPHQcQAtHwMwl2gG0wgQdQA+M1QEggB5stMLIdgIAood8JAru7eMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACxSURBVFhHY2AYBaNgFIyCUTAKRsEoGAWDGRjmC/+nBkY3lyCAafTfJI+CHRcK/0//ovJ/3//5/1f+b/hf8dMazAeJY8MwfSQ5BNliZENgfJgjYBjdUmwY2SHo9qEAmOXYDEAXIwfjdQQuy6mNcToC2QEWjaJYMQMDAxijGwrDMHl0fTBMtANgiQbdAHIxzDySHUBtPHQcQAtHwMwl2gG0wgQdQA+M1QEggB5stMLIdgIAood8JAru7eMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADbSURBVFhH7ZMxCgIxEEVzh8XaxgvYCVaewMJDWNpauq2XELGy9QCCd7IRi5EIfxnGmEwmW86Hz0Jm8/9jNwnB5XK5XC6XS6n5rqMay/1mIXB9m1a5GUQWr87d4O1zNpivczeB/CtG+Z1O9KALHd+bLIQEkT1JoTwVwgGudKD9a1kE4BlFiFw5X9f8gpSLECkAbIzPEMLXcg6X5mYAbUFpXgWw6Cc/RoFc18yrAHB1ZEiuIDdHXjOA1WaAsa0GwKGRAVarD2FUfCF3E6xWlUOAGNPqckh+xlbLfOgDfQuy4tzDR1YAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEFSURBVFhH7ZMxCsJAEEX3DsHaxgvYCVaewMJDWNpaauslRKxsPYDgnWzEYmSEkeG7u1lnN8ZAPnwSMpn/XxLiXK9eXdJ4VRF7fh56LXPcyxYWzw6V142ApBSjNQjmfSUpx4LlbfQ2zhDEDBErv9CernSk3WPRDASW608gACfa0Po+rQUwQWgAKUcAdspnyAaQAD46514OAci8OAAW/BWAb457xQFCv+HPAUJzvF4cgM9bB/A5NC8GYHV3Afg42Q4+AlPNuzoLe6LSAGIsCFnvCADm10oAECIGgvfJfjaAD6LOetcEwNIhqSB4Pxtzk4VvwWLz07NaB2DlQGSXizjIYszp5dMTBh6jR1gN89EAAAAASUVORK5CYII="]};
 GIFSPRITES.poussin={w:32,h:32,delays:[20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADdSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdxEnW5GL77FPg4ZH2E59315YzTYNBJ/freeG3w5Dw9/Oy/KyEFjishISk0nAtoOK+EBiYU3gJT3h4iZbwsBI94SElaNYq+ppwA08vvOZZ1jYByb51Rki/6y0wY7eAJTFXcc0zk8xu4ZDXvGbmO7cPh6PFPBNuoh63kynOUczJwkdIecKbf0UaUTXhIvpWU7qFGjWfXqGhV/Rz03ML3adXWkqEhStiqI/OMi+td1MKKK2HIMY589L6YPCXfAAEy6l6FEOyCAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcMgEATdRL6pIOW5hfzTRxpJDy7AReTh6KychMYIDu7k5MFI+4Fjd0FM02Dg5DFfN66dhoS/X7ftZyW0wGklJCSVhmsBFc+FwMCSwku0hIeX6AkPK+EJDylBs17R1wRvL6zLImaHgCRonxHSdfMr0JDmKu61zHznjnCIsphbZpLZPByMFvOy8BD1vF+y4hzFnCL8hFRLuPkTEhpRlnARfc3UXsGi7tsrNGwV/ZrxvIL79kpPibBwRQz10+XMa/tuagG1/RDEuGRe2x8M/pIPJ0SX5pOPPYEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZLBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMYOfO9ink4ZH2Y59315anaTDo5H49L1zbDQl/Py/L30pogd1KSEgqDdcCKp4LgYFbCi9REx5eoiU8rERPeEgJmrWKvi54e+E1z2L2E5AErTNCut70Ciwg5ioGWzPVBRi+Ze6dcZfgwWgx7wsOl/S4nbLiXEnMXeGQpdZwFfOz8BDlDaevm9xnrJX785WgYa3oV03PK3TfXmkpERauiKF+upy5td+NFWDthyDGW+bW/mBwSD58zZZMqN6kDwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZTBDcIwDEW7BFcmYDxW4M4eLMIOHYAhOBQZyVV5WHESW4VDnvQvxPnPrSqmaTAIcj0fF/62GyJ/3k/Lz5bQBXZbQiTbqFwX0PBeChSWkr5Eizx9iR552hIRecoSLOsNe6vg0wuPeZayL8FG9J4R0heQcg3F3gy7XSgvldfO0FGEl7NCjwkvWbldDmY4Z4W+DzhcSo9cQ+8KB3iRqZWzbxV6WB9ja0J/RAILW8O+ZiJvIfz0Ss8SaXJFCvWjs8q98zCewDtPQYpL5d75YPCXvACBCYoNp6cBwgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZPBDcIwDEW7BFcmYDxW4M4eLMIOHYAhOBS5kiXzMbFju4VDnvQvjfP/T9RM02CQ5Ho+LvhtNyj8eT8tPyvBBXYrQSFSHM4FWLivBAxsqbxET3h5iUh4WYlMeEkJNIsKfV3g6YnHPJPZR4AIWmcI+T10C1iAzFkYbM24CqAZ6pt574yY9YdvpbcSDA5pul0OqnBOE+ap4CZNm4VL0ADlDUdfN/gSInK9gBZo2Cv06yZzC+nTM5ESZeEMGfJPp5lb62msAGu9BDJumVvrg8Ff8gLmd6Oeo23GWAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcMgEATdRL6pIOW5hfzTRxpJDy7AReTh6KychMYIDu7k5MFI+4Fjd0FM02Dg5DFfN66dhoS/X7ftZyW0wGklJCSVhmsBFc+FwMCSwku0hIeX6AkPK+EJDylBs17R1wRvL6zLImaHgCRonxHSdfMr0JDmKu61zHznjnCIsphbZpLZPByMFvOy8BD1vF+y4hzFnCL8hFRLuPkTEhpRlnARfc3UXsGi7tsrNGwV/ZrxvIL79kpPibBwRQz10+XMa/tuagG1/RDEuGRe2x8M/pIPJ0SX5pOPPYEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADdSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdxEnW5GL77FMQkkfaT3zeXVvONA0G/879el747TAk/P28LD8roQUOKyEhqTRcC6i4LwQG5hRewhMeXqIlPKxET3hICZq1ir4m3MDTC695lrVNQLJvnRHS73oLzNgtYEnMVVzzzCSzWzjkNa+Z+c7tw+FoMc+Em6jH7WSKcxRzsvARUp7w5l+RRlRNuIi+1ZRuoUbNp1do6BX93PTcQvfplZYSYeGKGOqjs8xL692UAkrrIYhxzry0PhhYfACZyKl6D+kVxwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBCcMwEATdRL6pIOW5hfzTRxpJDy7AReThcCYHYix0J+lwCGhgP9JpdyU0TYPBv/OYrxvXTkPC36/b9rMSWuC0EhKSSsO1gIrnQmBgSeElasLDS7SEh5XoCQ8pQbNW0dcFby+syyJmh4AkaJ8R0nX3K9CQ5iru1cx8545wiPKYe2aS2TwcjBbzsvAQ9bxfsuIcxZwi/IRUTbj7ExIaUZ5wEX3dWK/gUfPtFRrWin7V9LxC9+2VlhJh4YoY6qfLmVv73VgB1n4IYlwyt/YHgxwfmFyX5uReIvQAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMxM6d7VMQkkfaj33eXVuepsHg37lfzwvXDkPC38/L8rMSWuCwEhKSSsO1gIrnQmDgnsJL1ISHl2gJDyvREx5Sgmatoq8L3l54zbOYbQKSoHVGSNebXoEFxFzFYGumugDD98y9M+4SPBgt5n3B4ZIet1NWnCuJuSscstQarmL+htw/oLzh9HbjKWHJ/flK0LBW9Kum5xW6b6+0lAgLV8RQP13O3Nrvxgqw9kMQ4z1za38wyPEBY/eYbcKtd5gAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADaSURBVFhH7ZLBDQIxDASvCb5UQHm0wJ8+aIQergCK4HHISD6FwYrPiXUIKSPtJ3F2N1GmaTD4d67n48K13ZDw5/20/KyEFtithISU0nAtoOK5FBhYU3qJSHh6iZbwtBI94SklaNYq+m6Ctxce8yxmXwFF0HtGKNebXoEFxFzFYG8mXIDhNfOtM6ESPJwl5pjwkKXb5WCKc5aY9wGHa2oJVzF3hQM8SG0Np98a6GF9xqhCn8+ChlHRL0zPK3TfXmkpkRauiKF+Osvc2+/GC/D2UxDjmrm3PxhYvAANd5Bwn9y7pAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMcNhn+xKE5JH2E59311Y8TYPBv3M9Hxd+2w0Jf95Py89KaIHdSkhIKg3XAiruC4GBOYWXqAkPL9ESHlaiJzykBM1aRV8XPL3wmGcx+whIgtYZIf3edAssIOYqBpdmXAVoRn0zr51JZv3hW+mthMIhS7fLwRTnLDHPhJssbRaeQgPKG05fN3wJLXK9gBw0rBX9qum5he7TKy0lwsIVMdSfzjIvrXdTCiithyDGOfPS+mBg8QJvjKOenI9RPAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBCcMwEATdRL6pIOW5hfzTRxpJDy7AReThcCYHYix0J+lwCGhgP9JpdyU0TYPBv/OYrxvXTkPC36/b9rMSWuC0EhKSSsO1gIrnQmBgSeElasLDS7SEh5XoCQ8pQbNW0dcFby+syyJmh4AkaJ8R0nX3K9CQ5iru1cx8545wiPKYe2aS2TwcjBbzsvAQ9bxfsuIcxZwi/IRUTbj7ExIaUZ5wEX3dWK/gUfPtFRrWin7V9LxC9+2VlhJh4YoY6qfLmVv73VgB1n4IYlwyt/YHgxwfmFyX5uReIvQAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADdSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdxEnW5GL77FPg4ZH2E59315YzTYNBJ/freeG3w5Dw9/Oy/KyEFjishISk0nAtoOK+EBiYU3gJT3h4iZbwsBI94SElaNYq+ppwA08vvOZZ1jYByb51Rki/6y0wY7eAJTFXcc0zk8xu4ZDXvGbmO7cPh6PFPBNuoh63kynOUczJwkdIecKbf0UaUTXhIvpWU7qFGjWfXqGhV/Rz03ML3adXWkqEhStiqI/OMi+td1MKKK2HIMY589L6YPCXfAAEy6l6FEOyCAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADKSURBVFhH7ZLBDUIhEERpwqsVWJ4teLcPG7EnD99s4v6QJ2F3YfP1wEvmAsvMQChlsZjkfj1vXDsMCX89L9vPSmiBw0pISC0N1wIqnkuBgT2ll4iEp5cYCU8rMROeUoJmo6Kvi4zbq9yvwIO1Sim7uBeZ+cx9wyHKY+6ZqWbbcDBbzGvCQ9TjdmqKcxRzulifMBLu/oSERpQnXERfN9YreDR8e4WGUdEvzMwrTN9eGSmRFq6IoX66lrm1P40VYO2nIMY9c2t/sfhL3uNFmEx/1Q6VAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADFSURBVFhH7ZLBDQIhFERpwqsVbHm24N0+bGR78rAGk2/0BfYDf7J64CVzgc/MQEhpMglyu5w3rh1GDn+sy/azElbgsBI55FMWbgVMPCeBgXuSl+gJl5cYCZeViIRLStBsVPRtQnF709ArsEBK6S0GeDPdBRiuUHMJHlSLeV9wuKb79VQU52pi7gsOeRoNNzG/CA9RreH0bUbxGZs/Xw0a9op+3UReIXx7Y6SELNzIhvbpSubefhgvwNuXkI33zL39yeQveQK/EaJMrlF/hAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADKSURBVFhH7ZOxDcMwDAS5RNpMkPGyQvrskUWyUwoHKijYB0KUKMJJoQO+saj/l2CJLBaTPO/Xjd9Oo4R/3rftZyW0wGklSsheGq4FVNyXAgNbSi8xEp5eIhKeVmImPKUEzaKibxcZp1eFboEFRKSKAd5MqECvee8M/Ztwc5aYY8JNll6PiynOWWLeAQ63FAlXMbfCAW6kesPpVwM9+BIiCr2APTQcFf2GmbmF6dMrkRJp4Uox1J/OMvfWp/ECvPUUinHL3FtfLP6SLy3XjJRgip+NAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZPBDcIwDEW7BFcmYDxW4M4eLMIOHYAhOBS5kiXzMbFju4VDnvQvjfP/T9RM02CQ5Ho+LvhtNyj8eT8tPyvBBXYrQSFSHM4FWLivBAxsqbxET3h5iUh4WYlMeEkJNIsKfV3g6YnHPJPZR4AIWmcI+T10C1iAzFkYbM24CqAZ6pt574yY9YdvpbcSDA5pul0OqnBOE+ap4CZNm4VL0ADlDUdfN/gSInK9gBZo2Cv06yZzC+nTM5ESZeEMGfJPp5lb62msAGu9BDJumVvrg8Ff8gLmd6Oeo23GWAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcMgEATdRL6pIOW5hfzTRxpJDy7AReTh6KychMYIDu7k5MFI+4Fjd0FM02Dg5DFfN66dhoS/X7ftZyW0wGklJCSVhmsBFc+FwMCSwku0hIeX6AkPK+EJDylBs17R1wRvL6zLImaHgCRonxHSdfMr0JDmKu61zHznjnCIsphbZpLZPByMFvOy8BD1vF+y4hzFnCL8hFRLuPkTEhpRlnARfc3UXsGi7tsrNGwV/ZrxvIL79kpPibBwRQz10+XMa/tuagG1/RDEuGRe2x8M/pIPJ0SX5pOPPYEAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADdSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdxEnW5GL77FMQkkfaT3zeXVvONA0G/879el747TAk/P28LD8roQUOKyEhqTRcC6i4LwQG5hRewhMeXqIlPKxET3hICZq1ir4m3MDTC695lrVNQLJvnRHS73oLzNgtYEnMVVzzzCSzWzjkNa+Z+c7tw+FoMc+Em6jH7WSKcxRzsvARUp7w5l+RRlRNuIi+1ZRuoUbNp1do6BX93PTcQvfplZYSYeGKGOqjs8xL692UAkrrIYhxzry0PhhYfACZyKl6D+kVxwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBCcMwEATdRL6pIOW5hfzTRxpJDy7AReThcCYHYix0J+lwCGhgP9JpdyU0TYPBv/OYrxvXTkPC36/b9rMSWuC0EhKSSsO1gIrnQmBgSeElasLDS7SEh5XoCQ8pQbNW0dcFby+syyJmh4AkaJ8R0nX3K9CQ5iru1cx8545wiPKYe2aS2TwcjBbzsvAQ9bxfsuIcxZwi/IRUTbj7ExIaUZ5wEX3dWK/gUfPtFRrWin7V9LxC9+2VlhJh4YoY6qfLmVv73VgB1n4IYlwyt/YHgxwfmFyX5uReIvQAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMYOfO9ikokkfaj33eXVuepsHg6Nyv54VruyHh7+dl+VsJLbBbCQlJpeFaQMVzITBwS+ElasLDS7SEh5XoCQ8pQbNW0dcFby+85lnMfgKSoHVGSNebXoEFxFzFYGumugDDt8y9M+4SPBgt5n3B4ZIet1NWnCuJuSscstQarmJ+Fh6ivOH0dZP7jLVyf74SNKwV/arpeYXu2ystJcLCFTHUT5czt/a7sQKs/RDEeMvc2h8McnwAvI6WTAzJqWIAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADZSURBVFhH7ZPBDcIwDEW7BFcmYDxW4M4eLMIOHYAhOBQZyVV4WHHqWEVIedK/NM7/P1EzTYPBv3M9Hxd+2w0Jf95Py89KaIHdSkhIKQ3XAiruS4GBNaWX2BKeXiISnlaiJzylBM2iom8TPL3wmGcx+woogt4zQvk9dAssIOYqBnszoQKt5q0z9K/CzVlijgk3WbpdDqY4Z4l5H3C4pki4irkrHOBGqjWcfmugB19CRKEXUELDraLfZnpuofv0SqREWrgihvrTWebeejdegLeeghjXzL31wcDiBcrxjC5ymWRLAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADXSURBVFhH7ZPBDcIwEATTBF8qoDxa4E8fNEIPKYAieARdpJPMcNhn+xKE5JH2E59311Y8TYPBv3M9Hxd+2w0Jf95Py89KaIHdSkhIKg3XAiruC4GBOYWXqAkPL9ESHlaiJzykBM1aRV8XPL3wmGcx+whIgtYZIf3edAssIOYqBpdmXAVoRn0zr51JZv3hW+mthMIhS7fLwRTnLDHPhJssbRaeQgPKG05fN3wJLXK9gBw0rBX9qum5he7TKy0lwsIVMdSfzjIvrXdTCiithyDGOfPS+mBg8QJvjKOenI9RPAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADYSURBVFhH7ZLBCcMwEATdRL6pIOW5hfzTRxpJDy7AReThcCYHYix0J+lwCGhgP9JpdyU0TYPBv/OYrxvXTkPC36/b9rMSWuC0EhKSSsO1gIrnQmBgSeElasLDS7SEh5XoCQ8pQbNW0dcFby+syyJmh4AkaJ8R0nX3K9CQ5iru1cx8545wiPKYe2aS2TwcjBbzsvAQ9bxfsuIcxZwi/IRUTbj7ExIaUZ5wEX3dWK/gUfPtFRrWin7V9LxC9+2VlhJh4YoY6qfLmVv73VgB1n4IYlwyt/YHgxwfmFyX5uReIvQAAAAASUVORK5CYII="]};
-GIFSPRITES.toad={w:32,h:32,delays:[100,100,100,100,100,100,100,100,100,100],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIASURBVFhH7ZRLSkMxGIXdgYPis1NFKT6wIghyoeigTkqt1NaBFsSBVAfqDpy5B3EPug2Le4p86T23f+MtfXgLDho4JE1yc76cpJmbm5VZmZVZ+e/luJ53KOxvPq47KRzLrBxVcu7jc81F1SVHW/2Ydr4XEk0TgoU9QHQ+76LqsosqeRkmmhoA0b+9F7x5qZ7zoo0hyXx1Nv04vwE7LC9nC8KimJ5cLvaJPnsHSrW8BxBEJiDEXb5KlwVBJOUh4iPKJA2MTlurAyUQAaRBMG9iED4uVTYGaijEX9PApNIquNrt9i/RP3WIZnvPdVWM654u7nYTiPBOCAK4zCAa7R0PgjFtakGEFzLzJIi8m0LRNe72Y5guGGP2jQgBBJGkMQkAhuEdQGECiMVDgLR/x8gQTLQ7JoX7lyi5F4CERzAIQg/UWA8V1Oy0/0L2xJgg7BH0IFZ8rZ3b+zAUgglMVty9JH4DyNC/HXGtPmvOUejZHglA8Y0KgYmN3APEu8Y4uQ/jAFBjoL8ftUCeX48TCC6kvsGQNn20BXt2szUZAL+VArp8KPaBICVgzf3fND5GAKhHBlCc1OqzEJIMNd+a827Qb590ze93C4pd0H6ghay5zjzcOSJynT8wjA81p1w/HTjEx2prTIunzdGYlcYwDtcaWOzEtI/YpfrDtsTuSWbYWj8T4BhnKR7fpAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAH+SURBVFhH7ZRNSsNAHMW9gQtRq90qSvEDK4IghVIXugm1oq0LFcSFFBfqKbyDeAe9hsU7jfzGvPjPmJDWpuCiA4+ZTCbzfnnzMTMzLdMyLdPy30vrrOpQ2N97WHVS+K60chDNubf3FddoLzra6sd08DmfaJIQTOwBGqezrtGuuEZUlWGiiQEQ/ctrzZs3z+a8aGNIMh+Ddf+eZ8D2jyrlgjAppocXCynRZ/dAs1P1AIIoBYS4jy6zZUEQSXmIeIlKSQOj4+vlXAlEAFkQjPszCB83o7VcFUKMmwYm0XXNdW43f4n+iUP0+jvuW/W4/tH53XYCEe4JQQA3FkS3v5UYXj3uJaIfACURbsjSkhCANZeUAhD2jggBBJGkMQoABQiUB4Ds/cDkIUDW6RgaQgA2Ce0LJRAuQR6ELqiRLiqoMUpvyLp7em55cwthl+AHYsnX+nO7HwohGMBgGZGEPYo2BRn6uyOu1WfNWQpd20MBKD4LYZMIITCxkXuA+K8xTvbDKADUGOj42X3BUgiCI6lvMKRNH23Bntxs/A2AZ6WALu7rKRCkBKy5P6bxMgJAPTSA4qRWn4WQZKjx1rx7t+v77ZWu8Wm3oNgJ7QeayJprzcM/R0Su9QeG94XmFJ15PlZb7zR51hi9s9I7jMO5cosdmPURf6n+sC3x9yRTNNcXMHchmamwkxcAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIKSURBVFhH7ZRNSsNAHMV7AxdFrXarKMUPrAgFCZS6qJtQK7XtQgsiUooLdesFvIN4B72GxTtNeZO++M+fSdKPFFxk4JHJzGTeb95MplDIS17ykpf/XhqdsoF0e+9511C6L7Ny7hfN1/eO8VqbBnW2w3T8ux5qlRCY2AJ412vGa5WM55dpGGplAIj+47NizeudohXqMEQyP+N92493gNWapWxBMClML/obEaFNnoF6u2wBCJEJCOJu3rolQSAkZSGmW5RJGjC6HGzHiiAEcEFg3MIgdX/PJCkVYpk0YOAPKqb9cOgU+lYKAZOb4bFVb1Q1vdFJRGgnhD4ThADcQhA016ZUd3Rk+5mEPpBLJyHN717OItIpAELeERqAEGEa8wDQ9PGtZsV3JMAUIHk/YHIN4Po7EiEkAM0lRBwAVx8HwQsq9aKSZ8CVgNwCboM+A38QW/bJlcvzMBeENn99b4TmEA2x13yyTZpjK3htJwKgJP0NNMcvyjomhImM3AJMVw3j8DzMAoAB8j6Q+x6YB0kQAr8kvoEJDFFHG+rBXVI1V/cH8wFgMsYs1X+qhoeRqTABaW5/01awEADgOTMA48STbTIRioYcL827w1PbLq91jo+6qSInlB9wImnOPdcrhxA59x8w6E81R+Gpx8ess4+Tu8borZLjYKznii1yoOsjrJLtuk5h9Ugmba4JIEZGB5Fi88IAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAH+SURBVFhH7ZRNSsNAHMW9gQtRq90qSvEDK4IghVIXugm1oq0LFcSFFBfqKbyDeAe9hsU7jfzGvPjPmJDWpuCiA4+ZTCbzfnnzMTMzLdMyLdPy30vrrOpQ2N97WHVS+K60chDNubf3FddoLzra6sd08DmfaJIQTOwBGqezrtGuuEZUlWGiiQEQ/ctrzZs3z+a8aGNIMh+Ddf+eZ8D2jyrlgjAppocXCynRZ/dAs1P1AIIoBYS4jy6zZUEQSXmIeIlKSQOj4+vlXAlEAFkQjPszCB83o7VcFUKMmwYm0XXNdW43f4n+iUP0+jvuW/W4/tH53XYCEe4JQQA3FkS3v5UYXj3uJaIfACURbsjSkhCANZeUAhD2jggBBJGkMQoABQiUB4Ds/cDkIUDW6RgaQgA2Ce0LJRAuQR6ELqiRLiqoMUpvyLp7em55cwthl+AHYsnX+nO7HwohGMBgGZGEPYo2BRn6uyOu1WfNWQpd20MBKD4LYZMIITCxkXuA+K8xTvbDKADUGOj42X3BUgiCI6lvMKRNH23Bntxs/A2AZ6WALu7rKRCkBKy5P6bxMgJAPTSA4qRWn4WQZKjx1rx7t+v77ZWu8Wm3oNgJ7QeayJprzcM/R0Su9QeG94XmFJ15PlZb7zR51hi9s9I7jMO5cosdmPURf6n+sC3x9yRTNNcXMHchmamwkxcAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIASURBVFhH7ZRLSkMxGIXdgYPis1NFKT6wIghyoeigTkqt1NaBFsSBVAfqDpy5B3EPug2Le4p86T23f+MtfXgLDho4JE1yc76cpJmbm5VZmZVZ+e/luJ53KOxvPq47KRzLrBxVcu7jc81F1SVHW/2Ydr4XEk0TgoU9QHQ+76LqsosqeRkmmhoA0b+9F7x5qZ7zoo0hyXx1Nv04vwE7LC9nC8KimJ5cLvaJPnsHSrW8BxBEJiDEXb5KlwVBJOUh4iPKJA2MTlurAyUQAaRBMG9iED4uVTYGaijEX9PApNIquNrt9i/RP3WIZnvPdVWM654u7nYTiPBOCAK4zCAa7R0PgjFtakGEFzLzJIi8m0LRNe72Y5guGGP2jQgBBJGkMQkAhuEdQGECiMVDgLR/x8gQTLQ7JoX7lyi5F4CERzAIQg/UWA8V1Oy0/0L2xJgg7BH0IFZ8rZ3b+zAUgglMVty9JH4DyNC/HXGtPmvOUejZHglA8Y0KgYmN3APEu8Y4uQ/jAFBjoL8ftUCeX48TCC6kvsGQNn20BXt2szUZAL+VArp8KPaBICVgzf3fND5GAKhHBlCc1OqzEJIMNd+a827Qb590ze93C4pd0H6ghay5zjzcOSJynT8wjA81p1w/HTjEx2prTIunzdGYlcYwDtcaWOzEtI/YpfrDtsTuSWbYWj8T4BhnKR7fpAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAItSURBVFhH7ZXNSiNBEMd9Aw/Bz1wVJeguRoSFZSDEg16CumSNBw2IB9E9rPsGe/MdxHfQ11B8p5ZfJ/9JpTKjkzi5paDomp7q/v+m+mPm5mY2s5nlWLNdDbjv7/xdD3L/rjT72aqEp+e1kBwtBWL1I/r6tpD6NCGYOAIkv+ZDcrQcklZVgqlPDYDSPzzWonijXYlOjCCVeXndjO95BuzHwXK5IEyK6P7Z4pDTZ/dA46QaAQRRCgjlPjjPdguCU6kI0V+iUqqB0GF3NdcFIoAsCPImBmFwo7WR659CfLUaiLS6tXBytT3i9E8donOzE3pe77cD/339PYXwe0IQwJUGcXrzLYIgTEwrCL8hS68EJe9VoR5Or3f7MD0w3tk7wgMIIq3GJAAI+j2A+wr4Y+khJq6C/WKqcPs/SfcFIF48D0IX1NgXFV86vCEHzjtBIMrEtm22V2KrL9d+GAtA5R5UIhsAgVhuA6BY4iyFlqMwBIlFIHTzAUFsAWy+/huFAUhGQMePViD/7psphER1B9i1l/jx5dbIj8vrjZgGqAr42Z/6EAhul0CxTowgiGnHAtAxskthXRAegCPKvWEhBJDuiyIQWlNi/Rs8hJbAA1ByAfCMmMQL7YWY2J9QfZowy9ndWnfbj7jG806nQZVNBb1lAWBMmOUWQF9vxWUWIhfg4m4v4Eyq2Oeo1LhybOzzMYl/Wn47Sd6E9qotko+gHfMhwEfGQIn42OfKfJ4f8w7rJ2NsgtBVgQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIeSURBVFhH1ZRBSsNAGIV7AxdFjXarKIKKFUGQQNFF3YRQqa0L7cZFqRs9gucQ76DXsHinkTfJm/75O7Fpkwj+8MhkMsn78vJnGo20LvstA/GcNXzeNZS+VlldRE3z8bljwnjTYMx5mE6/153qhMCDLUB4s2bCODBh1KKhU20AiP7t/cCad/pNK4xhiGS+pvv2Os4Bdt4NqgXBQ2F6dbeREeZkD3R6LQtAiEpAEHf33i8JAiEpC5F+okrSgNH1aDtXBCGADwLrVgbBzZ1oL1cLIcqmAZNodGB6j4dzwnztEMPJiUnUTo8z3Y6PHYTuCUIArjKIweTIgsAYYxwJoRuy8iQQeZJC2wzGpylMAoZrco/QAIRwaawCAEPdA5BMQENIAN/fsRSEfGOk8PQaur4AiO8T5EKsAoA3zTbkTLhGCJ1CArFVHoBxz5LIAYiDxGgOwp+C9skt0C6CwBppmAeBdUsngBsAwN8PR4JocwhJaACrnmrGuCAEY+OuyD3AZ843pJk21/uC9pormuOIc7k1w0zGTXMJwO9OY9ynk9CemdIAqIeXMwPJ5oI54CCuzzReHLieyUD8BgATLsRYzksANqmUToDfXEMsBMAbcey7zjUUe0TOyaR8EPq5hYsAet5XSImSabheKPpHlC0NIhtSr629LAT2jCINWVf5IKCin7Z0uc+RQmC8TG+VKpjCkGOY8jfWa2spafZnb/2v6gdyF1bilRy+7gAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIBSURBVFhH7ZVBSsNAGIV7AxdFjXarKAUVK4IggaKLugmhUlsX2o2LUjd6BM8h3kGvYfFOI2+Sl/75O0PbNIEu+sMjyWRm3pc302mttql1qZtew0C6ffB2aCj9rrS6jurm++fAhPGuwT3bYTr5285UJQQmtgDh/ZYJ48CEUYOGmSoDQPSfX01r3u7VrXAPQyTzOzm27/EMsKtOUC4IJoXp7eNOTmiTe6DdbVgAQpQCgrg7T25JEAhJWYh0iUpJA0Z3w32vCEIAFwT6FQbB4HZ05NVciFXTgEk0bJruy8mM0F45xGB8bhK10utUD6OzDELvCUIArjSI/vjUgsAY97gSQm/I0pNA5EkKLdMfXaQwCRjeyTNCAxAiS6MIAAz1HoBkAhpCArh+HUtByC9GCq8fYbYvAOJaAi9EEQB8aX5DToV3hNApJBB7qwMw7mkSHoA4SIxmINwpaB9vgXYeBPpIQx8E+i2dAAYAgD8/XAmizSEkoQGsumozxgtCMDaeijwDXOb8Qpppc30uYH6M8SZCc1zxLI9mDJJx01wCMHYaz4CIv287Pm3D0joBUM/vlwaSmwuDAQexf27d4yDbMzmIFEC2UdaID7j3AWACfUhxnISSG5d9mBjnwvyYzyYAEwymKQE0CE18/5xyjIaAJAT7yDHeIoBuX7RkEnKJN7Wptal/v7wzXh2RvKUAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIBSURBVFhH7ZZPSsNAGMV7AxfFv9kqSkHFiiBIoOiibkqJ1NaFduOi1I0ewXOId9BrWLzTyJvkTb98nSQmTXf94JFJJpn3m5fJtI3Guta1Lk9dDwID6euj1wND6b7a6qrXNF/f+ybsbxu0eR2ms99Np1VCYGALEN5tmLC/Y8JeQEOnlQEg+o/PljXvDJpWaMMQyfzMjmw/zgF22d2pFwSDwvTmYSslXJNroBMFFoAQtYAg7u6jXxIEQlIWInlFtaQBo9vxXqYIQgAfBO6rDIKHO73DTBVCLJsGTHrjlomejxeE6yuHGE3PTKx2cpzrfnLqIPSaIATgaoMYTk8sCIzRxpEQekHWngQij1Nom+HkPIGJwdAn9wgNQAiXRhUAGOo1AMkENIQE8H0dpSDkjJHCy3vo1gVAfK8gE6IKAGaaXpBzoY8QOoUYYnd5AMY9T8IP4IwWIPwpaJ/MAm0RBAakGe7PgkBf6QTwAAD4+eFIEKwH+yUUAFhFajH2/wlBYu6K3AMomtPEnidm2lzvC9rLWxwUbbk1ZwHYBBIzl0hizNcmk9B+qZLkvCYh3Gw9s0+998SczzmIKgAoQqRWfRS418RncA7BSILb35EigKe3CzcQ2pDss/0ecy05JoEIKfsWSprmAoiZaqUG5F88T6KVS4PlFe/FmijzXG6VGSgvUdYfuko4VDyBwOAAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAH+SURBVFhH7ZRNSsNAHMW9gQtRq90qSvEDK4IghVIXugm1oq0LFcSFFBfqKbyDeAe9hsU7jfzGvPjPmJDWpuCiA4+ZTCbzfnnzMTMzLdMyLdPy30vrrOpQ2N97WHVS+K60chDNubf3FddoLzra6sd08DmfaJIQTOwBGqezrtGuuEZUlWGiiQEQ/ctrzZs3z+a8aGNIMh+Ddf+eZ8D2jyrlgjAppocXCynRZ/dAs1P1AIIoBYS4jy6zZUEQSXmIeIlKSQOj4+vlXAlEAFkQjPszCB83o7VcFUKMmwYm0XXNdW43f4n+iUP0+jvuW/W4/tH53XYCEe4JQQA3FkS3v5UYXj3uJaIfACURbsjSkhCANZeUAhD2jggBBJGkMQoABQiUB4Ds/cDkIUDW6RgaQgA2Ce0LJRAuQR6ELqiRLiqoMUpvyLp7em55cwthl+AHYsnX+nO7HwohGMBgGZGEPYo2BRn6uyOu1WfNWQpd20MBKD4LYZMIITCxkXuA+K8xTvbDKADUGOj42X3BUgiCI6lvMKRNH23Bntxs/A2AZ6WALu7rKRCkBKy5P6bxMgJAPTSA4qRWn4WQZKjx1rx7t+v77ZWu8Wm3oNgJ7QeayJprzcM/R0Su9QeG94XmFJ15PlZb7zR51hi9s9I7jMO5cosdmPURf6n+sC3x9yRTNNcXMHchmamwkxcAAAAASUVORK5CYII="]};
+GIFSPRITES.toad={w:32,h:32,delays:[100,100,100,100,100,100,100,100,100,100],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAImSURBVFhH7ZS9SgNBFIUtrRQUNZpWUcQfjAiCLAQttAkxEk0KDYiFqIX6Bna+g/gO+hoG32nlm+zZ3Ex24xo3XS4cZnb+zjd3ZmdiYhzjGMc4fompmckQpbUn9eUWLH5YLzpZI+qNx5VYI4Fg0YPKbPjxuRwG1QVX144xbX/PxRoJRLSgEwDB2XQYVAthUCk6Q/UhAeQKofS/va8783J91ok6hmTmq73m+vkGbP+4kB8Ii7AopkfN+R7RZu9AuVZ0YwUhEH/NzOHMq4Xw+DJZFgSRKQcRHdG/s8EkjE5aS6kSiACSIBg3VDaYwORyZTVVv0IkZMP3SQ0GY1JprYe1m80+0T5SCAY27nYilUy9o/Pb7RjCvxOCAC43iIu7LQeCMXVKQfgXMvdMkPJOFkrhxe1uBNMBo8++ET6AIOJsDAOAoX8HkJ8BxOI+QNLfkQmCAQy0OyYL9y9BfC8A8Y8gDUIPVOaHigFQs9PeC9kVfYKwR9CFWHSldm7vw0AI7Z7BSnc3E/0AMnRvR1SqzZpzFHq2MwEofVkhMLEpdwDRrjGO78NfACgx0O9HKZDn18MYggupORhSp426YE+vN4YD0O+o/7/5UOoBQcqANXe/aXSMAFBmBlA6Kfn2ISQZarw1592g3T7pGj/Q3C5oJ2gha64z93eOSLnOHxj6B5oTdF497TkxWXWbBZQ0Rn1W6sPYruX7xmEB/Lr62aXa/brE7snMoLWIH0OAZsOD0nawAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIkSURBVFhH7ZTNSgJRGIZdtipIKsttUUg/ZARBCGIL24gZpi5KiBYiLaqr6B6ie6jbSLqniec07/R5mtHJdOcHL3Pm/L3P+c5PJjOPecxjHmNicXkhQEn1cW1TCyavNPNO1ohy+2Er0kwgmPS0lg3e3jeDUn3NlbViTAefK5FmAhFO6ARA6XIpKNVzQamWd4ZqQwKYKoTS//JacOblZtaJMoZk5mOw49r5B+ykmpseCJMwKaZnndUhUWfPQLmRd30FIRB/ztThzOu5oHodLwuCyJSDCLfo39lgEEbn3Y1ECUQAcRD0mygbDGBwubadqLEQMdnwfRKDzpjUuoWgcbf3S9TPFIKO7f5hqKIpf+uqdxBB+GdCEMBNDEGnVn8/Mrx5PI5EPQDKhH8gp5IJC2DNJWUBCPtG+ACCiLKRFoAQBEoCQPZ9YHIfIO52pIKwADYTOhfKgL8FSRB6oFI/VHSAGqPhA1kMnp4rztxC2C34gVh3X63cnoeREDTQgc4yIhP2KtosyNC9HeFXddacrdCznQpA6bMQNhM+BCY25Q4gXDXG0Xn4CwBfDHT97LlgKwTBldQYDClTR1mwF7e7kwHwryygzn1xCAQpA9bcXdNwGwHgmxpA6eTLvw8hyVD9rXmrd+Tq7ZOu/iPN7YR2gCay5tpzf+WIlGv/gaF9pDlBo+48g1W2WUBxfdRmpTaM7Vy+bxQWwC+rnVWq3i9LrJ7MjJqL+AJyh2/1cPHVLwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIwSURBVFhH7ZTPSltBFMZddmWhoo1ma6lI/2BEECQQdKGbkFqscdEKIiLBhbr1BfoOxXdoX6PiO035neS7nhzmXpOa7HLg486dmXu+35yZO3Nzs5jFLGbxTMy/eZVQWX9ubGJB8t2juskb0e5evys0FQiS7rQX0u8/q6nZeWttrRjTh8fFQlOBGCQ0AdD8+jo1O7XUbNfNUGNIABOFUPl/3a+beetowUQbQyrz92HNxnkHbHu/NjkQkpAU072TpSHR589A67BucwUhkJhz5DDzTi3tf8/LgyAqZRCDLXpxNfgIo4PTlVIJRAA5COb9VzX4oNV+X6lnITLViD7ZkHn7dD0dnn/MirGpQTAJk2+Xn03dXiN1extDol8Q8UwIArixIbx5NJWOe59sXJWIB/JFlWDAm/+42RpSrAIQ/o6IAIIoqjEOgEwv7rZNeqcCqgLy9wPJI0Du7yiFiAAy9xBlAFp9GYQuqMqLKp6BXAX8Fmgb4hl4gli2p1buz8NYENH89uduYY5kyF7rqT5vzlbo2i4FICJElMz5RdUmISa+5AYwWDXGxXkYBYAJ/j7w+94371dCEPySfIMJhrTpo92/Sxrpy9mH8QBIpjJ7nVw1isOoqqgC3tx+005/IQDwHBlA5eTJu98WLxlqvjc/vty0fn+ta36luU/oP1Aib649jytHlFz7DwzjleYEgzr1fKy2rwLKzYlb5edh7HNF3yI8QGxrnFWqP7YlVk9lqnIR/wDyaJM81iPflwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIkSURBVFhH7ZTNSgJRGIZdtipIKsttUUg/ZARBCGIL24gZpi5KiBYiLaqr6B6ie6jbSLqniec07/R5mtHJdOcHL3Pm/L3P+c5PJjOPecxjHmNicXkhQEn1cW1TCyavNPNO1ohy+2Er0kwgmPS0lg3e3jeDUn3NlbViTAefK5FmAhFO6ARA6XIpKNVzQamWd4ZqQwKYKoTS//JacOblZtaJMoZk5mOw49r5B+ykmpseCJMwKaZnndUhUWfPQLmRd30FIRB/ztThzOu5oHodLwuCyJSDCLfo39lgEEbn3Y1ECUQAcRD0mygbDGBwubadqLEQMdnwfRKDzpjUuoWgcbf3S9TPFIKO7f5hqKIpf+uqdxBB+GdCEMBNDEGnVn8/Mrx5PI5EPQDKhH8gp5IJC2DNJWUBCPtG+ACCiLKRFoAQBEoCQPZ9YHIfIO52pIKwADYTOhfKgL8FSRB6oFI/VHSAGqPhA1kMnp4rztxC2C34gVh3X63cnoeREDTQgc4yIhP2KtosyNC9HeFXddacrdCznQpA6bMQNhM+BCY25Q4gXDXG0Xn4CwBfDHT97LlgKwTBldQYDClTR1mwF7e7kwHwryygzn1xCAQpA9bcXdNwGwHgmxpA6eTLvw8hyVD9rXmrd+Tq7ZOu/iPN7YR2gCay5tpzf+WIlGv/gaF9pDlBo+48g1W2WUBxfdRmpTaM7Vy+bxQWwC+rnVWq3i9LrJ7MjJqL+AJyh2/1cPHVLwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAImSURBVFhH7ZS9SgNBFIUtrRQUNZpWUcQfjAiCLAQttAkxEk0KDYiFqIX6Bna+g/gO+hoG32nlm+zZ3Ex24xo3XS4cZnb+zjd3ZmdiYhzjGMc4fompmckQpbUn9eUWLH5YLzpZI+qNx5VYI4Fg0YPKbPjxuRwG1QVX144xbX/PxRoJRLSgEwDB2XQYVAthUCk6Q/UhAeQKofS/va8783J91ok6hmTmq73m+vkGbP+4kB8Ii7AopkfN+R7RZu9AuVZ0YwUhEH/NzOHMq4Xw+DJZFgSRKQcRHdG/s8EkjE5aS6kSiACSIBg3VDaYwORyZTVVv0IkZMP3SQ0GY1JprYe1m80+0T5SCAY27nYilUy9o/Pb7RjCvxOCAC43iIu7LQeCMXVKQfgXMvdMkPJOFkrhxe1uBNMBo8++ET6AIOJsDAOAoX8HkJ8BxOI+QNLfkQmCAQy0OyYL9y9BfC8A8Y8gDUIPVOaHigFQs9PeC9kVfYKwR9CFWHSldm7vw0AI7Z7BSnc3E/0AMnRvR1SqzZpzFHq2MwEofVkhMLEpdwDRrjGO78NfACgx0O9HKZDn18MYggupORhSp426YE+vN4YD0O+o/7/5UOoBQcqANXe/aXSMAFBmBlA6Kfn2ISQZarw1592g3T7pGj/Q3C5oJ2gha64z93eOSLnOHxj6B5oTdF497TkxWXWbBZQ0Rn1W6sPYruX7xmEB/Lr62aXa/brE7snMoLWIH0OAZsOD0nawAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJPSURBVFhH7ZXNLgNRFMctrUgISreEiI+oSCQySVMLNk2Rai2QiIVggTew8w7iHXgN4p1Gfrf9j9PrTjutaWLhJidz5t5zz/83537MyMh/+29/tY1NjMZYWn9oLLdG8kq96MwK4TfvFhIbCgRJd6qT8evbfBzVZpyvL0b043MqsaFAtBM6AyA6Go+jWiGOqkUnqDFMALlCqPzPL8tOvFyfdIaPIJV5/1hy47wDtr1XyA+EJCRFdPdkusPos3ugfFh0sYIQiJ8zc3PitUK8dxo2C4JRKQfRXqJfV4NJCO2fz6WaQAQQgiBuoGowgcnl6mKq9YQIVMPXSW0EI1I9X44PL1d/GP1DhSCweb3RtpLxW3Z8tZ5A+HtCEMDlBtG4XnMgCOPzFIS/IXOvBCVvVaEUN6422zAtMMbsHeEDCCKpxiAACPp7APMr4B9LH2KgKgjA7oebxyjZF4D44mkQuqD6uqgI4ks7N+S3MSYIRElsn5X6rHvqy7Uf+gJQub8rEQZAwJXbAMiXOEuh5cgEQQCBWSB08wGBbwFsvP4bmQEIRkDHj6dAHp4qCYREdQfYtZf4wcXKjx9XVwgGNUFVwE5uSx0gmF0C+ToxgsDn2ReAjpFdCmuC8AE4otwbFkIAyb7oBSEAAvH1b/AhtAQ+ACUXAO+ISbznXtD6KyHvOhVpxu7Wutt+xDWfMZ0GVTYzgPpJGDILoK+XuM1rIYIAdJzdbzkjqXwLIUCJK8b6iguJ9yy/TZIGYK/abvGag6CdkwpAs/S+z0SJ+L5iQ+Ld5nwB8JjPvsc77OgAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJKSURBVFhHvZTBSsNAFEWzdKVgUavdKkpBxYogSKDoom5KqNTWhXbjotSNfoLfIf6D/obFf4rcSe705XWmTZvUgUumyevckzsvEwRBEKxvrsXX3ZoR5rjH+/3XAyv5rLSBRa/alfjrez8Oox0zxz2aj3+3rFYCkS5oBIDwbiMOo2octmvGkM8gApQKwfg/PuvGvNmtGGEOQyTzMz4yz/EbYJetankgWASLwvTmYTsj3JM90OzUTC0hCKLXXGgg7tajWxIEQlIGIt2iUtKA0e1gzyuCEMAFgbql08Cfm+1Dr+ZCONLQHjMHTNqDetx5Pp4S7q8coj86ixM10utE98NTC6F7ghCAKwRhDpzUsDc6MSAwxhxXQuiGLDUJFCLyJIVG3BuepzAJGJ7JM0IDEMKmsQwADHUPQDIBDSEBXF9HbggCyH54eQ9tXwDEtQVeiGUA8KbZhpwIzwihU0ggdosDMO5JEh6AqJoYTUG4U8gNANp5EKiRhj4I1C2cAP4AAH5+uBJEm0NIQgMYdVQzRjkgUMDYeCryDHCZ8w1pps31uTATQJrjit/yaIaZjJvmEoD7TmP8TyfhhXABQE9vF0ayuWAOOIj1mcaLqrZnMhCzAGDCQsx9AGxSKZ0A91xDzAXAG9GUhRqEby57RN6TSbkguJ72t0ac62cEYN0sISVKpmF7Ic8XoYeX3DF8ILIh865VaOhUzJmhGnKRFys0fBAQtlbXlz7klhACc/aWri91wBymMOQcpvyMV74FMJBm+ovS9SsZ0uxfjfOOP5z9wzRZ2JDZAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIvSURBVFhH7ZXLSsNAGIW7dKVgUaPdKkpBxYogSKDoom5CqNTWhXbjotSNPoLPIb6DvobFd4qcyZzkz9+Z3kx3HTjkMpfz9czfSaWyaratb64lkO+9q6+0hsWvOzUjaYT73utBpqVAYNGrqJp8fe8nYbxj7vmLYTr63cq0FAi7oBEAwruNJIyDJIxqxpB9EAFKhWD8H591Y97sVI1wD0Mk8zM6Mv14BthlKygPBItgUZjePGwXhHeyBprtmhlLCILoNedqiLv16JYEgZCUgbBbVEoaMLrt73lFEAK4IDBu4TQwuRkdejUVwpGG9pjYYBL160n7+XhMeL90iN7wLEnVsNdc94PTDELXBCEA9y8Ic+BYw+7wxIDAGPe4EkIXZKlJYCAiT1NoJN3BuYVJwdAnzwgNQIgsjUUAYKhrAJIJaAgJ4Pp3zAxBAFkPL+9hVhcAcW2BF2IRAPzSYkHmQh8hdAopxO7/ARh3noQHIA5SozEIdwozA4B2GgTGSEMfBMbNnQAmAIB/P1wJos0hJKEBjNqqGOP8W+GFQQdj46nIM8Blzl9IM22uzwUmzEQKQNIcVzzLoxmTZNw0lwCMncZjIOLzbebbd9haJwD09HZhJIsLkwEHcXxh3+Mgq5kChAWQ76gKTPiAex8AFtCHFOdJKFm4HMPEuBa3xCQAE0ymKQtFg9DE9+WU+6ohIAnBMcaLk2iqi5MA0sAlPY+SSXCLOUbO8TaXwTxtEuiqrRraHwY+nDuR6qy3AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIqSURBVFhH7ZXNSsNAFIW7dKVgUavdKkpBxYogSKDoom5CiNTqQrtxUepGH8HnEN9BX8PiO0XOJGd6cztj0zYFFx04dP7PN3duppXKsizLfyyr6ysJ5Ot3jZVWsPllp24kjVC/e9mzWggENr0Iq8nn124SRFumzhPDdPizYbUQiGxDIwAEN2tJENWSIKwbQ45BBCgVguF//2gY81anaoQ6DBGZ7+GBGUcbYOftWnkg2ASbwvTqfjMn9MkcaMV1M5cQBNF7Fi7GPKol7Qe3JAiESBmI7IrmjgYWwei6t+MVQQjggsC8maKBBVjcCve9mgjhiIb28RZMhknYayTx0+GY0L9QCEy8G5xkaop6qtv+sYXQOUEIwJUG0R0cGRAYo45fQuiELD0SCHkahWbS7Z9mMCkYxuQboQEIYaMxCwAMdQ5AMgIaQgK4vo7CEASQ+fD8Fti8AIjrCrwQswDgpPmEHAljhNBRSCG25wdguEeRcANYozEIdxQKA4B2EgQ2pBnm+yAwNnUEsAAA/PzwSxDkg/kSJgAYxSoZowIQBMCmfBX5BlA0p4lpZ2baXL8LhQC4KeryafYBmAhkZjYimTGvTUbCC0FzCm0NYU/rOH3u3jNzrrMQ0wKwnxC5rI/rtp9r0IZgJMHN/8hfAOh8fD2zG6EOMQpsu8y1uIbgEtJpjiJNdH0MQJxUSxqgLq/Ia85CM12XbQ2mJedzLnJCruOcqYsG0OOy6Lm+db8VXqSmE6va0AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIkSURBVFhH7ZTNSgJRGIZdtipIKsttUUg/ZARBCGIL24gZpi5KiBYiLaqr6B6ie6jbSLqniec07/R5mtHJdOcHL3Pm/L3P+c5PJjOPecxjHmNicXkhQEn1cW1TCyavNPNO1ohy+2Er0kwgmPS0lg3e3jeDUn3NlbViTAefK5FmAhFO6ARA6XIpKNVzQamWd4ZqQwKYKoTS//JacOblZtaJMoZk5mOw49r5B+ykmpseCJMwKaZnndUhUWfPQLmRd30FIRB/ztThzOu5oHodLwuCyJSDCLfo39lgEEbn3Y1ECUQAcRD0mygbDGBwubadqLEQMdnwfRKDzpjUuoWgcbf3S9TPFIKO7f5hqKIpf+uqdxBB+GdCEMBNDEGnVn8/Mrx5PI5EPQDKhH8gp5IJC2DNJWUBCPtG+ACCiLKRFoAQBEoCQPZ9YHIfIO52pIKwADYTOhfKgL8FSRB6oFI/VHSAGqPhA1kMnp4rztxC2C34gVh3X63cnoeREDTQgc4yIhP2KtosyNC9HeFXddacrdCznQpA6bMQNhM+BCY25Q4gXDXG0Xn4CwBfDHT97LlgKwTBldQYDClTR1mwF7e7kwHwryygzn1xCAQpA9bcXdNwGwHgmxpA6eTLvw8hyVD9rXmrd+Tq7ZOu/iPN7YR2gCay5tpzf+WIlGv/gaF9pDlBo+48g1W2WUBxfdRmpTaM7Vy+bxQWwC+rnVWq3i9LrJ7MjJqL+AJyh2/1cPHVLwAAAABJRU5ErkJggg=="]};
+GIFSPRITES.minos={w:32,h:32,delays:[300,300,100,200,200,300,300,300,300,300,300,300,300,300,300,300,100,300,300,300,300,300,300],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGtSURBVFhH3ZUxTsQwFETT0FAsxSJxgj0AEulSEAqkSBRpkKCjo6LjCpyFC9BxuF1NpIlmBztxHKdhpJFR7P/nxc6aqkpUXdfHvu+PGH0OmptfJTbvum6yOeaLQ6AZGrdtO9uYa4tCoBHCbw+XUT/e7YZArIMBUQwAQjOEvHU3UWNN0zTjThUDwBu+POz/BKoxz10oFkxxiz2UhqqqGtb40XivbBEiZIQTwF0EZGoHPDC0jiDeN0nXVxdDcahpyL4O5veRBUEAjG4P1w+VoRyzABDy8/kaBPDwOX+/P429PCcqBfCGISOERg1GPv/9+hicDTBlhmItjecYNXwVgDaZswLAPp8MURoAx7EYAEVLAPwIUM+RzgLQ802xAtD8eS4GSN0FB9Bg9WYACkEAD99sB/ztdfv1NmQvzwrKb7wpCAQ+3+9HAD7Tel5QnhOVArDYg/XtHcDnOec5UfEe0OsVMAzSUc0jcIhF4ZRCoIFCxMx1CpAVTvE/IBsTQq0A/F7U3jNL3tRhfBe8frU8mCEKsikAFALQuf8N4OEagr95BPwIz6sLyMMdwH1eHdcJVfbYZxIEUe8AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGlSURBVFhH3ZUxTsUwAEO7sDDA8JE4AQdAolsHyoBUiaELEmxsTGxcgbNwATYO95ErufI3SZuk+QxYsoKaxH4kpTRNotq23Y/juMfoc9Da/CYxfBiGxXDMV4dAGIL7vl8N5tqqEAhC+fXVadT3N2dTIdbBgKgGACEMJS/DZdRY03XdfFLVAPAbPt3tfhWqMc9TqFZM8Yi9lIaappnW+NV4VrEIETLKCeCuArJ0Al4YWkcQz03SxfnJtDkUGrKvg/l+FEEQAKPby/VFZSnHIgCUfL0/BwG8fM2frw9zlvdEpQAeGDJKaOzByOffH2+TiwGWzFKspfEco5ZvAtCQNSsA7PPJELUBcB3ZANiUA+BXgP0c6SIAvd8UKwDNP89sgNRTcAAtVh8NQCEI4OV/cgJ+/Po1ZJZ3BZUDgMLH290MwGdazA+U90TlAAj04iUAndPT8Z6o+B3QzytgvBCjOgSbXU4pBAII4aUO4KdQVE7xPyCDCaFWAF6Z2jOL5KEO46fg+zfLi1miIEcFgEIAOve/AbxcS/Azr4Av4eHuCvJyB3Af7o7rB3V52xAPcuvbAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGmSURBVFhH3ZUxTsQwFETd0FBAsUicgAMgkS4FoUCKRJEGCTo6KjquwFm4AB2HWzSRJpod7DhxvBSMNPIq3/7z1s56Q1iopmn2wzDsMXoNytU3ic37vp9tjnp1CDRD467rso05tyoEGiH8+uo06fubszEQ82BAVAOA0AwhL/1l0pjTtu20U9UA8A2f7na/AtWocxeqBVPcYg+loRDCOMePxnsVixAxI5wA7iogczvggbF5BPG+i3RxfjIujjWN2efBfD+KIAiA0e3h+qIylGMRAEK+3p+jAB6e8+frw9TLc5JSAG8YM0JorMHI598fb6OLAebMUMyl8Ryjhm8C0CY5KwDs9cUQtQFwHKsBsGgNgB8B1nOkiwD0fJdYAWj+PIsA/JvG7AAarD4agEIQwMP/ZAd8+/U23PQOeKD78XY3ARBIg3lBeU5SeuXmIFBzAK3p7nhOUrwH9HoFjIMwnI7Brg6nFAINCKGBbs5TgKJwiv+AbEwItQLwyNTes0je1GF8F3z9ZnkwQxTkqABQDEBr/xvAwzUEn3kEfAkPV1eQhzuA+3B1Wj9ZROGuOVUWcwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGmSURBVFhH3ZUxTsQwFETd0FBAsUicgAMgkS4FoUCKRJEGCTo6KjquwFm4AB2HWzSRJpod7DhxvBSMNDJaf/95a3tNCAvVNM1+GIY9Rp+DcvObxOZ93882x3x1CDRD467rso1ZWxUCjRB+fXWa9P3N2RiIOhgQ1QAgNEPIS3+ZNGratp12qhoAvuHT3e5XoBrz3IVqwRS32ENpKIQw1vjReK9iESJmhBPAXQVkbgc8MFZHEO+7SBfnJ+PiWNOYvQ7m/SiCIABGt4frRWUoxyIAhHy9P0cBPDznz9eHqZfnJKUA3jBmhNBYg5Gff3+8jS4GmDNDUUvjc4wavglAm+SsALDPL4aoDYDjWA2ARWsA/AiwniNdBKDnu8QKQPPnWQTg3zRmB9Bg9dEAFIIAHv4nO+Dbr6/hpjvgge7H290EQCAN5gPlOUnpk5uDwJwD6JzujuckxXdAn9cYBMPpWN3qcEoh0ICXSwPdrFOAonCK/wHZmBBqBeCRqb1nkbypw/gu+PrN8mCGKMhRAaAYgM79bwAP1xD8zSPgJTxcXUEe7gDuw9Vp/QBVHOLT61QdfAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGmSURBVFhH3ZUxTsQwFETd0FBAsUicgAMgkS4FoUCKRJEGCTo6KjquwFm4AB2HWzSRJpod7DhxvBSMNDJaf/95a3tNCAvVNM1+GIY9Rp+DcvObxOZ93882x3x1CDRD467rso1ZWxUCjRB+fXWa9P3N2RiIOhgQ1QAgNEPIS3+ZNGratp12qhoAvuHT3e5XoBrz3IVqwRS32ENpKIQw1vjReK9iESJmhBPAXQVkbgc8MFZHEO+7SBfnJ+PiWNOYvQ7m/SiCIABGt4frRWUoxyIAhHy9P0cBPDznz9eHqZfnJKUA3jBmhNBYg5Gff3+8jS4GmDNDUUvjc4wavglAm+SsALDPL4aoDYDjWA2ARWsA/AiwniNdBKDnu8QKQPPnWQTg3zRmB9Bg9dEAFIIAHv4nO+Dbr6/hpjvgge7H290EQCAN5gPlOUnpk5uDwJwD6JzujuckxXdAn9cYBMPpWN3qcEoh0ICXSwPdrFOAonCK/wHZmBBqBeCRqb1nkbypw/gu+PrN8mCGKMhRAaAYgM79bwAP1xD8zSPgJTxcXUEe7gDuw9Vp/QBVHOLT61QdfAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGmSURBVFhH3ZUxTsQwFETd0FBAsUicgAMgkS4FoUCKRJEGCTo6KjquwFm4AB2HWzSRJpod7DhxvBSMNPIqtv+8/c56Q1iopmn2wzDsMfoclJvfJBbv+362OOarQ6AYCnddly3MtVUhUAjh11enSd/fnI2BWAcDohoAhGIIeekvk8aatm2nTlUDwDd8utv9ClRjnl2oFkyxxR5KQyGEcY0fjdcqFiFiRjgB3FVA5jrggbF1BPG6i3RxfjJujhWN2dfBfD+KIAiA0e3h+qIylGMRAEK+3p+jAB6e8+frw1TLc5JSAC8YM0Jo7MHI598fb6OLAebMUKyl8Ryjhm8C0CI5KwDs84shagPgOFYDYNMaAD8C7OdIFwHo+S6xAtD8eRYB+DeN2QE0WH00AIUggIf/SQe8/XobbnoHPND9eLubAAikwbygPCcpvXJzEJhzAJ3T7nhOUrwH9HoFjIIwWB2DXR1OKQQKEMJDHcC7UBRO8R+QhQmhVgAemdprFsmLOox3wfdvlgczREGOCgDFAHTufwN4uIbgM4+AL+Hh7grycAdwH+5O6wf72uCpOywv7QAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGtSURBVFhH3ZUxTsQwFETT0FAsxSJxgj0AEulSEAqkSBRpkKCjo6LjCpyFC9BxuF1NpIlmBztxHKdhpJFR7P/nxc6aqkpUXdfHvu+PGH0OmptfJTbvum6yOeaLQ6AZGrdtO9uYa4tCoBHCbw+XUT/e7YZArIMBUQwAQjOEvHU3UWNN0zTjThUDwBu+POz/BKoxz10oFkxxiz2UhqqqGtb40XivbBEiZIQTwF0EZGoHPDC0jiDeN0nXVxdDcahpyL4O5veRBUEAjG4P1w+VoRyzABDy8/kaBPDwOX+/P429PCcqBfCGISOERg1GPv/9+hicDTBlhmItjecYNXwVgDaZswLAPp8MURoAx7EYAEVLAPwIUM+RzgLQ802xAtD8eS4GSN0FB9Bg9WYACkEAD99sB/ztdfv1NmQvzwrKb7wpCAQ+3+9HAD7Tel5QnhOVArDYg/XtHcDnOec5UfEe0OsVMAzSUc0jcIhF4ZRCoIFCxMx1CpAVTvE/IBsTQq0A/F7U3jNL3tRhfBe8frU8mCEKsikAFALQuf8N4OEagr95BPwIz6sLyMMdwH1eHdcJVfbYZxIEUe8AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGqSURBVFhHvZUxTsQwFETT0FAsxSJxgj0AEulSEAqkSBRpkKCjo6LjCpyFC9BxuF1NpIlGg53YXoeRRpbi7z8vdtbbNIlq2/Y4juMRo89Ba/Nnic2HYVhsjvnqEGiGxn3frzZmbVUINEL47eEy6se73RSIOhgQ1QAgNEPI23ATNWq6rpt3qhoA3vDlYf8nUI157kK1YIpb7KE01DTNVONH472KRYiQEU4AdxWQpR3wwFAdQbxvkq6vLqbFoaYhex3M76MIggAY3R6uHypDORYBIOTn8zUI4OFr/n5/mnt5TlQK4A1DRgiNNRj5/PfrY3IxwJIZiloazzFq+FkA2mTNCgD7fDJEbQAcRzYAFuUA+BFgPUe6CEDPN8UKQPPnmQ2QugsOoMHqzQAUggAevtkO+Nvr9uttyF6eFZTfeEsQCHy+388AfKbreUF5TlQKwMUerG/vAD7POc+JiveAXq+AYZCOah6BQ2SFUwqBBgoRM+sUoCic4j8gGxNCHQJQe88ieVOHUQBfW0UezCCHqA7goRquNf8K4DUQnm92DCnh3AGMsbrN5DuUA3ACHz7PfZLTfqgAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGrSURBVFhH1ZUxSsVAGITT2Fho8QRP4AEE06UwFkLAIo2gnZ2VnVfwLF7AzsM9mcCEcdx/X3ZffOLAEM3uznzZjbFp/ovatt2O47jF1cegXeN7ieHDMGTDMb46BMIQ3Pf9zmDOXRUCQSi/vDgOfXt1MhViHgyI1QAghKHkaTgPjTld1807tRoAnvDhZvOjUI1x7gLMnfGsKnGLvZSGmqaZ5uiR6O+eWSwNdaOcALQCEsQzF+ns9Gh+In9yhrt9Do+nCoIAHuqlXs5SXqsAUP7x+jgtxM9uL9cX1cfen+/mLO8JlQPwAjfWoJTln28vk6sBvCBlFNFYg7VavhdAzizFXJoAsAIUQSiAh+QcAWCXigF4nl6SswJgPa/6fnhXUjUAfgRazD/PKgA93yXGGi1WFwMs3YUUgJdX7cBSAIfgWv0aMsu7kioB8KfnPS3m98F7QikAF3uxAtxfb74BRHDeE4rfAf26AYZFelXzpXWIonJKIRCgEJE5TwGqyin+A2IwIegIQO2ZVfJQBXEAX7uKvDyCOCgA7yvEwQB87Fd3IVdO4f6fAfh4ak6kLzfnuwHBERH3AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGjSURBVFhH1ZUxTsQwFETd0FBAsUicgAMgkS4FoUCKRJEGCTo6KjquwFm4AB2HWzSRJhoNdpw4DhIjjbyK7T9vvzfeEP6LmqY5DsNwxOhzUG5+k1i87/vZ4pivDoFiKNx1XbYw11aFQCGEX1+dJn1/czYGYh0MiGoAEIoh5KW/TBpr2radOlUNAN/w6e7wK1CNeXahWjDFFnsoDYUQxjV+NF6rWISIGeEEcFcBmeuAB8bWEcTrLtLF+cm4OVY0Zl8H8/dRBEEAjG4P1x8qQzkWASDk6/05CuDhOX++Pky1PCcpBfCCMSOExh6MfP798Ta6GGDODMVaGs8xavgmAC2SswLAPr8YojYAjmM1ADatAfAjwH6OdBGAnu8SKwDN13M1wNIuOIAGq3cDUAgCePhuHfBvr+3X25C1PCsqv/HmIBD4eHuYAPhM9/OC8pykFICb8ZlBOqod1LvjOUnxHtDrVSFS5hE4xKpwSiEIQIgUCNcoQFE4xX9ABUh1gkG+1msWyYumulAt0OUAfw7h4Xyur9puAB4eC1CQ2PwmeXgsIDef0g9vmcQMjJOGcQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGiSURBVFhHxZUxTsQwFETT0FBAsUicgAMgkS4FS4EUiWIbJOjoqOi4AmfhAnQcbtFEequvIU4cx7AjjbyK7T8v35G3aTLVtu1+t9vtNfqcNDe/ShTv+36yuOarQ6iYCm+329nCrK0KoUIKv746Tfr+5mwI1DpZENUAJBVTyEt/mbTWdF136FQ1AL3h093mV2C05ulCtWBEiz0US03TDGs4Eq+xWkCMWeEA4KogUx1wGNZVBVGBnOApyGKIi/OTYbNGt4enPlQ+0CKIFICHuwllLAJQ0Nf78+GimfPn68PBY3PU8pykIsCUCdVazHPCvz/eBhcDUCDH7NEYw48CIPt8NkQJQDwCB9BxLAbg643nm2P2aD8jLgLI6UIKAHMnLAYAwgPHHAFicPSfAPjbA+DhqzowBaHgx9vNaPvjbUgtzxqVX7kpAN48AvA87tedkB0uRQA26zdBcYx2UD8ez0mKe4CrNp6th2I6pX0OsSgcRQgAgBgDAcC7UBSO+AuOACmICBDtNYvlhQFxAN9XVQ4g/yuAdDQAD5Y5Ar6JowBELwX4AXW72waiufX7AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGjSURBVFhHxZUxTsQwFETT0FBAsUicgAMgkS4FoUCKRJEGCTo6KjquwFm4AB2H29VEmmg02HHseJeRRpZi+8+L89fbNCvVtu1+HMc9Rp+DUvObxOLDMCwWx3x1CBRD4b7vk4W5tioECiH89uY86se7iykQ62BAVAOAUAwhb8N11FjTdd18UtUA8IYvD7s/gWrM8xSqBVM8Yg+loaZppjX+abxWsQgRMsIJ4K4CsnQCHhhaRxCvu0pXl2fT5lDRkH0dzP4ogiAARreHa6MylGMRAEJ+Pl+DAB6e8vf701zLc6JSAC8YMkJo7MHI579fH5OLAZbMUKyl8Ryjhm8C0CIpKwDs86shagPgc2QDYFMOgH8C7OdIFwHo911jBaD588wGWHsKDqDB6qMBKAQBPLzoBLAhBeBvr8evtyHreVZQfuMtQSDw+X43A/CZ7ucF5TlRKQA3e7C+vQP4POc8JyreA3q9AoZBOqr5CRwiK5xSCPYCIWIO9UxROMV/QBZOgfi6TeEqbcZYeFaX50o72oOPHk79azjlECcN9yY8aTjk3V0j/ACs98oEja+kxwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGmSURBVFhHvZU9SsVAHMTT2Fho8QRP4AEE06UwFkLAIo2gnZ2VnVfwLF7AzsM9mcCEYdyPZLN5A8NKdvc/v/14a9MsVNu2x3Ecj2i9D8r1bxKLD8OQLI7+6hAohsJ932cLc2xVCBRC+O3NedSPdxdTIMbBgKgGAKEYQt6G66gxpuu6eaeqAWCFLw+Hf4Fq9HMXqgVT3GIPpaGmaaYxfjReq1iECBnhBHBXAUntgAeGxhHE6y7S1eXZNDlUNGQfB/N+FEEQAK3bw/WiMpRtEQBCfj5fgwAenvP3+9Ncy3OiUgAvGDJCaMxBy++/Xx+TiwFSZijG0viOVsM3AWiRnBUA9v7FELUBcByrATBpDYAfAeazpYsA9HyXWAFo/jxXAyzdBQfQYPVuAApBAA8v2gFMyAH46nX79TVkPc8Kyl+8FAQCn+8PMwC/6Xw+UJ4TlQJwsgfr6h3A+9nnOVHxHdDnFTAM0lbNI3CIVeGUQvAuECLm0J0pCqf4HxB/E4D2cAVQe81NSoWvuuWlSoX72F0UAjjJyqHQ9u963iq9fLSHnxTAg0sB/gAeLtGHEDiiOgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGxSURBVFhH1ZUxTsQwFETd0FBAsUicgAMgkS4FoUCKtEUaJOjoqOi4AmfhAnQcbtFEmmh2sL2x1wLxpVHYjf3fi501IfyX6rpuN03TDle/hzp0/6hi83Ecs81xv7kEmqHxMAwHG3NsUwk0Avz66jSZ+5uzGYhxCCSaCaDQDJDn8TIZjOn7flmpZgJ4wse7zQ+gBve5CghXxntVFZfYoQwqhDCP0S3Rz96zuLSpB3AKMCpIEe+5qi7OT5Yn8idnc4+P4fZUSVDAmzrU4YTyWiUA+Ofb0zwRf3scri+q3/t42S69nJOsnIADPJgDKOFf769zqgUcEAtADOZgrsKPEsiFUIxlKICoQJGECniTXFICWKViAe6nQ3JRAcznVd8PZ0WrRsC3QMH8eRYL8ClKAoiCNVUCa1YhJuDw6hVYI+ASnKunIXs5K1p+4DgsBaasSiA8H5yTLBXgZAerwMPtZk8gJeecZPEc0NPNwQpQAVx9TBGcpRJ8sQBKhXvsslVwFv8BsbHua05A4z2rypvGJJoCvVxARVTA5zUth/M73wKf17Rc4lcFHIxwC/hO/ImAplTgG0Uuw9qdRKrQAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGiSURBVFhHxZUxTgMxFES3oaGAIkicgAMgkS4FoUBaiSINEnR0VHRcgbNwAToOl2hWetHXYO96HSeMNHK0tv+8/V45XVeo5XK53Ww2W40+J03NHySK930/WlzzzSFUTIXX6/VkYdY2hVAhhd/enGf9eHcxBGqdLIhmAJKKKeStv85aa1ar1b5TzQD0hi8Piz+B0ZqnC82CES32UCx1XTes4Ui8xsECImWFA4Cbgox1wGFY1xREBUqCxyCrIa4uz4bNGt0envtQ+UCrIHIAHu4mlLEKQEE/n6/7i2bK3+9Pe6fmqOU5WUWAMROqtZjnhP9+fQyuBqBAidmjMYb/C4Ds88UQNQDxCBxAxzEbgK83nm+J2aP9jLgKoKQLOQDMnTAbAAgPTDkCxODoowD42wPg4dUdmIJQ8PP9Itn+eBtSx7OSKgXgzSMAz+N+3QnF4VIEYLN+ExTHaAf14/GcrLgHuGrj2XqoA2ifQ8wKRxECACCiHcC7UBWO+AuOACkYB4j2mlXyohR2iGaBKXl4fH5ygBh0EgAPJ4jfHMPRAHJyqLkAO9Wczz1zfCyjAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGqSURBVFhHvZUxTsQwFETT0FAsxSJxgj0AEulSEAqkSBRpkKCjo6LjCpyFC9BxuF1NpIlGg53YXoeRRpbi7z8vdtbbNIlq2/Y4juMRo89Ba/Nnic2HYVhsjvnqEGiGxn3frzZmbVUINEL47eEy6se73RSIOhgQ1QAgNEPI23ATNWq6rpt3qhoA3vDlYf8nUI157kK1YIpb7KE01DTNVONH472KRYiQEU4AdxWQpR3wwFAdQbxvkq6vLqbFoaYhex3M76MIggAY3R6uHypDORYBIOTn8zUI4OFr/n5/mnt5TlQK4A1DRgiNNRj5/PfrY3IxwJIZiloazzFq+FkA2mTNCgD7fDJEbQAcRzYAFuUA+BFgPUe6CEDPN8UKQPPnmQ2QugsOoMHqzQAUggAevtkO+Nvr9uttyF6eFZTfeEsQCHy+388AfKbreUF5TlQKwMUerG/vAD7POc+JiveAXq+AYZCOah6BQ2SFUwqBBgoRM+sUoCic4j8gGxNCHQJQe88ieVOHUQBfW0UezCCHqA7goRquNf8K4DUQnm92DCnh3AGMsbrN5DuUA3ACHz7PfZLTfqgAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGrSURBVFhH1ZUxSsVAGITT2Fho8QRP4AEE06UwFkLAIo2gnZ2VnVfwLF7AzsM9mcCEcdx/X3ZffOLAEM3uznzZjbFp/ovatt2O47jF1cegXeN7ieHDMGTDMb46BMIQ3Pf9zmDOXRUCQSi/vDgOfXt1MhViHgyI1QAghKHkaTgPjTld1807tRoAnvDhZvOjUI1x7gLMnfGsKnGLvZSGmqaZ5uiR6O+eWSwNdaOcALQCEsQzF+ns9Gh+In9yhrt9Do+nCoIAHuqlXs5SXqsAUP7x+jgtxM9uL9cX1cfen+/mLO8JlQPwAjfWoJTln28vk6sBvCBlFNFYg7VavhdAzizFXJoAsAIUQSiAh+QcAWCXigF4nl6SswJgPa/6fnhXUjUAfgRazD/PKgA93yXGGi1WFwMs3YUUgJdX7cBSAIfgWv0aMsu7kioB8KfnPS3m98F7QikAF3uxAtxfb74BRHDeE4rfAf26AYZFelXzpXWIonJKIRCgEJE5TwGqyin+A2IwIegIQO2ZVfJQBXEAX7uKvDyCOCgA7yvEwQB87Fd3IVdO4f6fAfh4ak6kLzfnuwHBERH3AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGjSURBVFhH1ZUxTsQwFETd0FBAsUicgAMgkS4FoUCKRJEGCTo6KjquwFm4AB2HWzSRJhoNdpw4DhIjjbyK7T9vvzfeEP6LmqY5DsNwxOhzUG5+k1i87/vZ4pivDoFiKNx1XbYw11aFQCGEX1+dJn1/czYGYh0MiGoAEIoh5KW/TBpr2radOlUNAN/w6e7wK1CNeXahWjDFFnsoDYUQxjV+NF6rWISIGeEEcFcBmeuAB8bWEcTrLtLF+cm4OVY0Zl8H8/dRBEEAjG4P1x8qQzkWASDk6/05CuDhOX++Pky1PCcpBfCCMSOExh6MfP798Ta6GGDODMVaGs8xavgmAC2SswLAPr8YojYAjmM1ADatAfAjwH6OdBGAnu8SKwDN13M1wNIuOIAGq3cDUAgCePhuHfBvr+3X25C1PCsqv/HmIBD4eHuYAPhM9/OC8pykFICb8ZlBOqod1LvjOUnxHtDrVSFS5hE4xKpwSiEIQIgUCNcoQFE4xX9ABUh1gkG+1msWyYumulAt0OUAfw7h4Xyur9puAB4eC1CQ2PwmeXgsIDef0g9vmcQMjJOGcQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGiSURBVFhHxZUxTsQwFETT0FBAsUicgAMgkS4FS4EUiWIbJOjoqOi4AmfhAnQcbtFEequvIU4cx7AjjbyK7T8v35G3aTLVtu1+t9vtNfqcNDe/ShTv+36yuOarQ6iYCm+329nCrK0KoUIKv746Tfr+5mwI1DpZENUAJBVTyEt/mbTWdF136FQ1AL3h093mV2C05ulCtWBEiz0US03TDGs4Eq+xWkCMWeEA4KogUx1wGNZVBVGBnOApyGKIi/OTYbNGt4enPlQ+0CKIFICHuwllLAJQ0Nf78+GimfPn68PBY3PU8pykIsCUCdVazHPCvz/eBhcDUCDH7NEYw48CIPt8NkQJQDwCB9BxLAbg643nm2P2aD8jLgLI6UIKAHMnLAYAwgPHHAFicPSfAPjbA+DhqzowBaHgx9vNaPvjbUgtzxqVX7kpAN48AvA87tedkB0uRQA26zdBcYx2UD8ez0mKe4CrNp6th2I6pX0OsSgcRQgAgBgDAcC7UBSO+AuOACmICBDtNYvlhQFxAN9XVQ4g/yuAdDQAD5Y5Ar6JowBELwX4AXW72waiufX7AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGjSURBVFhHxZUxTsQwFETT0FBAsUicgAMgkS4FoUCKRJEGCTo6KjquwFm4AB2H29VEmmg02HHseJeRRpZi+8+L89fbNCvVtu1+HMc9Rp+DUvObxOLDMCwWx3x1CBRD4b7vk4W5tioECiH89uY86se7iykQ62BAVAOAUAwhb8N11FjTdd18UtUA8IYvD7s/gWrM8xSqBVM8Yg+loaZppjX+abxWsQgRMsIJ4K4CsnQCHhhaRxCvu0pXl2fT5lDRkH0dzP4ogiAARreHa6MylGMRAEJ+Pl+DAB6e8vf701zLc6JSAC8YMkJo7MHI579fH5OLAZbMUKyl8Ryjhm8C0CIpKwDs86shagPgc2QDYFMOgH8C7OdIFwHo911jBaD588wGWHsKDqDB6qMBKAQBPLzoBLAhBeBvr8evtyHreVZQfuMtQSDw+X43A/CZ7ucF5TlRKQA3e7C+vQP4POc8JyreA3q9AoZBOqr5CRwiK5xSCPYCIWIO9UxROMV/QBZOgfi6TeEqbcZYeFaX50o72oOPHk79azjlECcN9yY8aTjk3V0j/ACs98oEja+kxwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGmSURBVFhHvZU9SsVAHMTT2Fho8QRP4AEE06UwFkLAIo2gnZ2VnVfwLF7AzsM9mcCEYdyPZLN5A8NKdvc/v/14a9MsVNu2x3Ecj2i9D8r1bxKLD8OQLI7+6hAohsJ932cLc2xVCBRC+O3NedSPdxdTIMbBgKgGAKEYQt6G66gxpuu6eaeqAWCFLw+Hf4Fq9HMXqgVT3GIPpaGmaaYxfjReq1iECBnhBHBXAUntgAeGxhHE6y7S1eXZNDlUNGQfB/N+FEEQAK3bw/WiMpRtEQBCfj5fgwAenvP3+9Ncy3OiUgAvGDJCaMxBy++/Xx+TiwFSZijG0viOVsM3AWiRnBUA9v7FELUBcByrATBpDYAfAeazpYsA9HyXWAFo/jxXAyzdBQfQYPVuAApBAA8v2gFMyAH46nX79TVkPc8Kyl+8FAQCn+8PMwC/6Xw+UJ4TlQJwsgfr6h3A+9nnOVHxHdDnFTAM0lbNI3CIVeGUQvAuECLm0J0pCqf4HxB/E4D2cAVQe81NSoWvuuWlSoX72F0UAjjJyqHQ9u963iq9fLSHnxTAg0sB/gAeLtGHEDiiOgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGxSURBVFhH1ZUxTsQwFETd0FBAsUicgAMgkS4FoUCKtEUaJOjoqOi4AmfhAnQcbtFEmmh2sL2x1wLxpVHYjf3fi501IfyX6rpuN03TDle/hzp0/6hi83Ecs81xv7kEmqHxMAwHG3NsUwk0Avz66jSZ+5uzGYhxCCSaCaDQDJDn8TIZjOn7flmpZgJ4wse7zQ+gBve5CghXxntVFZfYoQwqhDCP0S3Rz96zuLSpB3AKMCpIEe+5qi7OT5Yn8idnc4+P4fZUSVDAmzrU4YTyWiUA+Ofb0zwRf3scri+q3/t42S69nJOsnIADPJgDKOFf769zqgUcEAtADOZgrsKPEsiFUIxlKICoQJGECniTXFICWKViAe6nQ3JRAcznVd8PZ0WrRsC3QMH8eRYL8ClKAoiCNVUCa1YhJuDw6hVYI+ASnKunIXs5K1p+4DgsBaasSiA8H5yTLBXgZAerwMPtZk8gJeecZPEc0NPNwQpQAVx9TBGcpRJ8sQBKhXvsslVwFv8BsbHua05A4z2rypvGJJoCvVxARVTA5zUth/M73wKf17Rc4lcFHIxwC/hO/ImAplTgG0Uuw9qdRKrQAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGiSURBVFhHxZUxTgMxFES3oaGAIkicgAMgkS4FoUBaiSINEnR0VHRcgbNwAToOl2hWetHXYO96HSeMNHK0tv+8/V45XVeo5XK53Ww2W40+J03NHySK930/WlzzzSFUTIXX6/VkYdY2hVAhhd/enGf9eHcxBGqdLIhmAJKKKeStv85aa1ar1b5TzQD0hi8Piz+B0ZqnC82CES32UCx1XTes4Ui8xsECImWFA4Cbgox1wGFY1xREBUqCxyCrIa4uz4bNGt0envtQ+UCrIHIAHu4mlLEKQEE/n6/7i2bK3+9Pe6fmqOU5WUWAMROqtZjnhP9+fQyuBqBAidmjMYb/C4Ds88UQNQDxCBxAxzEbgK83nm+J2aP9jLgKoKQLOQDMnTAbAAgPTDkCxODoowD42wPg4dUdmIJQ8PP9Itn+eBtSx7OSKgXgzSMAz+N+3QnF4VIEYLN+ExTHaAf14/GcrLgHuGrj2XqoA2ifQ8wKRxECACCiHcC7UBWO+AuOACkYB4j2mlXyohR2iGaBKXl4fH5ygBh0EgAPJ4jfHMPRAHJyqLkAO9Wczz1zfCyjAAAAAElFTkSuQmCC"]};
 const EGG_COST=150;
 /* ---- Créatures animées par GIF (créations de l'utilisateur, frames pré-extraites) ---- */
 const GIFRT={};
@@ -1822,7 +2086,11 @@ function gifFrame(id,moving){
   if(wLen&&r.idx<wS){r.idx=wS;r.acc=0;}
   const now=performance.now();
   if(!r.last)r.last=now;
-  const speed=now<r.boostUntil?3:1;      // clic sur la créature : ×3 pendant 2 s
+  /* ×3 pendant 2 s au clic sur la créature. `walkSpeed` s'y ajoute pour accélérer le SEUL
+     cycle de marche (`wLen` non nul) : les délais du module restent ceux que l'utilisateur
+     a dessinés, c'est l'horloge de lecture qui accélère — et la respiration immobile
+     conserve son rythme d'origine. */
+  const speed=(now<r.boostUntil?3:1)*((wLen&&cr.walkSpeed)?cr.walkSpeed:1);
   r.acc+=(now-r.last)*speed;r.last=now;
   let guard=0;
   while(r.acc>=g.delays[r.idx]&&guard++<64){r.acc-=g.delays[r.idx];
@@ -2044,6 +2312,7 @@ function renderList(){
 }
 function card(it){
   const d=document.createElement("div");d.className="box quest";
+  if(it.type==="plaisir")d.classList.add("plaisir");
   const t=TYPES[it.type]||TYPES.secondaire;
   let meta="";
   if(cur==="reussie"){
@@ -2052,41 +2321,141 @@ function card(it){
     const days=daysTo(it.date);
     const cd = days<0?"Passé" : days===0?"Aujourd'hui !" : days===1?"Demain":`Dans ${days} jours`;
     meta=`<span class="chip blue">${TYPES.evenement.label}</span><span class="countdown">⏳ ${cd}</span>`;
+  }else if(it.type==="plaisir"){
+    meta=`<span class="chip gold">🎁 Plaisir mérité</span>`;
   }else{
     meta=`<span class="chip ${t.chip}">${t.label}</span>`;
     if(estRepoussee(it))meta+=`<span class="chip">⏰ plus tard</span>`;
     meta+=`<span class="chip">${recLabel(it)}</span>`;
-    if(it.time)meta+=`<span class="chip blue">🕐 ${it.time}</span>`;
-    if(it.dur>0)meta+=`<span class="chip gold">⏱ ${it.dur} min</span>`;
+    /* l'heure et la durée ne sont plus des pastilles : elles vivent en haut à droite
+       du billet, à la même place sur toutes les lignes (voir .q-hour) */
   }
   d.innerHTML=`
     <div class="q-ic">${it.icon}</div>
     <div class="q-body">
-      <div class="q-title">${esc(it.title)}</div>
+      <div class="q-line">
+        <div class="q-title">${esc(it.title)}</div>
+        ${hourHTML(it)}
+      </div>
       <div class="q-meta">${meta}</div>
       <div class="q-actions"></div>
+      <div class="q-more"></div>
     </div>`;
   const act=d.querySelector(".q-actions");
+  const more=d.querySelector(".q-more");
+  /* UN SEUL bouton visible par billet. Avant, chaque ligne en portait quatre : sur dix
+     quêtes cela faisait quarante décisions à trier du regard, et le bouton destructeur
+     (« Refuser ») était collé au bouton de validation. Le reste part derrière « ⋯ »,
+     qu'on ouvre aussi par un appui long sur le billet. */
+  const secondaires=[];
+  const supprimer=["🗑 Retirer","btn ghost",()=>{S.quests=S.quests.filter(x=>x.id!==it.id);persist();}];
 
-  if(cur==="reussie"){ act.remove(); }
+  if(cur==="reussie"){ act.remove(); more.remove(); return d; }
   else if(cur==="abandonnee"){
     add(act,"↻ Relancer","btn gold",()=>relance(it));
+  }else if(it.type==="plaisir"){
+    add(act,"🎁 Savourer","btn gold",()=>completeFlow(it));
+    /* PAS openAdd() : son sélecteur d'importance ne connaît que principale / secondaire /
+       événement, et un plaisir y perdrait son type — donc son cadre doré et sa gratuité. */
+    secondaires.push(["✎ Replanifier","btn ghost",()=>replanifierPlaisir(it)],supprimer);
   }else if(it.type==="evenement"){
     add(act,"✔ Fait","btn go",()=>quickDone(it,40));
-    add(act,"🗑 Retirer","btn ghost",()=>{S.quests=S.quests.filter(x=>x.id!==it.id);persist();});
-  }else if(it.type==="secondaire"){
+    secondaires.push(supprimer);
+  }else{
     if(it.dur>0) add(act,"▶ Accepter","btn go",()=>startTimer(it));
-    else add(act,"✔ Valider","btn go",()=>completeFlow(it));
-    add(act,"✎","btn ghost",()=>openAdd(it));
-  }else{ // principale
-    if(it.dur>0) add(act,"▶ Accepter","btn go",()=>startTimer(it));
-    else add(act,"✔ Valider","btn go",()=>completeFlow(it));
-    if(estRepoussee(it)) add(act,"↩ Reprendre","btn gold",()=>reprendre(it));
-    else                 add(act,"⏰ Repousser","btn ghost",()=>repousser(it));
-    add(act,"✖ Refuser","btn no",()=>abandon(it));
-    add(act,"✎","btn ghost",()=>openAdd(it));
+    else         add(act,"✔ Valider","btn go",()=>completeFlow(it));
+    /* « Repousser » ne dépend PLUS du type mais de l'HEURE : repousser une quête qui n'en
+       a pas ne veut rien dire — il n'y a rien à décaler. Le geste s'aligne ainsi sur
+       l'expiration automatique : on peut repousser exactement ce qui peut expirer.
+       « Refuser » et « Modifier », eux, valent pour toutes les quêtes — une secondaire
+       n'avait aucun moyen d'être déclinée, alors qu'elle compte dans la journée. */
+    if(aUneHeure(it)){
+      secondaires.push(estRepoussee(it)?["↩ Reprendre","btn gold",()=>reprendre(it)]
+                                       :["⏰ Repousser","btn ghost",()=>repousser(it)]);
+    }
+    secondaires.push(["✖ Refuser","btn no",()=>abandon(it)]);
+    secondaires.push(["✎ Modifier","btn ghost",()=>openAdd(it)]);
   }
+  if(!secondaires.length){ more.remove(); return d; }
+  secondaires.forEach(a=>add(more,a[0],a[1],a[2]));
+  const bascule=()=>{const on=d.classList.toggle("open");pts.textContent=on?"✕":"⋯";};
+  const pts=document.createElement("button");
+  pts.className="btn ghost pix q-dots";pts.textContent="⋯";
+  pts.setAttribute("aria-label","Autres actions");
+  pts.onclick=()=>{sfxCrayon();bascule();};
+  act.appendChild(pts);
+  /* Appui long (≈ 0,5 s) n'importe où sur le billet : même effet, pour le pouce. Un clic
+     sur un bouton ne l'arme pas, sinon valider une quête déplierait aussi le tiroir. */
+  let presse=null;
+  d.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button"))return;
+    presse=setTimeout(()=>{presse=null;sfxCrayon();bascule();},480);
+  });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>
+    d.addEventListener(ev,()=>{if(presse){clearTimeout(presse);presse=null;}}));
   return d;
+}
+/* ================= Les horaires d'une quête =================
+   Une quête se décrit par une heure de DÉBUT (facultative) et une heure de FIN. Le
+   chronomètre en déduit sa durée : on pense sa journée en « de 9 h à 11 h », pas en
+   « 120 minutes à partir d'un moment indéterminé ». `it.dur` reste stocké en minutes —
+   tout le chronomètre existant continue de le lire — mais n'est plus saisi à la main. */
+function hFR(hhmm){
+  if(!hhmm)return "";
+  const p=String(hhmm).split(":"), h=+p[0], m=+(p[1]||0);
+  if(!isFinite(h))return "";
+  return h+"h"+(m?pad2(m):"");
+}
+function minDe(hhmm){
+  if(!hhmm)return null;
+  const p=String(hhmm).split(":"), h=+p[0], m=+(p[1]||0);
+  return isFinite(h)?h*60+m:null;
+}
+/* Une fin antérieure au début passe minuit (une séance de 23 h à 0 h 30). */
+function dureeEntre(deb,fin){
+  const a=minDe(deb), b=minDe(fin);
+  if(a==null||b==null)return 0;
+  let d=b-a; if(d<0)d+=1440;
+  return d>0?d:0;
+}
+/* Heure de fin reconstituée pour les quêtes d'avant, qui ne stockaient qu'une durée. */
+function finDe(it){
+  if(!it)return "";
+  if(it.fin)return it.fin;
+  const a=minDe(it.time);
+  if(a==null||!it.dur)return "";
+  const b=(a+it.dur)%1440;
+  return pad2(Math.floor(b/60))+":"+pad2(b%60);
+}
+/* Une quête « a une heure » dès qu'elle porte un début OU une fin. C'est ce qui décide
+   si « Repousser » lui est proposé, et c'est exactement la même condition que celle qui
+   la rend expirable : les deux notions doivent rester cousues l'une à l'autre. */
+function aUneHeure(it){ return !!(it && (it.time || finDe(it))); }
+function plageFR(it){
+  const deb=hFR(it.time), fin=hFR(finDe(it));
+  if(deb&&fin)return deb+" → "+fin;
+  if(deb)return deb;
+  if(fin)return "→ "+fin;
+  return it.dur>0?("⏱ "+it.dur+" min"):"";
+}
+/* Le bloc d'horaire du billet : deux lignes calées à droite, qui occupent enfin le vide
+   laissé par le titre. C'est l'information qu'on cherche en balayant la liste. */
+function hourHTML(it){
+  const deb=hFR(it.time), fin=hFR(finDe(it));
+  /* Dans la dernière demi-heure avant l'expiration, la seconde ligne cède la place au
+     décompte : c'est la seule information qui compte à ce moment-là. */
+  let cls="", bas=fin?("→ "+fin):"";
+  if(expireActif()&&!it.doneToday&&!it.abandonedToday){
+    const lim=echeanceDe(it);
+    if(lim!=null){
+      const reste=lim-minutesDuJour();
+      if(reste<=30){ cls=" urgent"; bas = reste<=0 ? "expire…" : ("⌛ "+reste+" min"); }
+    }
+  }
+  if(deb)      return `<span class="q-hour${cls}"><b>${deb}</b>${bas?`<i>${bas}</i>`:""}</span>`;
+  if(fin)      return `<span class="q-hour${cls}"><b>${fin}</b><i>${cls?bas:"échéance"}</i></span>`;
+  if(it.dur>0) return `<span class="q-hour"><b>${it.dur}</b><i>min</i></span>`;
+  return "";
 }
 /* Toutes les actions des billets de quête passent par ici : un coup de crayon sur le
    papier accompagne donc chaque clic (valider, accepter, repousser, refuser, modifier…). */
@@ -2105,17 +2474,109 @@ function histStatus(H,title){
   }
   return{type:"notdone"};
 }
-function statusCard(it,status,info){
+function statusCard(it,status,info,retouchable){
   info=info||{};
   const d=document.createElement("div");d.className="box quest sc-"+status;
+  if(it.type==="plaisir")d.classList.add("plaisir");
   const t=TYPES[it.type]||TYPES.secondaire;
   let badge="•",meta="";
-  if(status==="done"){badge="✔";meta=`<span class="chip gold">+${info.gain||0} XP</span>${info.rating?`<span class="chip">${"★".repeat(info.rating)}</span>`:""}`;}
+  if(status==="done"){badge="✔";meta=`<span class="chip gold">+${info.gain||0} XP</span>`;}
   else if(status==="abandoned"){badge="✖";meta=`<span class="chip">abandonnée</span>`;}
   else if(status==="notdone"){badge="✖";meta=`<span class="chip">non faite</span>`;}
-  else {badge="○";meta=`<span class="chip ${t.chip}">${t.label}</span>${it.time?`<span class="chip blue">🕐 ${it.time}</span>`:""}`;}
-  d.innerHTML=`<div class="q-ic">${it.icon}</div><div class="q-body"><div class="q-title">${esc(it.title)}</div><div class="q-meta">${meta}</div></div><div class="sc-badge">${badge}</div>`;
+  else {badge="○";meta=`<span class="chip ${t.chip}">${t.label}</span>`;}
+  const heure=(status==="preview"||status==="notdone")?hourHTML(it):"";
+  d.innerHTML=`<div class="q-ic">${it.icon}</div><div class="q-body">
+      <div class="q-line"><div class="q-title">${esc(it.title)}</div>${heure}</div>
+      <div class="q-meta">${meta}</div>
+    </div><div class="sc-badge">${badge}</div>`;
+  /* Les étoiles ne s'affichent qu'ICI, une fois la quête rangée dans le tiroir « faites
+     aujourd'hui » : la note ne barre plus la route de la récompense. Elles sont
+     cliquables tant que la quête date du jour — un seul geste, rien à valider. */
+  if(status==="done"&&it.type!=="plaisir"){
+    const note=Math.max(1,Math.min(5,info.rating||4));
+    const st=document.createElement("span");st.className="sc-stars";
+    st.title="Note ton sérieux — l'XP s'ajuste";
+    for(let i=1;i<=5;i++){
+      const b=document.createElement("b");b.textContent="★";
+      if(i<=note)b.classList.add("on");
+      if(retouchable)b.onclick=e=>{e.stopPropagation();sfxCrayon();renote(it.title,i);};
+      st.appendChild(b);
+    }
+    if(!retouchable)st.style.cursor="default";
+    d.querySelector(".q-meta").appendChild(st);
+  }
   return d;
+}
+/* ================= L'objectif du jour =================
+   `dayComplete()` exigeait que TOUTES les quêtes actives soient faites : du tout ou rien,
+   qui ne récompense jamais une journée ordinaire. Trois quêtes suffisent maintenant à
+   gagner la journée et à faire monter la série ; le reste est du bonus. */
+function objBloc(){
+  const n=questesDuJour(), fait=n>=OBJ_JOUR;
+  const d=document.createElement("div");
+  d.className="obj"+(fait?" done":"");
+  d.id="objBloc";                       // cible du trophée qui s'envole (voir volTrophee)
+  d.innerHTML=`<div class="obj-top">
+      <span>${fait?"🏆 Journée gagnée":"🏆 Objectif du jour"}</span>
+      <b>${n} / ${OBJ_JOUR}</b></div>
+    <span class="obj-bar"><i style="width:${(Math.min(1,n/OBJ_JOUR)*100).toFixed(0)}%"></i></span>`;
+  return d;
+}
+/* ---- Le trophée qui s'envole ----
+   À chaque quête validée, un 🏆 jaillit de la gerbe de confettis, décrit un arc et va se
+   poser sur la pastille d'objectif, avec un « cling » à l'arrivée. Sans lui, la barre
+   montait dans l'indifférence : c'est le geste qui apprend que trois quêtes = journée
+   gagnée. La cible est la barre du journal si elle est à l'écran, sinon la pastille de
+   l'accueil ; si aucune des deux n'est visible, on ne joue rien. */
+function volTrophee(){
+  if(reduce)return;
+  const visible=e=>{ if(!e)return false;
+    const r=e.getBoundingClientRect();
+    return r.width>0&&r.bottom>0&&r.top<innerHeight; };
+  const cible=[document.getElementById("objBloc"),document.getElementById("accTroph")].find(visible);
+  if(!cible)return;
+  const r=cible.getBoundingClientRect();
+  const x0=innerWidth/2, y0=innerHeight*0.42;
+  const x1=r.left+r.width/2, y1=r.top+r.height/2;
+  const e=document.createElement("div");
+  e.className="troph-vol"; e.textContent="🏆";
+  e.style.left=x0+"px"; e.style.top=y0+"px";
+  document.body.appendChild(e);
+  /* l'image intermédiaire remonte de 44 px : c'est elle qui courbe la trajectoire */
+  const an=e.animate([
+    {transform:"translate(-50%,-50%) scale(.25)",opacity:0,offset:0},
+    {transform:"translate(-50%,-50%) scale(1.45)",opacity:1,offset:.20},
+    {transform:`translate(calc(-50% + ${((x1-x0)*.5).toFixed(1)}px), calc(-50% + ${((y1-y0)*.5-44).toFixed(1)}px)) scale(1.1)`,opacity:1,offset:.62},
+    {transform:`translate(calc(-50% + ${(x1-x0).toFixed(1)}px), calc(-50% + ${(y1-y0).toFixed(1)}px)) scale(.4)`,opacity:0,offset:1}
+  ],{duration:1050,easing:"cubic-bezier(.32,0,.24,1)"});
+  const poser=()=>{
+    e.remove();
+    try{sfxCling();}catch(err){}
+    try{cible.animate([{transform:"scale(1)"},{transform:"scale(1.16)"},{transform:"scale(1)"}],
+      {duration:300,easing:"ease-out"});}catch(err){}
+  };
+  if(an&&an.finished&&an.finished.then)an.finished.then(poser).catch(()=>{e.remove();});
+  else setTimeout(poser,1050);
+}
+/* Fêté UNE seule fois par jour, à l'instant où la 3ᵉ quête tombe. */
+function feteObjectif(){
+  if(S.objFete===today())return;
+  S.objFete=today(); save();
+  try{celebrate();victorySound();}catch(e){}
+  document.getElementById("lootOv")?.remove();
+  const ov=document.createElement("div");ov.id="lootOv";ov.className="loot-ov";
+  ov.innerHTML=`<div class="loot-box">
+    <div class="loot-ttl">✦ JOURNÉE GAGNÉE ✦</div>
+    <div class="loot-items">
+      <div class="loot-it" style="animation-delay:.08s"><span class="ic">🎯</span><b>${OBJ_JOUR}</b></div>
+      <div class="loot-it" style="animation-delay:.22s"><span class="ic">🔥</span><b>+1</b></div>
+    </div>
+    <div class="loot-note">Ta série montera d'un cran cette nuit. Le reste est du bonus.</div>
+    <button class="loot-ok">Bien joué !</button></div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector(".loot-ok").onclick=close;
+  ov.onclick=e=>{if(e.target===ov)close();};
 }
 function dayComplete(){
   const act=S.quests.filter(x=>(x.type==="principale"||x.type==="secondaire")&&!x.abandonedToday&&(x.rec==="oneshot"||isActiveToday(x)));
@@ -2158,11 +2619,17 @@ function renderDayView(type){
   const nav=document.createElement("div");nav.className="day-nav";
   nav.innerHTML=`<div class="day-lbl${rel==="today"?" now":""}">${DOWL[viewDow]} ${selDate.getDate()}/${selDate.getMonth()+1}${relTxt}</div>`;
   el.appendChild(nav);
+  /* la barre d'objectif ne s'affiche que sur AUJOURD'HUI : sur une journée passée ou à
+     venir, elle afficherait le compte du jour courant et mentirait */
+  if(rel==="today")el.appendChild(objBloc());
   const list=document.createElement("div");list.className="quests";el.appendChild(list);
   const H=S.history[selIso];
   const byTime=(a,b)=>(a.time||"99").localeCompare(b.time||"99");
   const scheduled=S.quests.filter(x=>x.type===type&&x.rec!=="oneshot"&&(x.days||[]).includes(viewDow)).sort(byTime);
   const events = type==="principale"?S.quests.filter(x=>x.type==="evenement"&&x.date===selIso).sort(byTime):[];
+  /* Les plaisirs achetés vivent dans la liste PRINCIPALE, au jour où on les a placés :
+     une récompense qu'on ne croise pas est une récompense qu'on ne prend pas. */
+  const plaisirs = type==="principale"?S.quests.filter(x=>x.type==="plaisir"&&x.date===selIso).sort(byTime):[];
   const spont = rel==="today"?S.quests.filter(x=>x.type===type&&x.rec==="oneshot"&&!x.doneToday&&!x.abandonedToday):[];
   let any=false; const emit=n=>{list.appendChild(n);any=true;};
   const doneList=[];
@@ -2182,6 +2649,10 @@ function renderDayView(type){
   const rows=[];
   scheduled.forEach(it=>rows.push({it,run:()=>render(it)}));
   events.forEach(it=>rows.push({it,run:()=>{
+    if(rel==="today")emit(card(it));
+    else if(rel==="past"){const st=histStatus(H,it.title);emit(statusCard(it,st.type,st));}
+    else emit(statusCard(it,"preview"));}}));
+  plaisirs.forEach(it=>rows.push({it,run:()=>{
     if(rel==="today")emit(card(it));
     else if(rel==="past"){const st=histStatus(H,it.title);emit(statusCard(it,st.type,st));}
     else emit(statusCard(it,"preview"));}}));
@@ -2205,7 +2676,8 @@ function renderDayView(type){
     btn.onclick=()=>{doneOpen=!doneOpen;renderList();};
     el.appendChild(btn);
     if(doneOpen){const dl=document.createElement("div");dl.className="quests";dl.style.marginTop="8px";
-      doneList.forEach(it=>dl.appendChild(statusCard(it,"done",dinfo(it))));el.appendChild(dl);}
+      /* `true` : les étoiles sont retouchables ici, et seulement ici (quêtes du jour) */
+      doneList.forEach(it=>dl.appendChild(statusCard(it,"done",dinfo(it),true)));el.appendChild(dl);}
   }
 }
 
@@ -2341,7 +2813,10 @@ function persist(){save();renderHUD();renderTabs();renderList();}
 function abandon(it){
   const o=S.quests.find(x=>x.id===it.id);
   if(o){o.abandonedToday=true;} else {it.abandonedToday=true;S.quests.push(it);}
-  S.streak=0;                     // on casse la série
+  /* La série ne saute PLUS au refus. L'ancienne règle punissait le seul geste honnête —
+     dire « pas aujourd'hui » — et laissait l'évitement silencieux intact : on apprenait
+     donc à ignorer la quête plutôt qu'à la refuser. Le refus nourrit maintenant le
+     Manxiety, ce qui coûte quelque chose sans détruire des semaines de série. */
   toast("Quête abandonnée 💤");
   manxRefus();                    // le Manxiety se nourrit des quêtes repoussées
   persist();
@@ -2359,9 +2834,73 @@ function relance(it){
 function estRepoussee(it){ return !!it && it.snoozeDay===today(); }
 function repousser(it){
   const o=S.quests.find(x=>x.id===it.id)||it;
-  o.snoozeDay=today();
-  toast("Repoussée à plus tard ⏰");
+  o.snoozeDay=today(); o.snoozeT=Date.now();   // l'horodatage ouvre le sursis d'expiration
+  const lim=echeanceDe(o);
+  toast(expireActif()&&lim!=null
+    ? "Repoussée ⏰ — jusqu'à "+hFR(pad2(Math.floor((lim%1440)/60))+":"+pad2(lim%60))
+    : "Repoussée à plus tard ⏰");
   persist();
+}
+
+/* ================= Expiration des quêtes =================
+   Le versant punitif : une quête programmée qui n'est pas validée dans l'heure suivant
+   son échéance est automatiquement abandonnée. Sans cela une quête ratée restait en
+   attente indéfiniment et la journée n'avait aucune forme.
+
+   Quatre garde-fous, sans lesquels la règle deviendrait injuste :
+   • L'échéance est l'heure de FIN quand la quête en a une — on ne va pas la faire
+     expirer à 10 h 30 alors qu'elle court jusqu'à 11 h 30.
+   • Une quête SANS heure n'expire jamais : c'est une « quand je peux », elle n'a aucun
+     rendez-vous à manquer.
+   • Repousser accorde un vrai sursis de 2 h. Sans lui le bouton ne servirait à rien ;
+     avec l'immunité totale, on repousserait tout et l'évitement redeviendrait gratuit.
+   • Les événements et les plaisirs sont hors du dispositif : un rendez-vous qui passe
+     n'est pas un échec, et une récompense déjà payée en jetons ne doit pas s'évaporer.
+
+   Une quête expirée compte comme un refus : elle nourrit le Manxiety, comme si on avait
+   appuyé sur « Refuser ». Elle ne casse PAS la série — seule une journée à zéro le fait. */
+const QUETE_GRACE=60;          // minutes de battement après l'échéance
+const SNOOZE_SURSIS=120;       // minutes gagnées en repoussant
+function expireActif(){ return !(S.settings&&S.settings.expire===false); }
+function minutesDuJour(){ const n=new Date(); return n.getHours()*60+n.getMinutes(); }
+/* Échéance d'une quête, en minutes depuis minuit — null si elle ne peut pas expirer. */
+function echeanceDe(it){
+  if(!it||(it.type!=="principale"&&it.type!=="secondaire"))return null;
+  const deb=minDe(it.time), fin=minDe(finDe(it));
+  const ref=(fin!=null)?fin:deb;
+  if(ref==null)return null;
+  let lim=ref+QUETE_GRACE;
+  /* une séance qui passe minuit (23 h → 0 h 30) ne doit pas expirer le matin même */
+  if(deb!=null&&fin!=null&&fin<deb)lim+=1440;
+  const minuit=new Date(today()+"T00:00").getTime();
+  /* Deux reports possibles de l'échéance, dont on garde le plus tardif :
+     — le sursis obtenu en repoussant la quête ;
+     — l'heure de battement d'une quête qui vient d'être CRÉÉE ou MODIFIÉE. Sans ce
+       second report, ajouter à 14 h une routine calée sur 8 h la faisait disparaître
+       dans les vingt secondes, avant même d'avoir été lue. */
+  const repli=(t,sursis)=>{ if(t)lim=Math.max(lim,Math.floor((t-minuit)/60000)+sursis); };
+  if(estRepoussee(it))repli(it.snoozeT,SNOOZE_SURSIS);
+  repli(it.creeT,QUETE_GRACE);
+  return lim;
+}
+function questeExpiree(it){
+  if(!expireActif())return false;
+  if(!it||it.doneToday||it.abandonedToday)return false;
+  if(!isActiveToday(it))return false;
+  const lim=echeanceDe(it);
+  return lim!=null&&minutesDuJour()>lim;
+}
+function expireQuetes(){
+  if(!expireActif())return;
+  const perdues=S.quests.filter(x=>(x.type==="principale"||x.type==="secondaire")&&questeExpiree(x));
+  if(!perdues.length)return;
+  perdues.forEach(x=>{ x.abandonedToday=true; manxRefus(); });
+  save();
+  const n=perdues.length;
+  toast(n===1 ? `⌛ « ${perdues[0].title} » a expiré — passée en abandon`
+              : `⌛ ${n} quêtes ont expiré — passées en abandon`);
+  try{notify(n===1?"Quête expirée ⌛":n+" quêtes expirées ⌛",perdues.map(x=>x.title).join(", "));}catch(e){}
+  renderHUD(); renderTabs(); renderList();
 }
 function reprendre(it){
   const o=S.quests.find(x=>x.id===it.id)||it;
@@ -2371,42 +2910,72 @@ function reprendre(it){
 }
 function quickDone(it,base){ completeFlow(it,base); }
 
+/* Jetons de plaisir : la monnaie RÉSERVÉE aux récompenses réelles. Les pièces servent au
+   camp (œufs, boutique) ; sans monnaie séparée, le gacha — immédiat, animé, sonore —
+   rafle tout et la partie qui a un effet dans la vraie vie ne sert jamais. Le taux est
+   calibré sur le catalogue par défaut : un tiers du gain, soit ≈ 45 jetons pour une
+   journée à trois quêtes. Un petit plaisir (60) tombe en un jour et demi, une sortie
+   (600) demande environ deux semaines de régularité. */
+function jetonsPour(gain){return Math.max(1,Math.round(gain/3));}
 function award(it,rating,base){
-  const b=base||it.base||(TYPES[it.type]?.base)||25;
-  const gain=Math.round(b*(0.5+rating*0.1)*multiplier());
-  S.xpTotal+=gain; S.coins+=gain;
-  S.streak++; S.best=Math.max(S.best,S.streak);
+  const b=base!=null?base:(it.base!=null?it.base:(TYPES[it.type]?.base??25));
+  const mult=multiplier();
+  const gain=Math.round(b*(0.5+rating*0.1)*mult);
+  const plaisir=it.type==="plaisir";
+  const jet=plaisir?0:jetonsPour(gain);
+  /* Relevé AVANT d'empiler la quête dans S.done : mesuré après, l'objectif serait déjà
+     atteint et la fête ne se déclencherait jamais. */
+  const objAvant=objAtteint();
+  S.xpTotal+=gain; S.coins+=gain; S.jetons=(S.jetons||0)+jet;
+  /* La série ne se joue plus ici : elle compte des JOURS, pas des validations, et se
+     tranche au passage de minuit dans majSerie(). */
   S.totalDone=(S.totalDone||0)+1;
   // récurrente → marquée faite pour aujourd'hui ; oneshot / événement → retirée
   if(it.rec && it.rec!=="oneshot"){ const o=S.quests.find(x=>x.id===it.id); if(o)o.doneToday=true; }
   else                             { S.quests=S.quests.filter(x=>x.id!==it.id); }
-  S.done.push({title:it.title,icon:it.icon,gain,rating,type:it.type,day:today()});
+  /* `base` et `mult` sont mémorisés pour que la note puisse être RETOUCHÉE après coup
+     (voir renote) en recalculant le gain exactement, même une fois la série changée. */
+  S.done.push({title:it.title,icon:it.icon,gain,rating,type:it.type,day:today(),base:b,mult});
   celebrate(); victorySound();
-  toast(`+${gain} XP · +${gain} 🪙 !`);
+  if(plaisir){
+    toast(`🎁 ${it.title} — savouré !`);
+  }else{
+    /* une quête réelle = une bûche pour le feu du camp */
+    const b=feuAjoute(1);
+    toast(`+${gain} XP · +${gain} 🪙 · +${jet} 🎟️ · 🪵 +1`
+      +(b.rallume?" — le feu repart !":b.enReserve?" en réserve":""));
+  }
   manxChasse();                   // une quête accomplie chasse le Manxiety
   persist();
+  /* après persist() : la barre d'objectif vient d'être redessinée, donc le trophée vole
+     vers la bonne position et le compteur qu'il éclaire est déjà à jour */
+  if(!plaisir)try{volTrophee();}catch(e){}
+  /* la fête attend que le trophée soit posé, sinon son voile la masque en plein vol */
+  if(!plaisir&&!objAvant&&objAtteint())setTimeout(feteObjectif,1150);
+}
+/* Retoucher la note APRÈS coup, sans modale au moment de la victoire : on recalcule le
+   gain avec la même base et le même multiplicateur, et on n'applique que l'écart. */
+function renote(titre,r){
+  const rec=[...S.done].reverse().find(x=>x.title===titre&&x.day===today());
+  if(!rec||rec.rating===r)return;
+  const b=rec.base!=null?rec.base:(TYPES[rec.type]?.base??25);
+  const neuf=Math.round(b*(0.5+r*0.1)*(rec.mult||1));
+  const d=neuf-rec.gain;
+  const dj=rec.type==="plaisir"?0:jetonsPour(neuf)-jetonsPour(rec.gain);
+  S.xpTotal=Math.max(0,S.xpTotal+d);
+  S.coins=Math.max(0,S.coins+d);
+  S.jetons=Math.max(0,(S.jetons||0)+dj);
+  rec.gain=neuf; rec.rating=r;
+  save(); renderHUD(); renderList();
 }
 
-/* ---- Flow de notation (auto-évaluation du sérieux) ---- */
-function completeFlow(it,base){
-  let rating=4;
-  const labels=["","Bâclé 😐","Moyen","Correct","Sérieux 💪","Parfait ⭐"];
-  openModal(`
-    <h2>Quête accomplie</h2>
-    <p class="hint">${esc(it.title)} — note ton sérieux, ça influence l'XP.</p>
-    <div class="stars" id="stars"></div>
-    <div class="rate-label" id="rlab">${labels[4]}</div>
-    <div class="modal-actions">
-      <button class="btn ghost pix" id="cancel">Annuler</button>
-      <button class="btn gold pix" id="ok">Valider ✔</button>
-    </div>`);
-  const sc=document.getElementById("stars");
-  function paint(){[...sc.children].forEach((s,i)=>{const on=i<rating;s.classList.toggle("on",on);s.textContent=on?"★":"☆";});document.getElementById("rlab").textContent=labels[rating];}
-  for(let i=1;i<=5;i++){const s=document.createElement("span");s.className="star";s.textContent="☆";s.onclick=()=>{rating=i;paint();};sc.appendChild(s);}
-  paint();
-  document.getElementById("cancel").onclick=closeModal;
-  document.getElementById("ok").onclick=()=>{closeModal();award(it,rating,base);};
-}
+/* ---- Validation ----
+   Plus de modale de notation. Elle s'intercalait pile à l'instant où la récompense doit
+   tomber, imposait deux gestes de plus et demandait de se juger (« Bâclé 😐 ») au moment
+   le moins opportun. On valide donc d'un seul geste, à 4 étoiles par défaut, et la note
+   reste RETOUCHABLE plus tard, discrètement : les étoiles du tiroir « 🏆 Faites
+   aujourd'hui » sont cliquables et rappellent renote(). Rien à accepter ni à refuser. */
+function completeFlow(it,base){ award(it,4,base); }
 
 /* ---- Chrono ---- */
 let timer=null;
@@ -2464,8 +3033,12 @@ function openAdd(edit, preType){
         <button type="button" data-r="tous">Tous les jours</button>
       </div></div>
     <div class="field" id="wrapDays" style="display:none"><label>Jours actifs</label><div class="icon-row" id="dayChips"></div></div>
-    <div class="field" id="wrapTime"><label>Heure proposée (optionnel)</label><input id="fTime" type="time" value="${editing&&edit.time?edit.time:""}"></div>
-    <div class="field" id="wrapDur"><label>Durée chrono (min, 0 = sans)</label><input id="fDur" type="number" min="0" max="480" value="${editing?(edit.dur||0):0}"></div>
+    <div class="field" id="wrapTime"><label>Heure de début (optionnel)</label><input id="fTime" type="time" value="${editing&&edit.time?edit.time:""}"></div>
+    <!-- Plus de « durée en minutes » : on donne l'heure de FIN, et le chronomètre en
+         déduit sa durée. C'est ainsi qu'on pense sa journée — « de 9 h à 11 h », pas
+         « 120 minutes à partir d'un moment indéterminé ». -->
+    <div class="field" id="wrapDur"><label>Heure de fin (chronomètre)</label><input id="fFin" type="time" value="${editing?(edit.fin||finDe(edit)||""):""}">
+      <div class="hint" id="durCalc" style="margin-top:5px"></div></div>
     <div class="field" id="wrapDate" style="display:none"><label>Date</label><input id="fDate" type="date" value="${editing&&edit.date?edit.date:addDays(1)}"></div>
     <div class="field" id="wrapEvTime" style="display:none"><label>Heure</label><input id="fEvTime" type="time" value="${editing&&edit.time?edit.time:"20:00"}"></div>
     <div class="field" id="wrapRem" style="display:none"><label>Rappel (notification avant)</label>
@@ -2504,6 +3077,18 @@ function openAdd(edit, preType){
   segR.querySelectorAll("[data-r]").forEach(b=>{ if(b.dataset.r===rec)b.classList.add("on");
     b.onclick=()=>{rec=b.dataset.r;[...segR.children].forEach(c=>c.classList.remove("on"));b.classList.add("on");upd();};});
   upd();
+  /* Aperçu vivant du chronomètre déduit : sans lui, on saisit deux heures sans savoir ce
+     que l'application en fait. */
+  const majDuree=()=>{
+    const e=g("durCalc"); if(!e)return;
+    const deb=g("fTime").value, fin=g("fFin").value;
+    const d=dureeEntre(deb,fin);
+    e.textContent = d ? ("⏱ Chronomètre : "+(d>=60?(Math.floor(d/60)+" h"+(d%60?" "+pad2(d%60):"")):(d+" min")))
+      : (fin&&!deb) ? "Sans heure de début, pas de chronomètre — la fin sert d'échéance."
+      : "Laisse vide s'il n'y a rien à chronométrer.";
+  };
+  ["fTime","fFin"].forEach(id=>{const e=g(id); if(e)e.addEventListener("input",majDuree);});
+  majDuree();
   if(editing){const db=g("del"); if(db)db.onclick=()=>{S.quests=S.quests.filter(x=>x.id!==edit.id);closeModal();toast("Quête supprimée 🗑");persist();};}
   g("cancel").onclick=closeModal;
   g("ok").onclick=()=>{
@@ -2513,59 +3098,124 @@ function openAdd(edit, preType){
       if(editing)Object.assign(edit,{title,type:"evenement",icon,date,time,reminder,notified:false,remFired:false});
       else {S.quests.push({id:uid(),title,type:"evenement",icon,date,time,reminder,notified:false,remFired:false}); cur="evenement";}
     }else{
-      const time=g("fTime").value||"";
-      const dur=parseInt(g("fDur").value)||0;
+      const time=g("fTime").value||"", fin=g("fFin").value||"";
+      /* le chronomètre se déduit de l'écart début → fin ; sans heure de début, il n'y a
+         rien à chronométrer, la fin ne sert alors que d'échéance affichée */
+      const dur=dureeEntre(time,fin);
       let dys=(rec==="certains")?days.slice().sort((a,b)=>a-b):[0,1,2,3,4,5,6];
       if(rec==="certains"&&!dys.length){toast("Choisis au moins un jour");return;}
-      if(editing)Object.assign(edit,{title,type,icon,rec,time,dur,days:dys});
-      else {S.quests.push({id:uid(),title,type,icon,rec,time,dur,days:dys,doneToday:false,abandonedToday:false,notifDay:false}); cur=type; viewDow=todayDow();}
+      /* `creeT` ouvre l'heure de battement avant toute expiration automatique — posé
+         aussi à la modification, puisqu'on peut y changer les horaires */
+      if(editing)Object.assign(edit,{title,type,icon,rec,time,fin,dur,days:dys,creeT:Date.now()});
+      else {S.quests.push({id:uid(),title,type,icon,rec,time,fin,dur,days:dys,creeT:Date.now(),doneToday:false,abandonedToday:false,notifDay:false}); cur=type; viewDow=todayDow();}
     }
     closeModal(); toast(editing?"Quête modifiée ✎":"Quête créée ✚"); persist();
   };
 }
 
 /* ================= Récompenses réelles ================= */
+/* ================= Les récompenses réelles =================
+   Elles ne se « consomment » plus depuis une modale : on les ACHÈTE avec des jetons, et
+   elles viennent se poser dans le programme comme une quête à cadre doré, au jour choisi.
+   Deux raisons : une récompense qu'on ne croise pas dans sa journée est une récompense
+   qu'on ne prend jamais, et l'inscrire à l'avance transforme le plaisir en rendez-vous
+   plutôt qu'en impulsion. */
 function openRewards(){
+  const J=S.jetons||0;
   const rows=S.rewards.map(r=>{
-    const ok=S.coins>=r.cost;
-    return `<div class="box quest" style="animation:none">
+    const ok=J>=r.cost;
+    return `<div class="box quest plaisir" style="animation:none">
       <div class="q-ic">${r.icon}</div>
       <div class="q-body">
-        <div class="q-title">${esc(r.title)}</div>
-        <div class="q-meta">
-          <span class="chip gold">🪙 ${r.cost}</span>
-          ${r.claimed?`<span class="chip">obtenue ×${r.claimed}</span>`:""}
-        </div>
+        <div class="q-line"><div class="q-title">${esc(r.title)}</div>
+          <span class="q-hour">🎟️ ${r.cost}</span></div>
+        <div class="q-meta">${r.claimed?`<span class="chip">savourée ×${r.claimed}</span>`
+          :`<span class="chip gold">jamais prise</span>`}</div>
         <div class="q-actions">
-          <button class="btn ${ok?"go":""} pix" data-claim="${r.id}" ${ok?"":"disabled"}>
-            ${ok?"🎁 Débloquer":"🔒 "+(r.cost-S.coins)+" pièces manquantes"}</button>
+          <button class="btn ${ok?"gold":""} pix" data-claim="${r.id}" ${ok?"":"disabled"}>
+            ${ok?"🎁 Programmer":"🔒 encore "+(r.cost-J)+" 🎟️"}</button>
           <button class="btn ghost pix" data-del="${r.id}">🗑</button>
         </div>
       </div></div>`;
   }).join("");
   openModal(`
     <h2>🎁 Récompenses</h2>
-    <p class="hint">Dépense tes 🪙 <b style="color:var(--gold)">${S.coins} pièces</b> en plaisirs bien réels.</p>
-    <div class="quests" style="max-height:46vh;overflow:auto;margin-bottom:14px">${rows}</div>
+    <p class="hint">Tu as <b style="color:var(--gold)">${J} jetons de plaisir 🎟️</b>, gagnés en accomplissant des quêtes. Ils ne servent qu'ici — les 🪙 pièces, elles, restent pour le camp et les œufs.</p>
+    <div class="quests" style="max-height:44vh;overflow:auto;margin-bottom:14px">${rows}</div>
     <button class="btn wide pix" id="newRw" style="justify-content:center;display:flex;margin-bottom:8px">✚ Ajouter une récompense</button>
     <div class="modal-actions"><button class="btn ghost pix" id="cancel" style="flex:1;justify-content:center;display:flex">Fermer</button></div>`);
   document.getElementById("cancel").onclick=closeModal;
   document.getElementById("newRw").onclick=newReward;
   modalEl.querySelectorAll("[data-claim]").forEach(b=>b.onclick=()=>{
     const r=S.rewards.find(x=>x.id===b.dataset.claim);
-    if(S.coins>=r.cost){S.coins-=r.cost;r.claimed++;celebrate();victorySound();toast("Récompense débloquée 🎁");save();renderHUD();renderTabs();openRewards();}
+    if(r&&(S.jetons||0)>=r.cost)planifierPlaisir(r);
   });
   modalEl.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
     S.rewards=S.rewards.filter(x=>x.id!==b.dataset.del);save();openRewards();
   });
 }
+/* Achat + mise au programme, en un seul écran : on choisit le jour (et l'heure si on
+   veut), les jetons partent, et la quête dorée apparaît dans la liste principale. */
+function planifierPlaisir(r){
+  if((S.jetons||0)<r.cost)return;
+  const dem=addDays(1);
+  openModal(`
+    <h2>${r.icon} ${esc(r.title)}</h2>
+    <p class="hint">Quand veux-tu la savourer ? Elle t'attendra dans tes quêtes principales, en doré, ce jour-là.</p>
+    <div class="field"><label>Jour</label><input id="pDate" type="date" value="${today()}" min="${today()}"></div>
+    <div class="field"><label>Heure (facultatif)</label><input id="pTime" type="time" value=""></div>
+    <div class="q-actions" style="margin-bottom:12px">
+      <button class="btn pix" id="pToday">Aujourd'hui</button>
+      <button class="btn pix" id="pTmr">Demain</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost pix" id="cancel">Retour</button>
+      <button class="btn gold pix" id="ok">🎟️ ${r.cost} — l'inscrire</button>
+    </div>`);
+  const dEl=document.getElementById("pDate");
+  document.getElementById("pToday").onclick=()=>{dEl.value=today();};
+  document.getElementById("pTmr").onclick=()=>{dEl.value=dem;};
+  document.getElementById("cancel").onclick=openRewards;
+  document.getElementById("ok").onclick=()=>{
+    if((S.jetons||0)<r.cost){toast("Plus assez de jetons 🎟️");return;}
+    const jour=dEl.value||today(), heure=document.getElementById("pTime").value||"";
+    S.jetons-=r.cost; r.claimed=(r.claimed||0)+1;
+    S.quests.push({id:uid(),title:r.title,type:"plaisir",icon:r.icon,rec:"oneshot",
+      date:jour,time:heure,dur:0,days:[0,1,2,3,4,5,6],
+      doneToday:false,abandonedToday:false,notifDay:false});
+    save();closeModal();celebrate();victorySound();
+    toast(jour===today()?`🎁 ${r.title} t'attend aujourd'hui !`
+                        :`🎁 ${r.title} inscrit au ${new Date(jour+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}`);
+    renderHUD();renderTabs();renderList();
+  };
+}
+/* Déplacer un plaisir déjà payé : rien d'autre à régler que le moment. */
+function replanifierPlaisir(it){
+  openModal(`
+    <h2>${it.icon} ${esc(it.title)}</h2>
+    <p class="hint">Déplace-le au moment qui te va. Il est déjà payé — tu ne perds rien.</p>
+    <div class="field"><label>Jour</label><input id="rpDate" type="date" value="${it.date||today()}" min="${today()}"></div>
+    <div class="field"><label>Heure (facultatif)</label><input id="rpTime" type="time" value="${it.time||""}"></div>
+    <div class="modal-actions">
+      <button class="btn ghost pix" id="cancel">Retour</button>
+      <button class="btn gold pix" id="ok">Déplacer</button>
+    </div>`);
+  document.getElementById("cancel").onclick=closeModal;
+  document.getElementById("ok").onclick=()=>{
+    const o=S.quests.find(x=>x.id===it.id)||it;
+    o.date=document.getElementById("rpDate").value||today();
+    o.time=document.getElementById("rpTime").value||"";
+    closeModal(); persist();
+    toast(o.date===today()?"🎁 Déplacé à aujourd'hui":"🎁 Déplacé au "+new Date(o.date+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"}));
+  };
+}
 function newReward(){
   let icon="🎁";
   openModal(`
     <h2>Nouvelle récompense</h2>
-    <p class="hint">Un plaisir que tu t'accordes en pièces.</p>
+    <p class="hint">Un plaisir que tu t'accordes, payé en jetons 🎟️.</p>
     <div class="field"><label>Nom</label><input id="rTitle" placeholder="Ex : Pâtisserie préférée" maxlength="40"></div>
-    <div class="field"><label>Coût en pièces 🪙</label><input id="rCost" type="number" min="10" max="5000" value="150"></div>
+    <div class="field"><label>Coût en jetons 🎟️</label><input id="rCost" type="number" min="10" max="5000" value="150"></div>
     <div class="field"><label>Icône</label><div class="icon-row" id="ricons"></div></div>
     <div class="modal-actions">
       <button class="btn ghost pix" id="cancel">Retour</button>
@@ -2753,11 +3403,33 @@ function checkSchedule(){
     if(diff<=0 && diff>-120000){ x.notifDay=true; changed=true; notify("C'est l'heure : "+x.title, "Ta quête t'attend ⚔️ ("+x.time+")"); }
   });
   if(changed)save();
+  /* APRÈS les rappels : une quête qu'on vient d'annoncer ne doit pas expirer dans le
+     même passage. Ce battement de 20 s suffit — la précision à la minute n'a pas de sens
+     pour un délai d'une heure. */
+  try{expireQuetes();}catch(e){}
 }
 
 /* ================= Boutique / personnalisation ================= */
+/* Porte vers les récompenses RÉELLES, en tête de la boutique. Elle a quitté l'accueil
+   (qui doit rester compact) mais ne pouvait pas redevenir invisible : la boutique est
+   l'endroit où l'on vient dépenser, c'est là qu'elle se comprend toute seule. Elle
+   n'utilise pas de pièces mais des jetons — d'où le bloc à part, avant les catégories. */
+function shopRecompHTML(){
+  const J=S.jetons||0;
+  const dispo=(S.rewards||[]).filter(r=>J>=r.cost).length;
+  const reste=(S.rewards||[]).filter(r=>J<r.cost).sort((a,b)=>a.cost-b.cost)[0];
+  const sous = dispo ? (dispo+" récompense"+(dispo>1?"s":"")+" à portée !")
+    : (reste?("Encore "+(reste.cost-J)+" 🎟️ pour « "+esc(reste.title)+" »"):"Ajoute-en une");
+  return `<div class="shop-cat">🎁 Plaisirs réels</div>
+    <button class="shop-recomp" id="shopRecomp">
+      <span class="shop-rec-em">🎁</span>
+      <span class="shop-rec-txt"><b>Mes récompenses</b><i>${sous}</i></span>
+      <span class="shop-rec-j">🎟️ ${J}</span>
+      <span class="shop-rec-go">›</span>
+    </button>`;
+}
 function shopHTML(){
-  return CATS.map(c=>{
+  return shopRecompHTML()+CATS.map(c=>{
     const items=Object.keys(c.data).map(id=>{
       const it=c.data[id];
       const owned=S.cosmetics.owned.includes(c.cat+":"+id);
@@ -2776,6 +3448,7 @@ function shopHTML(){
 }
 function mountShop(root,rerender){
   root.innerHTML=shopHTML();
+  {const b=root.querySelector("#shopRecomp"); if(b)b.onclick=openRewards;}
   root.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{const[c,i]=b.dataset.buy.split(":");if(buyItem(c,i))rerender();});
   root.querySelectorAll("[data-eq]").forEach(b=>b.onclick=()=>{const[c,i]=b.dataset.eq.split(":");equipItem(c,i);rerender();});
 }
@@ -3089,6 +3762,12 @@ function renderSettings(){
   el.appendChild(row("🔊","Sons","Jingles, cris des créatures et ambiance du camp.",S.settings.sound,()=>{S.settings.sound=!S.settings.sound;save();renderSettings();try{updateAmbience();}catch(e){}}));
   el.appendChild(row("🎉","Animations & confettis","Effets de récompense et avatar qui célèbre.",S.settings.anim,()=>{S.settings.anim=!S.settings.anim;save();renderSettings();}));
   el.appendChild(row("🏕️","Écran d'accueil","Afficher le camp au lancement de l'appli.",S.settings.splash,()=>{S.settings.splash=!S.settings.splash;save();renderSettings();}));
+  /* Réglage à part : c'est le seul mécanisme de l'application qui retire quelque chose
+     sans qu'on ait rien fait. Il doit pouvoir être coupé sans discussion. */
+  el.appendChild(row("⌛","Expiration automatique",
+    "Une quête non validée "+(QUETE_GRACE/60)+" h après son heure passe en abandon (2 h de sursis si tu la repousses). Les quêtes sans heure ne sont jamais concernées.",
+    expireActif(),
+    ()=>{S.settings.expire=!expireActif();save();renderSettings();renderTabs();}));
   const notif=document.createElement("button");notif.className="btn pix wide";notif.style.margin="12px 0 0";notif.style.cssText+=";justify-content:center;display:flex";notif.textContent="🔔 Activer les rappels";notif.onclick=askNotif;el.appendChild(notif);
   const reset=document.createElement("button");reset.className="btn no pix wide";reset.style.cssText="margin:10px 0 0;justify-content:center;display:flex";reset.textContent="🗑 Réinitialiser toute la progression";reset.onclick=confirmReset;el.appendChild(reset);
   const p=document.createElement("div");p.className="list-sub";p.style.cssText="margin:18px 2px 0;line-height:1.5";
@@ -3224,6 +3903,23 @@ function sfxCrayon(){
     src.connect(f);f.connect(lp);lp.connect(g);g.connect(AC.destination);src.start(t);
   }catch(e){}
 }
+/* « Cling » : une clochette claire, trois partiels harmoniques qui s'éteignent vite.
+   Volontairement plus haut et plus court que tous les autres sons de l'application —
+   il doit attirer l'œil sur la pastille d'objectif, pas se fondre dans le décor. */
+function sfxCling(){
+  if(!sfxOn())return;
+  try{audioCtx();
+    const t=AC.currentTime;
+    [[2093,1],[3136,.5],[4186,.24]].forEach(([f,k])=>{
+      const o=AC.createOscillator(),g=AC.createGain();
+      o.type="sine";o.frequency.setValueAtTime(f,t);
+      g.gain.setValueAtTime(.0001,t);
+      g.gain.exponentialRampToValueAtTime(.15*k,t+0.006);
+      g.gain.exponentialRampToValueAtTime(.0001,t+0.55);
+      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+0.6);
+    });
+  }catch(e){}
+}
 function sfxPoc(){        // petit "poc" : l'œuf se pose
   if(!sfxOn())return;
   try{audioCtx();
@@ -3329,6 +4025,10 @@ function sfxCry(id,gain){
                    [1568,1976,2637].forEach((f,i)=>V("square",f,f,.40+i*.07,.09,.06));},      // chant qui s'élève + arpège doré
       toad:   ()=>{V("triangle",165,132,0,.20,.17,[19,22]);                                   // « coâ » grave et vibré
                    V("triangle",148,118,.24,.22,.15,[17,20]);N(.46,.10,.05,320);},            // puis un second, plus bas
+      /* Minos : beuglement de taureau. Registre encore plus bas que le golem (110 → 72 Hz),
+         vibré large, doublé d'un souffle de naseaux. Un légendaire doit s'entendre. */
+      minos:  ()=>{V("square",110,72,0,.44,.19,[11,16]);N(.02,.34,.16,380);
+                   V("square",150,92,.34,.30,.14,[9,14]);N(.62,.14,.09,2600,"bandpass");},
     };
     (CRIES[id]||CRIES.heros)();
   }catch(e){}
@@ -4019,23 +4719,41 @@ function treeNightImg(i){
    tâche non faite ou repoussée. Elle se manifeste à droite de l'arbre quand le
    joueur n'a rien accompli depuis trop longtemps, ou a refusé plusieurs quêtes
    d'affilée. Accomplir UNE quête la dissipe. */
-const MANX_DELAI=36*3600*1000;   // 36 h sans rien accomplir
-const MANX_REFUS=3;              // ou 3 quêtes repoussées d'affilée
+/* ================= Le Manxiety, en trois temps =================
+   Il n'était qu'une ambiance : il apparaissait, il repartait, et ne coûtait rien.
+   Il escalade maintenant, et chaque palier prévient avant le suivant :
+     1. APPARITION — une silhouette sous l'arbre. Premier avertissement, muet.
+     2. MENACE     — un message dans le jeu ET une notification : il va se servir.
+     3. VOL        — il traverse le camp, prend une ressource sous nos yeux, repart.
+   Accomplir UNE quête le dissipe à n'importe quel palier. Après un vol, douze heures
+   de répit : il menace, il ne saigne pas. */
+const MANX_S1={h:36, refus:3};        // il apparaît
+const MANX_S2={h:48, refus:5};        // il annonce
+const MANX_S3={h:60, refus:7};        // il se sert
+const MANX_REPIT=12*3600*1000;        // délai minimal entre deux vols
+let MANX_VOL_DUR=4600;                // durée de la mise en scène du larcin, en ms
 let manxFade=0;                  // 0 → absent, 1 → pleinement présent
 let manxPoof=0;                  // horodatage de sa dissipation (petite animation)
+let manxVol=null;                // vol en cours de mise en scène (voir drawManxiety)
 function manxState(){
   if(!S.manx)S.manx={last:Date.now(),refus:0};
   return S.manx;
 }
-function manxPresent(){
-  const m=manxState();
-  return (Date.now()-(m.last||0)>MANX_DELAI)||((m.refus||0)>=MANX_REFUS);
+function manxNiveau(){
+  const m=manxState(), h=(Date.now()-(m.last||0))/3600000, r=m.refus||0;
+  if(h>MANX_S3.h||r>=MANX_S3.refus)return 3;
+  if(h>MANX_S2.h||r>=MANX_S2.refus)return 2;
+  if(h>MANX_S1.h||r>=MANX_S1.refus)return 1;
+  return 0;
 }
+function manxPresent(){ return manxNiveau()>0; }
 function manxRefus(){
-  const m=manxState(), avant=manxPresent();
+  const m=manxState(), avant=manxNiveau();
   m.refus=(m.refus||0)+1;
-  if(!avant&&manxPresent())
-    setTimeout(()=>toast("Quelque chose t'observe près de l'arbre…"),900);
+  const apres=manxNiveau();
+  if(!avant&&apres)setTimeout(()=>toast("Quelque chose t'observe près de l'arbre…"),900);
+  if(apres>avant)manxTick();
+  save();
 }
 function manxChasse(){
   const m=manxState();
@@ -4043,23 +4761,101 @@ function manxChasse(){
     manxPoof=performance.now();
     setTimeout(()=>toast("Le Manxiety se dissipe ✨"),700);
   }
-  m.last=Date.now(); m.refus=0;
+  m.last=Date.now(); m.refus=0; m.averti=0;
+}
+/* Battement de surveillance : appelé au démarrage, toutes les 20 s et au retour dans
+   l'onglet. C'est lui qui déclenche l'annonce, puis le vol. */
+function manxTick(){
+  const m=manxState(), n=manxNiveau();
+  if(n>=2&&m.averti!==2){
+    m.averti=2; save();
+    const msg="Il s'approche de tes réserves. Accomplis une quête avant qu'il ne se serve.";
+    setTimeout(()=>toast("⚠️ Le Manxiety rôde — "+msg),600);
+    try{notify("Le Manxiety rôde 👁️",msg);}catch(e){}
+  }
+  if(n<2&&m.averti){ m.averti=0; save(); }
+  if(n>=3&&Date.now()-(m.volT||0)>MANX_REPIT)manxLanceVol();
+}
+/* Choisit une cible, applique la perte TOUT DE SUITE (sinon un joueur absent ne perdrait
+   jamais rien, et la menace serait creuse), puis met le larcin en file d'attente pour
+   qu'on le voie se produire à la prochaine ouverture du camp. */
+function manxLanceVol(){
+  const m=manxState();
+  S.chest=S.chest||{coins:0,fish:0,grilled:0}; S.res=S.res||{fish:0,grilled:0};
+  let cible=null;
+  const buches=feuBuches();
+  if(buches>=1){
+    S.feu.reste=Math.max(0,S.feu.reste-BOIS_DUREE);
+    cible={quoi:"bois", x:165, n:1, ic:"🪵", txt:"une bûche"};
+  }else if(S.chest.grilled>0||S.chest.fish>0||S.chest.coins>0){
+    if(S.chest.grilled>0){const n=Math.max(1,Math.floor(S.chest.grilled/2));S.chest.grilled-=n;
+      cible={quoi:"coffre",x:21,n,ic:"🍢",txt:n+" poisson"+(n>1?"s":"")+" grillé"+(n>1?"s":"")};}
+    else if(S.chest.fish>0){const n=Math.max(1,Math.floor(S.chest.fish/2));S.chest.fish-=n;
+      cible={quoi:"coffre",x:21,n,ic:"🐟",txt:n+" poisson"+(n>1?"s":"")};}
+    else {const n=Math.max(1,Math.floor(S.chest.coins/2));S.chest.coins-=n;
+      cible={quoi:"coffre",x:21,n,ic:"🪙",txt:n+" pièce"+(n>1?"s":"")};}
+  }else if(S.coins>=20){
+    const n=Math.max(10,Math.round(S.coins*0.05)); S.coins-=n;
+    cible={quoi:"bourse",x:21,n,ic:"🪙",txt:n+" pièces"};
+  }
+  if(!cible)return;                       // rien à voler : il se contente de rôder
+  m.volT=Date.now(); m.enAttente=cible; save();
+  campStaticKey="";
+  try{notify("Le Manxiety s'est servi 👁️",`Il a emporté ${cible.txt}.`);}catch(e){}
+  toast(`👁️ Le Manxiety a emporté ${cible.ic} ${cible.txt} !`);
+  renderHUD();
+}
+/* Déclenche la mise en scène quand le camp redevient visible. */
+function manxRejoueVol(){
+  const m=manxState();
+  if(!m.enAttente||manxVol)return;
+  manxVol={t0:performance.now(), c:m.enAttente};
+  m.enAttente=null; save();
 }
 /* Rendu : silhouette sombre qui respire, à droite de l'arbre. Elle apparaît et
    s'efface en fondu, ondule légèrement et projette une ombre diffuse. */
+/* Renvoie l'emprise du Manxiety à l'écran (ou null s'il n'est pas visible) : drawHub s'en
+   sert pour repeindre par-dessus lui les objets derrière lesquels il passe. */
 function drawManxiety(x,T,P,t,day){
-  const g=gifData("manxiety"); if(!g)return;
+  const g=gifData("manxiety"); if(!g)return null;
+  manxRejoueVol();                       // un larcin en attente démarre dès qu'on regarde
   /* fondu : monte quand elle est là, redescend quand elle vient d'être chassée */
-  const cible=manxPresent()?1:0;
+  const cible=(manxPresent()||manxVol)?1:0;
   manxFade+=(cible-manxFade)*0.035;
   const poof=manxPoof?Math.max(0,1-(performance.now()-manxPoof)/900):0;
-  if(manxFade<0.01&&poof<=0){manxPoof=0;return;}
+  if(manxFade<0.01&&poof<=0){manxPoof=0;return null;}
   const im=reduce?gifPeek("manxiety"):gifFrame("manxiety");
-  if(!im)return;
-  const bb=gifBBox("manxiety"); if(!bb)return;
-  const H=32, sc=Math.round((H*1.24)/bb.h*10)/10;        // ~40 px de haut
+  if(!im)return null;
+  const bb=gifBBox("manxiety"); if(!bb)return null;
+  /* Mise en scène du vol : il quitte son arbre, marche jusqu'à la ressource, s'en
+     empare, et repart avec. Le compte a DÉJÀ été débité (voir manxLanceVol) — on ne
+     rejoue ici que ce qui s'est passé, pour qu'on le voie de ses yeux. */
+  let px=314, pyOff=0, porte=null;
+  if(manxVol){
+    const q=(performance.now()-manxVol.t0)/MANX_VOL_DUR;
+    if(q>=1){manxVol=null;}
+    else{
+      const c=manxVol.c, lisse=u=>u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
+      /* Il DESCEND vers sa cible en même temps qu'il s'en approche : rester sur la ligne
+         de sol de l'arbre le faisait marcher par-dessus le tableau des quêtes. */
+      const cy=(c.quoi==="bois")?P.fireY:(P.tnB+6);
+      let av=0;                                           // 0 = à l'arbre, 1 = sur la cible
+      if(q<.34)      av=lisse(q/.34);                     // il s'approche
+      else if(q<.52) av=1;                                // il se sert
+      else if(q<.86) av=1-lisse((q-.52)/.34);             // il repart
+      px=314+(c.x-314)*av;
+      pyOff=(cy-(P.trBase+3))*av;
+      if(q>=.44)porte=c;                                  // butin en main
+      manxFade=1;                                         // bien visible pendant le larcin
+    }
+  }
+  const py=P.trBase+3+pyOff;                              // à droite de l'arbre
+  /* PERSPECTIVE : il grandit à mesure qu'il descend vers le premier plan, comme les
+     créatures parties en tâche. Calculé APRÈS `py`, donc après le déplacement du vol —
+     l'échelle était figée avant, et il traversait le camp sans jamais s'approcher. */
+  const kP=1+.35*Math.max(0,Math.min(1,(py-(P.trBase+3))/Math.max(1,(P.tnB+6)-(P.trBase+3))));
+  const HM=32, sc=Math.round((HM*1.24*kP)/bb.h*10)/10;    // ~40 px de haut au fond
   const dw=Math.round(g.w*sc), dh=Math.round(g.h*sc);
-  const px=314, py=P.trBase+3;                            // à droite de l'arbre
   const dx=Math.round(px-(bb.x0+bb.w/2)*sc), dy=Math.round(py-(bb.y1+1)*sc);
   const a=Math.min(1,manxFade+poof);
   x.save();
@@ -4091,7 +4887,36 @@ function drawManxiety(x,T,P,t,day){
   x.globalAlpha=1;
   /* aura froide qui pulse : on la sent avant de la voir */
   T.glow(px,py-dh*0.45,13+2*Math.sin(t/17),"70,40,120",(day?.10:.16)*a);
+  /* Le butin qu'il emporte, serré au-dessus de lui. Une bûche volée est DESSINÉE en
+     pixels — le même bois que celui qui tombe dans le feu — et non posée en emoji :
+     c'était illisible, on ne comprenait pas ce qu'il venait de prendre au foyer. */
+  if(porte){
+    const by=Math.round(py-dh-6+Math.sin(t/7)*1.8), bx=Math.round(px);
+    T.glow(px,by,16,"255,120,50",.38);
+    x.globalAlpha=a;
+    if(porte.quoi==="bois"){
+      /* dimensionnée sur la SILHOUETTE (elle grandit donc avec la perspective) et cerclée
+         de noir : à 14 px sur fond de flammes elle se noyait dans le halo du feu */
+      const w=Math.max(14,Math.round(dw*0.62)), h=Math.max(6,Math.round(w*0.42));
+      const x0=bx-(w>>1), y0=by-(h>>1);
+      T.R(x0-1,y0-1,w+2,h+2,"#241505");                  // liseré sombre : elle se détache
+      T.R(x0,y0,w,h,"#6b4423");                          // corps de la bûche
+      T.R(x0,y0,w,Math.max(1,h>>2),"#8a5a2e");           // arête éclairée
+      const e=Math.max(1,Math.round(w*0.07));
+      T.R(x0+Math.round(w*0.22),y0+1,e,h-2,"#4a2d16");   // écorce
+      T.R(x0+Math.round(w*0.62),y0+1,e,h-2,"#4a2d16");
+      T.R(x0,y0+1,Math.max(2,Math.round(w*0.13)),h-2,"#c69a5e");  // cœur clair du bois
+    }else{
+      x.font="bold 13px Courier New,monospace";
+      x.textAlign="center"; x.textBaseline="middle";
+      x.fillText(porte.ic,px,by);
+      x.textAlign="start"; x.textBaseline="alphabetic";
+    }
+    x.globalAlpha=1;
+  }
   x.restore();
+  /* emprise renvoyée à drawHub pour le calcul d'occlusion */
+  return {x0:px-dw/2, y0:py-dh, x1:px+dw/2, y1:py, fy:py};
 }
 /* Poste de pêche : berge droite ou berge gauche de l'étang. En accueil l'étang est réduit et
    décalé vers la droite ; le pêcheur de la berge GAUCHE se retrouverait sur la tente, dont le
@@ -4461,10 +5286,12 @@ function buildHub(W,H,day){
     ao(21,bnB+1,17,.20);           // bannière
     ao(165,fireY+9,46,.12);        // rond du feu
   }
-  /* teinte chaude du feu (seulement s'il est allumé) */
+  /* teinte chaude du feu (seulement s'il est allumé), atténuée quand la réserve de bois
+     s'épuise : c'est le premier signe que le camp va s'arrêter */
   if(S.camp.fire){
-    const gW2=x.createRadialGradient(165,fireY-4,4,165,fireY-4,74);
-    gW2.addColorStop(0,`rgba(200,110,40,${(.22*C.glowK*2).toFixed(3)})`);gW2.addColorStop(1,"rgba(200,110,40,0)");
+    const ffS=.35+.65*feuForce();
+    const gW2=x.createRadialGradient(165,fireY-4,4,165,fireY-4,74*(.7+.3*ffS));
+    gW2.addColorStop(0,`rgba(200,110,40,${(.22*C.glowK*2*ffS).toFixed(3)})`);gW2.addColorStop(1,"rgba(200,110,40,0)");
     x.fillStyle=gW2;x.fillRect(85,fireY-80,160,156);   /* couvre tout le rayon : plus de coupe nette en bas */
   }
   /* vignette : recentrée sur la BANDE visible, pas sur le canvas — sinon elle assombrit
@@ -4747,17 +5574,21 @@ function drawHub(t){
   const flick=1+.09*Math.sin(t/5)+.05*Math.sin(t/2.3);
   const fy=P.fireY-2;
   if(S.camp.fire){
+    /* `ff` : 1 tant qu'il reste plus de 6 h de bois, puis décroissant jusqu'à 0,35 juste
+       avant l'extinction. Le rayonnement se resserre et pâlit — on VOIT la réserve
+       baisser sans avoir à ouvrir la moindre jauge. */
+    const ff=.35+.65*feuForce();
     x.save();x.translate(165,P.fireY),x.scale(1,.42);
-    let gr=x.createRadialGradient(0,0,2,0,0,88*flick);
-    gr.addColorStop(0,`rgba(255,160,60,${(.42*C.glowK).toFixed(3)})`);gr.addColorStop(1,"rgba(255,140,50,0)");
+    let gr=x.createRadialGradient(0,0,2,0,0,88*flick*(.62+.38*ff));
+    gr.addColorStop(0,`rgba(255,160,60,${(.42*C.glowK*ff).toFixed(3)})`);gr.addColorStop(1,"rgba(255,140,50,0)");
     x.fillStyle=gr;x.fillRect(-100,-100,200,200);x.restore();
-    T.glow(165,P.fireY-20,62*flick,"255,150,60",.20*C.glowK);
+    T.glow(165,P.fireY-20,62*flick*(.62+.38*ff),"255,150,60",.20*C.glowK*ff);
     /* le foyer et ses flammes : sprite 12 images dessiné par l'utilisateur */
     drawFeuSprite(x,P,day);
-    /* fumée qui monte au-dessus des flammes */
+    /* fumée qui monte au-dessus des flammes ; elle s'épaissit quand la flamme meurt */
     for(let i=0;i<5;i++){const pr=((t/60)+i*.2)%1;
       const sx=163+Math.sin(pr*4+i*1.7)*5+pr*14, syy=fy-30-pr*66;
-      const al=(day?.10:.16)*(1-pr), r=2+pr*6;
+      const al=(day?.10:.16)*(1-pr)*(1.6-.6*ff), r=2+pr*6;
       T.R(sx-r/2,syy,r,r,`rgba(190,186,180,${al.toFixed(2)})`);}
   }else{
     /* feu éteint : le foyer seul, puis braises rougeoyantes + filet de fumée froide */
@@ -4809,34 +5640,7 @@ function drawHub(t){
      ENCHAÎNÉ continu entre frames voisines (courbe en S : la transition glisse,
      plus aucun saut sec). Tronc unifié : seules les feuilles bougent. Le
      TABLEAU est redessiné devant : l'arbre reste derrière le panneau. ---- */
-  {
-    const N=TREE_FR.length;
-    /* phase le long du cycle, chaque transition durant TREE_DUR[i] */
-    let i0=0, f=0;
-    if(!reduce){
-      const ph=(t/21.31)%TREE_TOT;  /* 48 ÷ 1,05 ÷ 1,10 ÷ 1,50 ÷ 1,30 : vent ~125 % plus rapide qu'à l'origine */
-      while(i0<N-1&&ph>=TREE_CUM[i0])i0++;
-      f=(ph-(i0?TREE_CUM[i0-1]:0))/TREE_DUR[i0];   /* fondu LINÉAIRE = vitesse constante */
-      f=Math.max(0,Math.min(1,f));
-    }
-    const i1=(i0+1)%N;
-    const ok=im=>im&&(im.naturalWidth||im.width);
-    const gA=(TREE_FR[i0].complete&&TREE_FR[i0].naturalWidth)?(day?TREE_FR[i0]:treeNightImg(i0)):null;
-    if(gA&&ok(gA)){
-      const tw=TREE_FR[0].naturalWidth, th=TREE_FR[0].naturalHeight;
-      const dx=283-(tw>>1), dy=P.trBase+2-th;
-      x.drawImage(gA,dx,dy,tw,th);
-      if(!reduce&&f>0.03){
-        const gB=(TREE_FR[i1].complete&&TREE_FR[i1].naturalWidth)?(day?TREE_FR[i1]:treeNightImg(i1)):null;
-        if(gB&&ok(gB)){x.globalAlpha=f;x.drawImage(gB,dx,dy,tw,th);x.globalAlpha=1;}
-      }
-      if(hubPressed==="tableau"){
-        const cx0=255, cy0=(P.bdT+P.pbB)/2;
-        x.save();x.translate(cx0,cy0);x.scale(1.05,1.05);x.translate(-cx0,-cy0);
-        hubDrawBoard(x,P.bdT,P.pbB);x.restore();
-      }else hubDrawBoard(x,P.bdT,P.pbB);
-    }
-  }
+  hubDrawArbre(x,P,t,day);
   /* ---- créatures déployées : jusqu'à 3 se baladent chacune de son côté. Seule la n°1
      porte l'aura, la zone tactile et les cœurs de célébration. ---- */
   {
@@ -4912,8 +5716,21 @@ function drawHub(t){
       }
     }
   }
-  /* ---- le Manxiety : l'anxiété de la tâche repoussée, tapie près de l'arbre ---- */
-  drawManxiety(x,T,P,t,day);
+  /* ---- le Manxiety : l'anxiété de la tâche repoussée, tapie près de l'arbre ----
+     Il obéit à la même règle de profondeur que les créatures : tout objet dont le pied
+     est PLUS BAS que le sien le masque. On repeint donc par-dessus lui les objets du
+     camp qu'il traverse, puis l'arbre, qui n'était pas couvert par hubOcclusion. */
+  {
+    const mb=drawManxiety(x,T,P,t,day);
+    if(mb){
+      hubOcclusion(x,P,day,[mb],t);
+      const ab=hubArbreBoite(P);
+      if(mb.x1>ab.x0&&mb.x0<ab.x1&&mb.y1>ab.y0&&mb.y0<ab.y1&&mb.fy<ab.fy)
+        hubDrawArbre(x,P,t,day);
+    }
+  }
+  /* ---- les bûches gagnées tombent dans le feu, par-dessus tout le reste ---- */
+  drawBoisVol(x,T,P);
   /* ---- étalonnage final : un voile doré réchauffe le jour, un voile d'encre
      bleutée unifie la nuit — appliqué par-dessus tout, créatures comprises ---- */
   x.save();
@@ -4924,6 +5741,54 @@ function drawHub(t){
     x.fillStyle=day?"rgba(255,208,140,.05)":"rgba(40,60,140,.07)";
   x.fillRect(0,0,W,H);
   x.restore();
+}
+/* ================= La bûche qui tombe dans le feu =================
+   La récompense la plus lisible du système : une quête réelle accomplie = une bûche
+   visible qui tombe et fait jaillir des étincelles. Comme on valide depuis le journal,
+   le camp n'est pas à l'écran : les bûches sont EMPILÉES et ne démarrent qu'à la
+   première image où on le voit — sinon l'animation se jouerait dans le vide.
+
+   Le compteur affiche le RANG dans la volée (+1, +2, +3…) : trois quêtes validées
+   d'affilée font tomber trois bûches en cascade, avec le compte qui monte. */
+function drawBoisVol(x,T,P){
+  if(!BOIS_VOL.length)return;
+  const now=performance.now(), DUR=950;
+  /* horodatage à la première image visible, décalé de 240 ms par bûche */
+  let k=0;
+  BOIS_VOL.forEach(b=>{ if(!b.t0){ b.t0=now+k*240; b.k=++k; } });
+  const y1=P.fireY-8, y0=P.fireY-152;
+  for(let i=BOIS_VOL.length-1;i>=0;i--){
+    const b=BOIS_VOL[i], p=(now-b.t0)/DUR;
+    if(p<0)continue;
+    if(p>=1){ BOIS_VOL.splice(i,1); continue; }
+    if(p<.62){
+      /* chute accélérée (u² ≈ la gravité), avec un léger balancement */
+      const u=p/.62, yy=y0+(y1-y0)*u*u, xx=165+Math.sin(p*7.5)*3;
+      T.R(xx-6,yy-2,12,5,"#6b4423");        // le corps de la bûche
+      T.R(xx-6,yy-2,12,1,"#8a5a2e");        // arête éclairée
+      T.R(xx-4,yy-1,1,3,"#4a2d16");T.R(xx+1,yy-1,1,3,"#4a2d16");   // écorce
+      T.R(xx-7,yy-1,1,3,"#c69a5e");         // le bout clair, cœur du bois
+    }else{
+      /* impact : gerbe d'étincelles et coup de lumière */
+      const q=(p-.62)/.38;
+      for(let s=0;s<7;s++){
+        const a=-Math.PI/2+(s-3)*.42, v=(14+((s*7)%9))*q;
+        T.P(165+Math.cos(a)*v, y1-Math.sin(a)*v*.8+q*q*11, s%2?"#ffcf5a":"#ff8a2a");
+      }
+      T.glow(165,y1,28*(1-q),"255,170,60",.55*(1-q));
+    }
+    /* le « 🪵 +N » qui monte et s'efface */
+    if(p>.5){
+      const q=(p-.5)/.5, ty=y1-26-q*28;
+      x.save();
+      x.globalAlpha=Math.min(1,(1-q)*1.8);
+      x.font="bold 13px "+"Courier New,monospace";
+      x.textAlign="center";
+      x.fillStyle="rgba(30,18,6,.75)";x.fillText("🪵 +"+(b.k||1),166,ty+1);
+      x.fillStyle="#ffd056";x.fillText("🪵 +"+(b.k||1),165,ty);
+      x.restore();
+    }
+  }
 }
 /* Avance la balade d'UNE créature déployée (état + déplacement, AUCUN dessin).
    Le dessin est séparé pour pouvoir trier les créatures par calque avant de peindre.
@@ -5237,6 +6102,44 @@ function drawTentGlow(x,P,t,day){
   x.drawImage(tentGlowCv,b.x,b.y);
   x.restore();
 }
+/* ---- L'arbre du premier plan, avec le TABLEAU qui doit rester devant lui ----
+   Extrait de drawHub pour pouvoir être REPEINT par-dessus le Manxiety quand celui-ci lui
+   passe derrière : il était jusqu'ici dessiné une seule fois, avant lui, si bien que
+   l'ombre traversait le tronc au lieu de disparaître derrière. */
+function hubDrawArbre(x,P,t,day){
+  const N=TREE_FR.length;
+  /* phase le long du cycle, chaque transition durant TREE_DUR[i] */
+  let i0=0, f=0;
+  if(!reduce){
+    const ph=(t/21.31)%TREE_TOT;  /* 48 ÷ 1,05 ÷ 1,10 ÷ 1,50 ÷ 1,30 : vent ~125 % plus rapide qu'à l'origine */
+    while(i0<N-1&&ph>=TREE_CUM[i0])i0++;
+    f=(ph-(i0?TREE_CUM[i0-1]:0))/TREE_DUR[i0];   /* fondu LINÉAIRE = vitesse constante */
+    f=Math.max(0,Math.min(1,f));
+  }
+  const i1=(i0+1)%N;
+  const ok=im=>im&&(im.naturalWidth||im.width);
+  const gA=(TREE_FR[i0].complete&&TREE_FR[i0].naturalWidth)?(day?TREE_FR[i0]:treeNightImg(i0)):null;
+  if(!(gA&&ok(gA)))return false;
+  const tw=TREE_FR[0].naturalWidth, th=TREE_FR[0].naturalHeight;
+  const dx=283-(tw>>1), dy=P.trBase+2-th;
+  x.drawImage(gA,dx,dy,tw,th);
+  if(!reduce&&f>0.03){
+    const gB=(TREE_FR[i1].complete&&TREE_FR[i1].naturalWidth)?(day?TREE_FR[i1]:treeNightImg(i1)):null;
+    if(gB&&ok(gB)){x.globalAlpha=f;x.drawImage(gB,dx,dy,tw,th);x.globalAlpha=1;}
+  }
+  if(hubPressed==="tableau"){
+    const cx0=255, cy0=(P.bdT+P.pbB)/2;
+    x.save();x.translate(cx0,cy0);x.scale(1.05,1.05);x.translate(-cx0,-cy0);
+    hubDrawBoard(x,P.bdT,P.pbB);x.restore();
+  }else hubDrawBoard(x,P.bdT,P.pbB);
+  return true;
+}
+/* Emprise de l'arbre : sert à savoir si quelque chose lui passe derrière. */
+function hubArbreBoite(P){
+  const tw=(TREE_FR[0]&&TREE_FR[0].naturalWidth)||58;
+  const th=(TREE_FR[0]&&TREE_FR[0].naturalHeight)||96;
+  return {x0:283-(tw>>1),y0:P.trBase+2-th,x1:283+(tw>>1),y1:P.trBase+2,fy:P.trBase+2};
+}
 function hubOcclusion(x,P,day,boites,t){
   if(!boites||!boites.length)return;
   const hit=(r,base)=>boites.some(a=>a.x1>r[0]&&a.x0<r[2]&&a.y1>r[1]&&a.y0<r[3]&&a.fy<base);
@@ -5301,7 +6204,12 @@ function drawFeuSprite(x,P,day){
   /* pas d'ombre de contact sous le foyer : retirée à la demande de l'utilisateur. */
   x.imageSmoothingEnabled=false;
   if(S.camp.fire){
-    const idx=Math.floor(performance.now()/FEU_SPR.delay)%r.imgs.length;
+    /* Le sprite des flammes n'est pas redimensionné quand le bois manque — on tuerait le
+       calage au pixel près du foyer dessiné par l'utilisateur. C'est la CADENCE qui
+       ralentit (jusqu'à 1,8× plus lente) et l'incandescence qui pâlit : la flamme a l'air
+       de mourir sans qu'un seul pixel bouge de place. */
+    const ff=.35+.65*feuForce();
+    const idx=Math.floor(performance.now()/(FEU_SPR.delay*(1.8-.8*ff)))%r.imgs.length;
     const im=r.imgs[idx];
     if(feuPret(im))x.drawImage(im,dx,dy);
     /* incandescence : le halo des flammes ajouté EN LUMIÈRE, avec un léger
@@ -5311,7 +6219,7 @@ function drawFeuSprite(x,P,day){
       const bat=1+.14*Math.sin(performance.now()/230)+.07*Math.sin(performance.now()/97);
       x.save();
       x.globalCompositeOperation="lighter";
-      x.globalAlpha=Math.min(1,(day?.40:.54)*bat);
+      x.globalAlpha=Math.min(1,(day?.40:.54)*bat*ff);
       x.imageSmoothingEnabled=true;
       x.drawImage(h,dx-FEU_MARGE,dy-FEU_MARGE);
       x.restore();
@@ -5352,27 +6260,50 @@ function sfxFlame(on){
     src.connect(f);f.connect(g);g.connect(AC.destination);src.start(t);
   }catch(e){}
 }
-/* Un cuisinier au travail ne tolère pas un feu éteint : quelle que soit la façon dont
-   il s'est éteint (ou s'il était déjà froid à son arrivée), il le rallume en ~1 s. */
-let cookRelightT=null;
+/* Le feu ne se rallume PLUS tout seul : c'est le bois — donc les quêtes réelles — qui le
+   nourrit. Une cuisinière devant un foyer froid ne peut que réclamer, une fois par heure
+   au plus, pour ne pas harceler. */
+let cookRelightT=null, cookPlainteT=0;
 function ensureCookFire(){
-  if(S.camp.fire||cookRelightT)return;
+  if(feuAllume())return;
   if(!(S.tasks&&Object.values(S.tasks).some(tk=>tk.tal==="cuisine")))return;
-  cookRelightT=setTimeout(()=>{cookRelightT=null;
-    if(!S.camp.fire&&S.tasks&&Object.values(S.tasks).some(tk=>tk.tal==="cuisine")){
-      S.camp.fire=true; save();
-      campStaticKey=""; if(launchOpen)drawHub(0);
-      sfxFlame(true);
-      const id=Object.keys(S.tasks).find(k=>S.tasks[k].tal==="cuisine");
-      toast(`💢 ${CREATURES[id].name} rallume le feu — sa cuisine d'abord !`);
-    }},1000);
+  if(Date.now()-cookPlainteT<3600000)return;
+  cookPlainteT=Date.now();
+  const id=Object.keys(S.tasks).find(k=>S.tasks[k].tal==="cuisine");
+  if(CREATURES[id])toast(`💢 ${CREATURES[id].name} attend du bois — accomplis une quête !`);
 }
-function toggleFire(){
-  S.camp.fire=!S.camp.fire; save();
-  campStaticKey=""; if(launchOpen)drawHub(0);
-  sfxFlame(S.camp.fire);
-  toast(S.camp.fire?"Feu allumé 🔥":"Feu éteint 💨");
-  ensureCookFire();
+/* Toucher le feu n'allume ni n'éteint plus rien : il n'y a plus rien à décider, seulement
+   une réserve à consulter. On montre donc la jauge de combustible. */
+function toggleFire(){ ouvrirJauge(); }
+function ouvrirJauge(){
+  const total=feuMaj(), foyer=feuFoyer(), res=feuReserve();
+  const h=total/3600000, bFoyer=Math.ceil(foyer/BOIS_DUREE);
+  const manque=Math.max(0,BOIS_FOYER-bFoyer);
+  const pct=Math.max(0,Math.min(1,foyer/BOIS_MAX));
+  /* durée en français, sans décimale : « 40 min », « 3 h 30 », « 2 j 0 h » */
+  const dur = total<=0 ? "Éteint"
+    : h<1 ? Math.max(1,Math.round(h*60))+" min"
+    : h<24 ? Math.floor(h)+" h"+(Math.round((h%1)*60)?" "+pad2(Math.round((h%1)*60)):"")
+    : Math.floor(h/24)+" j "+Math.round(h%24)+" h";
+  const etat = total<=0 ? "Le foyer est froid. Tes créatures ne partiront nulle part."
+    : bFoyer<=2 ? "La flamme faiblit — il ne lui reste presque plus rien à brûler."
+    : bFoyer>=BOIS_FOYER ? "Le foyer est plein : le feu brûle à sa plus belle vivacité."
+    : "Le feu brûle franchement.";
+  openModal(`
+    <h2>🔥 Le feu du camp</h2>
+    <p class="hint">${etat}</p>
+    <div class="obj" style="margin-bottom:12px">
+      <div class="obj-top"><span>🪵 Foyer</span><b>${bFoyer} / ${BOIS_FOYER} bûches</b></div>
+      <span class="obj-bar"><i style="width:${(pct*100).toFixed(0)}%;background:repeating-linear-gradient(90deg,var(--flame2) 0 5px,var(--flame) 5px 7px)"></i></span>
+    </div>
+    <div class="obj" style="margin-bottom:12px">
+      <div class="obj-top"><span>📦 Réserve</span><b>${res} bûche${res>1?"s":""}</b></div>
+    </div>
+    <p class="hint">Une bûche brûle <b>4 h</b>. Le foyer en tient <b>${BOIS_FOYER}</b>, soit <b>48 h</b> de flamme à plein ; le surplus attend en réserve et y remonte tout seul dès qu'une bûche a fini de brûler. Le bois se consume en continu, que l'application soit ouverte ou fermée.</p>
+    <p class="hint" style="color:var(--gold)">Il reste ${dur} de feu au total.${manque?" Encore "+manque+" quête"+(manque>1?"s":"")+" pour remplir le foyer.":""}</p>
+    <p class="hint">Tant que le feu vit, tes créatures partent en mission ; quand il meurt, le camp s'arrête.</p>
+    <div class="modal-actions"><button class="btn ghost pix" id="cancel" style="flex:1;justify-content:center;display:flex">Fermer</button></div>`);
+  document.getElementById("cancel").onclick=closeModal;
 }
 /* ---- balade de la créature dans le camp ---- */
 let hubWalks={}, hubSafe=null;   // un état de balade par créature déployée (clé = son id)
@@ -6286,6 +7217,12 @@ function renderAccueil(){
   $("accXpFill").style.width=(100*li.cur/Math.max(1,li.next))+"%";
   $("accStreak").textContent="🔥 "+(S.streak||0)+" J";
   $("accCoins").textContent="🪙 "+S.coins;
+
+  /* --- objectif du jour, en une pastille --- */
+  {const n=questesDuJour(), fait=n>=OBJ_JOUR;
+   const e=$("accTroph");
+   e.textContent="🏆 "+n+"/"+OBJ_JOUR;
+   e.classList.toggle("done",fait);}
   try{drawAvatar(mood(),"accAvatar");}catch(e){}
 
   $("accDate").textContent=new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
@@ -6479,9 +7416,16 @@ function majJour(){
   if(launchOpen)try{drawHub(0);}catch(e){}
   toast("Nouveau jour ⛅ la journée d'hier est archivée");
 }
-setInterval(()=>{try{majJour();}catch(e){}try{checkTasks();}catch(e){}},20000);
+/* `feuMaj()` fait s'écouler le combustible en temps réel et bascule `S.camp.fire` : sans
+   ce battement régulier, le feu ne mourrait qu'au prochain geste du joueur. */
+setInterval(()=>{try{majJour();}catch(e){}try{feuMaj();}catch(e){}try{checkTasks();}catch(e){}
+  try{manxTick();}catch(e){}},20000);
 document.addEventListener("visibilitychange",()=>{
-  if(document.visibilityState==="visible")try{majJour();}catch(e){}});
+  if(document.visibilityState==="visible"){
+    try{majJour();}catch(e){}try{feuMaj();}catch(e){}try{manxTick();}catch(e){}
+    /* au retour d'une longue absence, l'ardoise se met à jour tout de suite plutôt
+       qu'au prochain battement de 20 s */
+    try{expireQuetes();}catch(e){}}});
 setInterval(()=>{const n=document.getElementById("nest");
   if(n&&n.style.display==="block"&&!document.getElementById("nsExpl")
      &&Date.now()-(window.nestTouchT||0)>1200)openNest();},30000);
@@ -6490,7 +7434,11 @@ try{const fl=document.createElement("link");fl.rel="icon";
   fl.href=document.querySelector('link[rel="apple-touch-icon"]').href;
   document.head.appendChild(fl);}catch(e){}
 document.getElementById("fab").onclick=fabAction;
-document.getElementById("coinsBtn").onclick=openRewards;
+/* Les pièces mènent à la boutique du camp, les jetons aux récompenses réelles : deux
+   bourses, deux portes. Avant, le compteur de pièces ouvrait les récompenses sans le
+   dire, et c'était le SEUL accès. */
+document.getElementById("coinsBtn").onclick=()=>{cur="boutique";renderTabs();renderList();animTab();};
+document.getElementById("jetonsBtn").onclick=openRewards;
 document.getElementById("medalBtn").onclick=()=>{cur="achievement";renderTabs();renderList();animTab();};
 document.querySelector(".avatar-wrap").onclick=openAvatar;
 // Swipe sur toute la page (Principales / Secondaires) — désactivé quand une fenêtre est ouverte
@@ -6526,7 +7474,25 @@ document.getElementById("hatch").addEventListener("pointerdown",e=>{
   if(!document.getElementById("hatchCard").classList.contains("show"))hatchSkip=true;
 });
 applyTheme();
+/* Le combustible s'écoule aussi pendant que l'application est fermée : on remet les
+   pendules à l'heure AVANT le premier rendu, sinon le feu s'afficherait allumé une
+   fraction de seconde avant de s'éteindre. */
+try{feuMaj();}catch(e){}
 renderHUD();renderTabs();renderList();
+/* Avis de série au démarrage : le passage de minuit se joue sans témoin, il faut donc
+   dire ce qui s'est passé — surtout quand le jeton de pardon vient de sauver la série. */
+try{
+  const av=(S.serie||{}).avis;
+  if(av){
+    S.serie.avis=null; save();
+    setTimeout(()=>{
+      if(av==="monte")toast(`🔥 Série ${S.streak} jour${S.streak>1?"s":""} — bien joué !`);
+      else if(av==="pardon")toast("🛡️ Jeton de pardon utilisé : ta série est intacte.");
+      else if(av==="casse")toast("La série est retombée à zéro. On repart aujourd'hui 🌱");
+    },1400);
+  }
+}catch(e){}
+try{manxTick();}catch(e){}
 if(S.settings.splash)showLaunch();
 /* Filet de sécurité : sauvegarde forcée quand l'app passe en arrière-plan ou se ferme
    (sur iOS, "pagehide"/"visibilitychange" sont les seuls signaux fiables avant fermeture) */
