@@ -941,6 +941,30 @@
   .sw.on{background:var(--green-deep);border-color:var(--green)}
   .sw.on i{left:22px;background:#fff8e8}
 
+  /* -- table de mixage : une ligne curseur + valeur + écoute, sous chaque piste -- */
+  .mix-row{display:flex;align-items:center;gap:9px;margin-top:10px;padding-top:9px;
+    border-top:2px dotted var(--border)}
+  .mix-val{flex:0 0 42px;text-align:right;font-family:var(--mono);font-size:11px;
+    font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+  .mix-test{flex:0 0 auto;padding:5px 9px;font-size:12px}
+  /* Curseur au look parchemin : rail creusé, poignée en fer. `appearance:none` sur les
+     deux préfixes, sinon Chrome garde son rail bleu par-dessus le nôtre. */
+  .mix-slider{flex:1;min-width:0;height:22px;cursor:pointer;background:transparent;
+    -webkit-appearance:none;appearance:none;margin:0}
+  .mix-slider:focus{outline:none}
+  .mix-slider:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .mix-slider::-webkit-slider-runnable-track{height:10px;background:var(--inset);
+    border:2px solid var(--border);box-shadow:inset 0 2px 3px rgba(58,38,12,.22)}
+  .mix-slider::-moz-range-track{height:10px;background:var(--inset);
+    border:2px solid var(--border);box-shadow:inset 0 2px 3px rgba(58,38,12,.22)}
+  .mix-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:16px;height:20px;margin-top:-7px;background:var(--gold-deep);
+    border:2px solid var(--border-hi);box-shadow:1px 1px 0 var(--shadow)}
+  .mix-slider::-moz-range-thumb{width:14px;height:18px;border-radius:0;
+    background:var(--gold-deep);border:2px solid var(--border-hi);box-shadow:1px 1px 0 var(--shadow)}
+  /* quatre onglets sur un écran étroit : on resserre plutôt que de laisser déborder */
+  .subtabs .subtab{font-size:10px;padding:8px 2px;letter-spacing:0}
+
   /* ======= Relief global : gravure des titres + biseaux des contrôles ======= */
   .list-title,.cal-title,.shop-cat,.lvl,.victory-t,.stat-n,.day-lbl,.p-title{text-shadow:var(--engrave)}
   .btn,.subtab,.qseg button,.seg button,.wd-pill,.icon-pick,.coins-btn,.medal-btn{
@@ -1162,6 +1186,21 @@ const TYPES={
      propre série. `base:0` fait que `award()` n'accorde ni XP ni pièce. */
   plaisir:{label:"Plaisir",base:0,chip:"gold"},
 };
+/* ======= Voies de la table de mixage =======
+   ⚠️ Déclaré ICI, avec les autres catalogues, et NON dans la section audio : `audioDef()`
+   est appelée depuis `seed()` et `load()`, qui s'exécutent à la ligne « let S=load() »,
+   bien avant la section audio. Un `const MIX` placé là-bas serait dans sa zone morte, la
+   ReferenceError serait avalée par le try/catch de load(), et la sauvegarde de
+   l'utilisateur repartirait de zéro en silence. Le découpage suit ce que le code sait
+   réellement dissocier — cinq familles, pas des catégories inventées. */
+const MIX={
+  ambiance:  {nom:"Ambiance du camp",  ic:"🌿", desc:"Vent, oiseaux le jour, grillons et chouette la nuit."},
+  creatures: {nom:"Cris des créatures",ic:"🐾", desc:"Quand tu caresses une créature, ou qu'un œuf éclôt."},
+  interface: {nom:"Papier et crayon",  ic:"✍️", desc:"Le crayon sur les billets, les pages qui se tournent."},
+  recompense:{nom:"Récompenses",       ic:"🏆", desc:"Jingle de victoire et « cling » du trophée."},
+  camp:      {nom:"Le camp",           ic:"🔥", desc:"Le feu, la coquille qui se fend, la magie de l'éclosion."},
+};
+function audioDef(){const o={master:{v:1}};Object.keys(MIX).forEach(k=>o[k]={v:1,mute:false});return o;}
 const TABS=[
   {id:"quetes",ic:"⚔️",name:"Quêtes",title:"",sub:""},
   {id:"evenement",ic:"📅",name:"Agenda",title:"Agenda & routine de la semaine",sub:"Calendrier, routine hebdo et événements. Touche un jour pour en ajouter un."},
@@ -1256,6 +1295,7 @@ function seed(){
     chest:{coins:0,fish:0,grilled:0},
     achievements:defaultAchievements(),
     settings:{theme:"light",sound:true,anim:true,splash:true,expire:true},
+    audio:audioDef(),
     history:{},
     rewards:[
       rw("Un carré de chocolat","🍫",60),
@@ -1336,6 +1376,10 @@ function load(){
     if(!s.achievements)s.achievements=defaultAchievements();
     if(!s.settings)s.settings={theme:"light",sound:true,anim:true,splash:true,expire:true};
     ["sound","anim","splash","expire"].forEach(k=>{if(s.settings[k]==null)s.settings[k]=true;});
+    /* table de mixage : on complète voie par voie, pour qu'une sauvegarde d'avant garde
+       ses réglages et hérite simplement des voies ajoutées depuis */
+    if(!s.audio)s.audio=audioDef();
+    {const d=audioDef();Object.keys(d).forEach(k=>{ if(!s.audio[k])s.audio[k]=d[k]; });}
     if(!s.settings.theme)s.settings.theme="light";
     if(!s.history)s.history={};
     if(!s.diary)s.diary={days:{}};
@@ -1468,8 +1512,12 @@ function majSerie(s,nVeille,veille){
 }
 /* Quêtes accomplies aujourd'hui qui comptent pour l'objectif (les plaisirs sont exclus). */
 function questesDuJour(){return (S.done||[]).filter(d=>d.type!=="plaisir").length;}
-const OBJ_JOUR=3;
-function objAtteint(){return questesDuJour()>=OBJ_JOUR;}
+const OBJ_JOUR=3;              // valeur par DÉFAUT, surchargeable dans Réglages › Jeu
+/* Lu partout à la place de la constante : le joueur peut abaisser la barre les jours où
+   trois quêtes sont hors de portée, ou la monter quand il carbure. Le garde-fou sur la
+   plage évite qu'une sauvegarde abîmée mette l'objectif à zéro ou à l'infini. */
+function objJour(){const v=(typeof S!=="undefined"&&S)?S.objJour:0;return (v>=1&&v<=9)?v:OBJ_JOUR;}
+function objAtteint(){return questesDuJour()>=objJour();}
 
 /* `save()` n'avance PLUS `lastDay` : c'était lui qui masquait le changement de journée
    (il suffisait d'une sauvegarde après minuit pour que l'archivage soit sauté à jamais).
@@ -1834,13 +1882,17 @@ const CREATURES={
      diablotin bat des ailes de la même façon posé ou en vol, comme demandé.
      La source regarde à DROITE : retournée à la construction, puis `profile:true` remet
      le miroir quand il va vers la droite.
-     ⚠️ AUCUN `gzoom`, et c'est délibéré : l'emprise fait 26 px de haut, donc kRaw = 0,924,
-     ce qui est AU-DESSUS du seuil de 0,85. `paintCreature` prend alors la branche entière
-     (z = k = 1) et non la branche lissée — le dessin sort déjà à l'échelle 1,000, au pixel
-     près. Ajouter le 1,0828 « pour arrondir » donnerait z=1,0828, une taille de 35 px et
-     un rééchantillonnage flou. Le facteur ne se calcule QUE si kRaw < 0,85.
+     `gzoom:1.1` : agrandissement de 10 % demandé. L'emprise fait 26 px de haut, donc
+     kRaw = 0,924, AU-DESSUS du seuil de 0,85 : `paintCreature` prend la branche ENTIÈRE,
+     `z = k × gzoom` avec k = 1, soit z = 1,10 tout rond. À l'écran 35 px au lieu de 32,
+     c'est-à-dire +9,4 % (35/32, le pas le plus proche sur une grille de 32).
+     ⚠️ Le facteur ne se calcule QUE si kRaw < 0,85 — au-dessus il ne sert plus à rattraper
+     un dessin trop petit dans son cadre, il agrandit franchement. Et 1,10 n'étant pas un
+     multiple entier, le dessin passe par `gifScaledFrame` (×4 au plus proche voisin puis
+     réduction douce) : bords très légèrement adoucis, comme le Tigre ou le Phénix. Seuls
+     1,0 et 2,0 restent au pixel près.
      `fly:9` : il plane à 9 px du sol, entre le Poussin (4) et le Dragono (10). */
-  diabolo:{name:"Diabolo",   rar:"tresrare",   skin:"#ff2c00", gif:true, fly:9, profile:true, tal:"exploration"},
+  diabolo:{name:"Diabolo",   rar:"tresrare",   skin:"#ff2c00", gif:true, gzoom:1.1, fly:9, profile:true, tal:"exploration"},
   /* Gobelin : 17 images. `idleFrames:9` = les images 1 à 9 en comptage humain (0-8 ici),
      `walkFrames:8` = les 8 DERNIÈRES, soit les images 10 à 17 (9-16). Terrestre : pas de
      `fly`, il marche au sol comme le Toad ou le Lapin.
@@ -1857,10 +1909,32 @@ const CREATURES={
          règle exige une jambe VERTE de chaque côté, ce qui épargne les dents de bord des
          images 9, 11, 13 et 15, qui n'en ont que d'un côté.
        • `walkSpeed:1.5` : marche accélérée de 50 %, cycle 2400 ms → 1600 ms.
-     AUCUN `gzoom`, délibérément : l'emprise fait 25 px de haut, donc kRaw = 0,961, soit
-     AU-DESSUS du seuil de 0,85 — `paintCreature` prend la branche entière (z = k = 1) et
-     sort déjà l'échelle 1,000 au pixel près. Le facteur ne se calcule que sous 0,85. */
-  gobelin:{name:"Gobelin",   rar:"tresrare",   skin:"#3cb446", gif:true, idleFrames:9, walkFrames:8, walkSpeed:1.5, profile:true, tal:"exploration"},
+     `gzoom:1.2825` = 1,35 × 0,95 : agrandi de 35 %, puis rabattu de 5 %. kRaw = 0,961 est
+     AU-DESSUS du seuil de 0,85, donc `paintCreature` prend la branche entière — `z = k ×
+     gzoom` avec k = 1, soit z = 1,2825. À l'écran : 41 px au lieu de 32, c'est-à-dire
+     +28,1 % par rapport au dessin d'origine, et −4,7 % par rapport aux 43 px précédents
+     (la grille de 32 quantifie, on ne tombe pas sur 5 % pile).
+     ⚠️ Contrairement à Minos (×2 pile), ce facteur n'est PAS un multiple entier : le dessin
+     passe donc par `gifScaledFrame`, qui l'agrandit ×4 au plus proche voisin avant de le
+     réduire en douceur. Les bords sont très légèrement adoucis — même traitement que le
+     Tigre, le Phénix et le Lapin. Seuls 1,0 et 2,0 restent au pixel près. */
+  gobelin:{name:"Gobelin",   rar:"tresrare",   skin:"#3cb446", gif:true, gzoom:1.2825, idleFrames:9, walkFrames:8, walkSpeed:1.5, profile:true, tal:"exploration"},
+  /* Skelet : premier sprite livré en DEUX fichiers, Skelet_arret et Skelet_marche, 12
+     images chacun. L'application ne connaît qu'un module par créature : on les a donc
+     concaténés — arrêt d'abord, marche ensuite — d'où `idleFrames:12` (images 0-11) et
+     `walkFrames:12` (les 12 dernières, 12-23).
+     Vérifié avant de concaténer : les deux fichiers posent les pieds sur y=31 et montent
+     à y=0, donc l'emprise union (28×32) couvre les deux régimes de la même façon et le
+     squelette ne saute pas verticalement en passant de l'un à l'autre.
+     AUCUN traitement — ni miroir, ni retouche : il regarde déjà à GAUCHE, ce qui est
+     précisément l'orientation qu'attend un module `profile:true`. C'est le premier de la
+     série à arriver dans le bon sens.
+     `gzoom:1.333` = 1/0,7504 : emprise de 32 px de haut, donc kRaw = 0,750 — sous le seuil
+     de 0,85, branche lissée — et ce facteur ramène l'échelle à exactement 1,000, au pixel
+     près. Pas de `ground:true` : les pieds touchent y=31 partout.
+     `walkSpeed:2` : seul le cycle de MARCHE double, 2400 ms → 1200. Le cliquetis sur
+     place garde les 200 ms par image du dessin d'origine. */
+  skelet: {name:"Skelet",    rar:"tresrare",   skin:"#e7e4d5", gif:true, gzoom:1.333, idleFrames:12, walkFrames:12, walkSpeed:2, profile:true, tal:"cuisine"},
 };
 /* ================= Talents & tâches des créatures =================
    Chaque créature a un talent (cuisine / pêche / exploration). Sa stat de talent =
@@ -2068,6 +2142,7 @@ GIFSPRITES.minos={w:32,h:32,delays:[300,300,100,200,200,300,300,300,300,300,300,
 GIFSPRITES.kappa={w:32,h:32,delays:[100,100,100,200,100,100,100,100],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHgSURBVFhH7VUxTsNAEHQi0SHxARo+QE1DkCVC6wIqCgqERMEDqFOFgidEEU0KhGjygQgJCaWg4Bt84tCebzfj0cXkbKfLSqPz3Toz49vbS5btYhebRJE7GxWYwzXMdRJF7vr3V15ARoWK8prlOgkQkOeju99a8PtMlx7wlSKwd/5RC3kHd4fp0oK+RkYR6Z/MovA5KlVzExHxdfPYGv+e6eujhiw2j63F5izzf2gdH2+NkOexNZwbWsVytiKUZ4WS/7yvUOSu9/bsetNRB8JZlnmixaQU1FHx/VoCDQgWk+5MeJLPFycxGAyqBgCWF5OdG1jOPLkJRHZB80/j8RYMLCYVA7KmYANaKjRwerzf3ISdAd3a6ci5r6HB56H2KK4GHi4P25nwHRARvz7LnJtnZYfUiCsamxBSEakYmJfiaKBSd0A7A0HYmwiEasAL84XDd4WgyN3NxUFDE2pAt1UIVZiF1kHKE0ykGdBbDbeWyTdBGwN4+tsY0BJu30D4Wj/qvI0BbislxHYUcBtWzIcydmJA5ixul1LkXYQ3lRzUXv4ugDsAgd1iuwBI+3oOqL8n11Zk4HkIJz/99McCDyDV1Z75n7JR68WCxPlkm7iCTDBdekD9dbQah7ytYZk2NPAH2NIY6ajTHGMAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHrSURBVFhH7VW9SgNBEN4IdoIvYOMLWNsYOVDbK7SysBDBwgewThWLPEIINikk2OQFgiBICgtfw5dYmbmdyXfD5szeXgrBgY+9/cn3fbuzs3HuP/5ElIXXVoBzOIZznURZ+J37KxagViCidkznOgkQoO/Du+9G2PWWLj1glySwe/bWCFqDp2Pp0sLshloS2TmeRsFzJlXtTUTE1/VjY/b3lr45Gshi/dhYrG9lfg/J4+OtEtp+bAz7iqxYTleE9C0Q8q/XFcrC92Yj35sMOhB2zjHRYlwJSiv4fKmABgiLcXcmmOT92VP0+/26AYDOk8nODSynTK4CkVOQ+afhcAsGFuOaARoTWAOSqs4N6NFOBt5/nCt4HnKP4mLg5GgvzwRXQET8+tR5P3dVhawRf7g8YOSZCHVdMzCvxNFA7dgDxECWCSaejZRUDLCwfXDCW4Hr8wyEnTOhVIAIR8qR19nxsvA3F/stTYgByasl3wRkPJhIMyDPKubWkm+CHANYfjkG5E5s30DYrd4XKM9WBmxdCyG+BwQUsmuxirINUN+K66sYWYtgU8lh65seI3iEEFgtegqAtN3bgPwzubwFFngfws1Pv/2xwAto8qrf9q+6VenFwojbm63iAmPC0qUH5F9azXGY1zFM04YGfgCQjjy0ftjOigAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHpSURBVFhH7VW9SgNBEN4E7ARfwMYXsLYxcmBsr9DKwkIECx/AOlUsfIQQbFKI2OQFgiBICgtfw5dYmbmdyXfD5szdbgrBgY/9u8z37fxsnPu3P2Fl4XUU4Bnu4VkWKwvfv71gAhoFQmr39CyLAQHND26+G2G/t+7aG9ySCHZO3xpB32B0rLt2Zm5DI5H0j2ZR8JlJVXcREfJ169ie/b1132wNzmLr2F5sbWl+N8nj/bU6tOvYHq4VSbacrRzSXCDOv15XKAvfe3n0vekoA7Fzjh0tJhWhjILP5woogLCY5BPBTt6fPNlgMKgLAOg5icwuYDlj50oQiYKcP4zHWxCwmNQE0J7ACpBUoYDjw93uIrQGJLTTkfcfQwWfQ+6RXATcne+nieAOiJBfnjjv567qkAZyQWcR5JRIagLmFTkKqOUdkCYgELOI4FAEMLF9cOxbQSgLf3W211GECJCwkkMhtkTrQOkJItoJkFcNQ2udb4IUAVj9KQIkhdsXEG7Lo6xTBNi2EofYjgTbhjXxIY1ZBNDakuujFPkWwaJam2kvfgvgDUBgt2gUAO1ubw3yz86lFS2wHkLlt6/+mKEAE9pamCMC0snJsANMYenc/lV3ynnMDLltLSUXZBcBBSijFlk41z1Jk8w3EPADxBs3qX5ustYAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHkSURBVFhH7VUxTgMxEHQi0SHxARo+QE3DoUhAmwIqCooIiYIHpE4VCp4QRTRXIESTD0RISCgFBd/gE0br8zhzG9+F8x1dRhr5bF92xt7dizE77LANw4ENI8h7vMZ7nWA4sP37aycgIwhRvRb2OgEJyPPR3U8t9fs6XHPQKUVg7/y9lvIO344O1wzqNDKKSP8kj9LtqVSlm4iIV81ja/r3Onw9aoLF5rG12FzLbAfyOB6FgHoeW+N5YCus8nVAeQYR/PttzeHA9l6fbG8+6UDYGOMCLWeFIEbw66UgGxAuZ92ZcEE+nq0gy7KyAWLYF5PKwOnxfroJF2SVu+BBIHIL2H+cTjcMPFwdpptACtiArIHaAFKlDSSbCDWAq51PrP28CHT7lHsW1waSTbgOiIjfnBlrF6bokApxsL2B8ahsYFGIs4FS5Uda9vbyINGEF0dgGIAxPumGMCg35E00M4APC58Owlqkjm0McAFWnnAbfYrk9/9vwJ/WjZi3MbBR2T4gd4RQd0LJvE9jJwZkrsXDdyHyLtOZagxV4a4dqQ2ZEC/dGLHZ6TUo/y44ukGT6kGqHmwnLmAD6mpL18wFmdR6VeAOUIUVnvW/ZVLOY1DiurWCONi5CSpAjKHI/H5YQ5rw/AcDv78DHFQbBB21AAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHrSURBVFhH7ZY/SgNBFMY3ATvBC9h4AWsbIwvGdgutLCxEsPAA1qli4RFCsEkhYpMLBEGQFBZew0uMvNn5Jt88JpvM7qTzwcdmZjbv+82/lxTFf2wTVWn8E+Ix7uOxLFGVpn9/ZQ3kCcFU9/mxLEEG8vno7rdR+n2dLj1olmKwd/7RKHmHV0enSws1G3mKSf9kFpUdU1vVHiJivq4d69Pf1+mboyFZrB3ri7W1zebAPj7e+oS6HevjtlenWM5WCeUzhOQ/7ytVpem9PZvedJTBuCgKm2gxqQ3xhL5fazGAaDHJB2GTfL4YicFgEAKQ/LhAZgdYzmxybxBZBYw/jcc7AFhMAgDpgzQAtio7gF/a6ciYr6GXHae9Z/MsADbkBkTMr88KY+ZFfUPWmD9cHprT4/08EAHAvDZngGDZnTnUDcLdbSQGgDXWBQe1IieEnZkA4AbAOHIdIQbuBuCWPgBokH1P91elubk4aAkBABwsnXwbCbiDSANAXefDpZNvoy4AfP+7AOBM7B7AzdafF6oP7QH4irmEXJBEbORhua81gJq1JNLmviyrKujPDwFoi80RWXaugiy+LVwRobTZIyIAVihGWvyOO/npp1+HmgkrWGJdqFpdvdTA74Q7cAFEqz1PCayCq5D+mfhn5A/Iy0UYZTS0OwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHfSURBVFhH7VU7TsNAEN1EokPiAjRcgJoGI0tA6wIqCgqERMEBqFOFgiNEEU0KhGhygQgJCaWg4BpcYtGMPZvnx8b4ly5PelrvjjPveWdn49wWW9RBlvowGjGGaxjrBVnqh3eXKiCj0UR5LcR6AQjI88HtTyX5fU7XHPCVIrBz+l5JeQd3h9M1A32NjCIyPJpFqTEqVXsTEfF189ga/57TV6MiWWweW4vNWeZ/WB0fbkJCnsfWcB7YCcvZKqE8Gy3599uKWeoHr09+MB31IOyc00SLSS5oo/HrJScaEC4m/ZnQJB/PXpAkSdkAMMTFZO8GljNNHgQiu2Dxx/F4AwYWk5IBWTOyASsVGjg+3G1vIpwB29rpyPvPs0CNQ+1R3AzcX+x3M6EdEBG/OnHez13eIRXixtYmJKmIlAzMc3E0UKo7sJuBQlhNFAnNgArzhcN3hTBL/fX5XksTZsC2VRKaMAuto5SnMNHMgN1quLWcvA67GMDT38WAlXDzBoqv1dHmXQxwW1lCbEcht2HJfFHGXgzInMXDpRR5F6mmGoPaS+8CuAOQ2C1hF4DNvp4B9dfk1opMPA/FyW9++mPAA0h1Dc/8T9mq9WIgcT7ZuiMYAwOcqh2g/jaWagyxP/Ea+AWPMBZ3XtwTKQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHgSURBVFhH7VS9SgNBEN4E7ARfwMYXsLYxcqC2V2hlYSGChQ9gnSoWeYQQbFJIsMkLBEGQFBa+hi+xMnP7TeaGzZnLbgTBgY+9/bnv+3ZnZ537jz8RZeGlBfScHtNzWaIsfPfukgWoBSBqx2QuSygB+j64/WqEXW/p2ofaJQnsnL42gtbo07F07cLshloS6R5NouA5k6rNTUTEV/VjY/Z/S98cDWSxfmws1rcyPwfy+HAjhLYfG9N9QVIsJktC+gZA/vmyRFn4znToO+N+BmHnHBPNR5UgWuDjuYI2QJiP8plgkrcnT9Hr9eoGFGSeTGY3sJgwuQhETgHzj4PBFgzMRzUDNAZYA0hVdgNytOO+9+9nAp5XudfiMHB8uJtmgisgIn514ryfuapCVojfX+wz0kyEuq4ZmFXi2kDt2ANgIMkEE0+HQgoDLGwfnPBW6PVpBsLOmRAVAOFIOfI6O14W/vp8b0MTMIC8WvJ1QMaDiXYG8Kzq3FrydZBiQJdfigHcie0bCLuV+6LKcyMDtq5BSJWAWy7GbCnqtyGXAeqLuN55MGLXavCa1mF2yY8RvQHWQCjBmphBu93bUIKN90Hlm249kCZOoQVx0czOf08ciBwzjlrD0rUPlX+0kgaYS4hv/uYdU0fApAAAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHfSURBVFhH7VU7TsNAEN1EokPiAjRcgJoGI0tA6wIqCgqERMEBqFOFgiNEEU0KhGhygQgJCaWg4BpcYtGMPZvnx8b4ly5PelrvjjPveWdn49wWW9RBlvowGjGGaxjrBVnqh3eXKiCj0UR5LcR6AQjI88HtTyX5fU7XHPCVIrBz+l5JeQd3h9M1A32NjCIyPJpFqTEqVXsTEfF189ga/57TV6MiWWweW4vNWeZ/WB0fbkJCnsfWcB7YCcvZKqE8Gy3599uKWeoHr09+MB31IOyc00SLSS5oo/HrJScaEC4m/ZnQJB/PXpAkSdkAMMTFZO8GljNNHgQiu2Dxx/F4AwYWk5IBWTOyASsVGjg+3G1vIpwB29rpyPvPs0CNQ+1R3AzcX+x3M6EdEBG/OnHez13eIRXixtYmJKmIlAzMc3E0UKo7sJuBQlhNFAnNgArzhcN3hTBL/fX5XksTZsC2VRKaMAuto5SnMNHMgN1quLWcvA67GMDT38WAlXDzBoqv1dHmXQxwW1lCbEcht2HJfFHGXgzInMXDpRR5F6mmGoPaS+8CuAOQ2C1hF4DNvp4B9dfk1opMPA/FyW9++mPAA0h1Dc/8T9mq9WIgcT7ZuiMYAwOcqh2g/jaWagyxP/Ea+AWPMBZ3XtwTKQAAAABJRU5ErkJggg=="]};
 GIFSPRITES.diabolo={w:32,h:32,delays:[100,100,100,100],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEZSURBVFhH7ZTBDcIwDEXDDBy5cEIcWIQhWIIr+7AAC3QSNmAGo19q4fw6qiWwEFK+9NU2dfx+26SldHX9o+RSBF4aS9EIOjpwGksTQAzD9XD6cQAeSxNA991q5pQA53URNa7lUOSx9z1si+C+mufbPiHxRBgQwG7yBum5DdKaHw7BE6ztU7Ij8FAILuYA+OZTk9FLr90zMytxMZufnD8B13tmZiUt4EnWAFW7IBjC9g+JGyicVz0H4BDcNyw72cJx3gpg67jHx7KNPbgX4Kuyjfnb2/9AWoDr5rX1cA4AQiiMoDLV5onBaU/dEoPV+D3jvh7TBBhvTX0D6XDIAlNXfktYZGpcI4RdlFyfKQ/mjaXJg3ljXV0zPQErV9kD0reMgQAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEPSURBVFhH7ZTLDcJADERDDRy5cEIcaIQiaIIr/dAADVAJHVDDogkYrBcnkCgGDhlpJPZjv8mySVVNmjRA5VAV+d1cimrQNoBjLk0CEabxeffjAJxLk0CX1azh9ABlUxX5uo59Xt7XzawfRYIIdiovkP32QVg3qvxT0oLv502zRy+xkUD6zx/j2haAYNb2FpuY+eQWqu0EBodgA7NA3ryM3D84BIs9nCfgA3SFIKNTLPbN2wJwH01Gp6yAATQXwWWt+QC+Hu0/VxSg/voBbmt+36g6Lp6v3hNitx/Q8tibJw8NAuSLYLM+zdybIsF4N+wEvhLCA3lBpfQQumRmjaOT+JYiWDSXpggWzU2a9J+6Afajre/tECHlAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEWSURBVFhH7ZSxDcJAEASfGghJiBABPZBCHXRASj80QANUQgckbuDQ2pxY1ocQ8Ef0K61kznc/++btUpq+kB2Kwe9qKQKk243hWksTQN3mGRbV0gSQwrp1Mdv+K8C62GUxGRl17a0qWxWDr8vY5/lw363zVQQIYCd7gPyag+hcVfEu1elwCCD85/tpD+vNAe71PAGgO/dQsIdICYJFAYD1LeAzkBKC4dFT8ADaVyWEL/QqAL+O2lclRBQAj13hfq9qAF7kOBtOPa4d6AePoehBL89+HUIX8YUYyn4397F4mBdRcBSA538KoDXIHzfMAfBp5r4ofBXxjjmEBnBVD4BD5sZvAPhAan+mIlhUS1MEi2pNTU1NoW5QrohyzuStzwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEWSURBVFhH7ZSxEcIwEARFDYQkRAwBjVAETZDSDw3QgCuhA2oQc4aH43gbjPVAoJu5Acv635MsO6WqqoHKu5ThV2MhakFrBy5jYQJIYbhuNj8OoGNhAui4mDw5PEBepQyflr6b+eW+WeuLCBDADvkOsv8cROuKilepNvh2mrJa+wwSNwIIz/zatDVvu4JHh9AmFkJtjwe/On9UCG1gBoit50DnfxxCixmuu8AB+kIoo1dazM27Aug8tTJ6ZQUaAGMeHMY9DsD10v59eQHaL6DA7R7PK6r97Pb6JQMiiAEJmjEXH6rHDgXFUA0QtgMsBZtDV80CTM9G+KpZDNQD+hXhkJlxjRB8IHV+pDyYNxYmD+aNVVX9p86Tpa/XEo/YhgAAAABJRU5ErkJggg=="]};
 GIFSPRITES.gobelin={w:32,h:32,delays:[300,300,300,300,300,300,300,300,300,300,300,300,300,300,300,300,300],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFPSURBVFhH7ZUxSwNBEIXvFyhG25QWFqI2IiGSRgzY+jPs8hPsRRCDFgdBJGAjNnY2+stW3ug7Js+NoDeb6j54XGZvdt7c3l62qjo6Ojr+SW9eJ2jj4c609fxo0rwi0LxX33yJ8bwu3wCN1u+vf0hzwxh+jJvifGqabk6vGiGPWqzQkuHraVM4Zwwdv41NO5O9dPg0im0AoAkUXptcpPNp365euA/z7cvdeHPABmw1nA5mgzR4OTGhgfDlFxJAI9/LvBAXWXrBTPdvj0yMV2Ve0Xj0fmZijNcAaX44fFI1hvwe0XkhcNPBhCsA0RwN+c2p81vjC/tNt+zrCG/CF+UrgNRcc8PIGeSkuWHkDHLS3DBYFEvOv17G/I1xH2uNVviiOHz0LIAwrrnh6CmYk84JRc1y0jmhwACfnxotGy+CO4x+HSuKN1y5ud/5ufgvfAL9ttTEywnKrwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFJSURBVFhH7ZUxSwNBFITvFyhGW0sLC1EbkRBJIwZs/Rl2+QnpRZAELQ5EJJAm2NjZ6C9bmadzvEwugt7bFHIfDGE3u2/mdvdui6KlpaXlj3SmZYK2nu5NO/Nnk47LAs075d2X2J6W+QPQaPPhdkk6Nozex6Aqzqem6fbkphLGUYsVGtJ7vagK1xlDZ28D0/7wMJ3M+rEBAEKg8MbwOl1Ndu3XC//DfG90EG8OGMBWw+n4sZu6L+cmBAhffiEBBPle5oV2lqUXzPRofGpie13mBY3775cmtrENkI4Ph0+qxhDPiM4JhSZcAYjmCMSDqfNCYHEY+UO36u3Q+Y3xhbkFDKPmWUL4omqkpv8/AD+9kN8C9OvYMLwhLh+9CyD0+0BaoxG+qN6EqiwBiJrVSeeEAgO8fmq0qj8L7jL6sS8r3nDt5v7k17V/wyfpG9bAGzFRigAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFMSURBVFhH7ZUxSwNBEIXvFyhGW8sUFqI2IiEhjRiw9WfY5SfYiyAJWhyISMAmpLGz0V+28kbfMffcFHJzAeE+eORmMztvbm/vtig6Ojo6/iu9RZmgnecH097yxaR5rUDzXnn/LcaLsv0GaLT9ePdLmhvG8HNSFedd03R3flsJeVS9QkOGbxdV4ZwxNHqfmA6mR+n0dRzbAEATKLw1vU5X83379cL/MO/fHMabAzZgq+F08jRIg9W5CQ2EL7+QABr5WeZa3MrSC2Z6PDszMd6UeUHj8celiTEeA6T54fBO1Rjye0TnhcBNBxOuAERzNOQ3p85vjC/sN926tyO8CV+UjwBSc80NI2eQk+aGkTPISXPDYFEsOT+9jHmNcR9rjUb4ojh89CyAMK654egpmJPOCUXNctI5ocAAr58arRtvDXcg1a43gt94ufgvfAGf6szYS1BghAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFPSURBVFhH7ZUxSwNBEIXvFyhG25QWFqI2IiGSRgzY+jPs8hPsRRCDFgdBJGAjNnY2+stW3ug7Js+NoDeb6j54XGZvdt7c3l62qjo6Ojr+SW9eJ2jj4c609fxo0rwi0LxX33yJ8bwu3wCN1u+vf0hzwxh+jJvifGqabk6vGiGPWqzQkuHraVM4Zwwdv41NO5O9dPg0im0AoAkUXptcpPNp365euA/z7cvdeHPABmw1nA5mgzR4OTGhgfDlFxJAI9/LvBAXWXrBTPdvj0yMV2Ve0Xj0fmZijNcAaX44fFI1hvwe0XkhcNPBhCsA0RwN+c2p81vjC/tNt+zrCG/CF+UrgNRcc8PIGeSkuWHkDHLS3DBYFEvOv17G/I1xH2uNVviiOHz0LIAwrrnh6CmYk84JRc1y0jmhwACfnxotGy+CO4x+HSuKN1y5ud/5ufgvfAL9ttTEywnKrwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFJSURBVFhH7ZUxSwNBFITvFyhGW0sLC1EbkRBJIwZs/Rl2+QnpRZAELQ5EJJAm2NjZ6C9bmadzvEwugt7bFHIfDGE3u2/mdvdui6KlpaXlj3SmZYK2nu5NO/Nnk47LAs075d2X2J6W+QPQaPPhdkk6Nozex6Aqzqem6fbkphLGUYsVGtJ7vagK1xlDZ28D0/7wMJ3M+rEBAEKg8MbwOl1Ndu3XC//DfG90EG8OGMBWw+n4sZu6L+cmBAhffiEBBPle5oV2lqUXzPRofGpie13mBY3775cmtrENkI4Ph0+qxhDPiM4JhSZcAYjmCMSDqfNCYHEY+UO36u3Q+Y3xhbkFDKPmWUL4omqkpv8/AD+9kN8C9OvYMLwhLh+9CyD0+0BaoxG+qN6EqiwBiJrVSeeEAgO8fmq0qj8L7jL6sS8r3nDt5v7k17V/wyfpG9bAGzFRigAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFMSURBVFhH7ZUxSwNBEIXvFyhGW8sUFqI2IiEhjRiw9WfY5SfYiyAJWhyISMAmpLGz0V+28kbfMffcFHJzAeE+eORmMztvbm/vtig6Ojo6/iu9RZmgnecH097yxaR5rUDzXnn/LcaLsv0GaLT9ePdLmhvG8HNSFedd03R3flsJeVS9QkOGbxdV4ZwxNHqfmA6mR+n0dRzbAEATKLw1vU5X83379cL/MO/fHMabAzZgq+F08jRIg9W5CQ2EL7+QABr5WeZa3MrSC2Z6PDszMd6UeUHj8celiTEeA6T54fBO1Rjye0TnhcBNBxOuAERzNOQ3p85vjC/sN926tyO8CV+UjwBSc80NI2eQk+aGkTPISXPDYFEsOT+9jHmNcR9rjUb4ojh89CyAMK654egpmJPOCUXNctI5ocAAr58arRtvDXcg1a43gt94ufgvfAGf6szYS1BghAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFPSURBVFhH7ZUxSwNBEIXvFyhG25QWFqI2IiGSRgzY+jPs8hPsRRCDFgdBJGAjNnY2+stW3ug7Js+NoDeb6j54XGZvdt7c3l62qjo6Ojr+SW9eJ2jj4c609fxo0rwi0LxX33yJ8bwu3wCN1u+vf0hzwxh+jJvifGqabk6vGiGPWqzQkuHraVM4Zwwdv41NO5O9dPg0im0AoAkUXptcpPNp365euA/z7cvdeHPABmw1nA5mgzR4OTGhgfDlFxJAI9/LvBAXWXrBTPdvj0yMV2Ve0Xj0fmZijNcAaX44fFI1hvwe0XkhcNPBhCsA0RwN+c2p81vjC/tNt+zrCG/CF+UrgNRcc8PIGeSkuWHkDHLS3DBYFEvOv17G/I1xH2uNVviiOHz0LIAwrrnh6CmYk84JRc1y0jmhwACfnxotGy+CO4x+HSuKN1y5ud/5ufgvfAL9ttTEywnKrwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFJSURBVFhH7ZUxSwNBFITvFyhGW0sLC1EbkRBJIwZs/Rl2+QnpRZAELQ5EJJAm2NjZ6C9bmadzvEwugt7bFHIfDGE3u2/mdvdui6KlpaXlj3SmZYK2nu5NO/Nnk47LAs075d2X2J6W+QPQaPPhdkk6Nozex6Aqzqem6fbkphLGUYsVGtJ7vagK1xlDZ28D0/7wMJ3M+rEBAEKg8MbwOl1Ndu3XC//DfG90EG8OGMBWw+n4sZu6L+cmBAhffiEBBPle5oV2lqUXzPRofGpie13mBY3775cmtrENkI4Ph0+qxhDPiM4JhSZcAYjmCMSDqfNCYHEY+UO36u3Q+Y3xhbkFDKPmWUL4omqkpv8/AD+9kN8C9OvYMLwhLh+9CyD0+0BaoxG+qN6EqiwBiJrVSeeEAgO8fmq0qj8L7jL6sS8r3nDt5v7k17V/wyfpG9bAGzFRigAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFGSURBVFhH7ZWxSgNREEX3CxSjraWFhaiNSIikEQO2foZdPsFeBEnQYiEECdiIjZ2NftnKHb3L5DoKsrMBYQ9cduftvLmzL2/ziqKjo6Pjv9JblBW0Mb8zbT09mDSvFWjeK28/xXhRtt8Ajdbvb75Jc9MYvI/q4nxrmm5Or2shj1qu0JDBy1ldODKGTl5Hpt3xfnX0OMxtAKAJFF4bX1YX0227euE5zHeu9vLNARuw1fgSYqj/fGpCA+nL76Hhb9I52cCgOpgcmxivyryg8fDt3MT4cNY3aX46fFM1hvwe0Xkp+I3HFYBojob8BtX5jfGF/aaLvo5WmvBF+RNAaq65aUQGkTQ3jcggkuamwaJYcv71MuY9xn2sNRrhi+Lw0bMAwrjmpqOnYCSdk4qaRdI5qcAAn58a/TTeGu5AWrpfCX7jRfFf+ACFuctM9qQQUAAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFTSURBVFhH7ZUxSwNBEIXvFyhG25QWFkFtREIkjRiw9WfY5SfYiyAGUxyEEAI2YpMujfllK2/MO/ae8RBuVpHcB4/L3s7Om527y2ZZQ0PDf6Q1zwO0N302HbzOTBqXBJq38sdPcTzP0xdAo93xwxdprBu91aBIzl3TdH90XwhxVDlDTXqLqyLxJmPoYjkwHQ2Pw9lL37cAgCKQeGd4G25GbbvGwjzMD+86/uaABVg3Ip1OuqH7dmlCAe7tFwJAIes2l8ZJWi+Y6cnTuYnj3zLPaNx/vzZxjMcAabw73KkaQ/qO6FoXaMIOQDRHQfqC6vrasIBYunOV5qgFEmLHfASQmsexyQrQXW5XAVDc9vg3/pIRl+xrYFIcPnoWQLivseUMTuhJqNJ4V9Rsk3SNG2w/Pj8a4cr7HOs6N6qeadWcG1UmVXO1id90nSPr4/nv+EmR3/EBENjUDepQovwAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFRSURBVFhH7ZUxSwNBEIXvFyiJtpYWFqI2IiGSRgzY+jPs8hPsRZAELQ5EJJAmpLGz0V+28kbfMXnukeLmBOE+eCS7Nztvbm7vtig6Ojo6/iP9eZmg3sujaXf5atK4VqB5v3z4Fsfzsv0CaLT9dP9LGhvG8HNcJedd03RndlcJcdR6hoYM3y6rxDlj6Px9bDqYHKXTxSi2AIAikHhrcpOuZ3v264XrMN+/PYw3ByzAuuF08jxIg9WFCQWEt19IAIX8tHlt3ErrBTM9np6ZOP4r84LGo48rE8d4DJDGh8M7VWPI7xFdFwI3HUzYAYjmKMhvTl3fGJ/Yb7q6tyO8CJ+UjwBSc40NI2eQk8aGkTPISWPDYFK0nJ9ejvkf836sORrhk+Lw0bMAwrzGhqOnYE66JhQ1y0nXhIG2wgCvnxrVzYdS91zd4dQOfqPpNbDp+ia+AOV2zUwhdMziAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFUSURBVFhH7ZWxSgQxFEXnCxRXW0sLC1EbkWVlG3HB1s+w20+wF0FctBhYFlmwERs7G/2ykfvcO2SuMU1eRGEOXLKZJO++fZNMqqqnp+c/MljWDbSxuDdtPT+adF4RaD6ob7/E/rIunwCN1h9uvknnujH6mLTB+a9pujm7boV5VDdCJqPXszZwzBg6eZuYdqf7zdHT2DcBgCQQeG162VzMtq0NhXGY71zt+ZsDJmDVCHQ4HzbDl1MTEnAvv9AAJLIqc6dfpPSCmR7cHZvY/y3zisbj93MT+3gNkM53hXsAUmOIe0LXucDNBlMkwApAoXmxJJgA++Gm++l0dCNkognwFbAial48ATWLqRshkz+RAMSzzk8vn8V+a4wsNCguH70LILsRSyRAYMA2JV3niprFpGtcgQFKTCO0OI76vBip95sacyNlkhpzY3UNRwlPhI5lUzL4J7hEz3xR+HlDAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFPSURBVFhH7ZUxSwNBEIXvFyhGW0sLC9E0IiGSRgzY+jPs8hPsgyAGLQ5CkICN2NjZ6C9beaPvmLysWNysINwHj2T3ZufNze3dVlVHR0fHf6a3rBO0tbg37Tw/mjSuCDTv1bdf4nhZly+ARpsPN2vS2DCGH+MmOe+aptuzaSPEUasZWjJ8PW8S54yh07exaX9ymI6fRrEFABSBxBuTq3Q527VfL1yH+d71Qbw5YAHWDaf+fJAGL2cmFBDefiEBFPLd5pVxkdYLZnp0d2Li+K/MKxqP3i9MHOMxQBofDu9UjSG/R3RdCNx0MGEHIJqjIL85dX1rfGK/6X56O8KL8En5CCA119gwcgY5aWwYOYOcNDYMJkXL+enlmP8x78eaoxU+KQ4fPQsgzGtsOHoK5qRrQlGznHRNKDDA66dGfr5Y+z3uQFqjeAF+4+k18Nt18glB7c1MGTzTCwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFTSURBVFhH7ZUxSwNBEIXvFyhG25QWFkFtREIkjRiw9WfY5SfYiyAGUxyEEAI2YpMujfllK2/MO/ae8RBuVpHcB4/L3s7Om527y2ZZQ0PDf6Q1zwO0N302HbzOTBqXBJq38sdPcTzP0xdAo93xwxdprBu91aBIzl3TdH90XwhxVDlDTXqLqyLxJmPoYjkwHQ2Pw9lL37cAgCKQeGd4G25GbbvGwjzMD+86/uaABVg3Ip1OuqH7dmlCAe7tFwJAIes2l8ZJWi+Y6cnTuYnj3zLPaNx/vzZxjMcAabw73KkaQ/qO6FoXaMIOQDRHQfqC6vrasIBYunOV5qgFEmLHfASQmsexyQrQXW5XAVDc9vg3/pIRl+xrYFIcPnoWQLivseUMTuhJqNJ4V9Rsk3SNG2w/Pj8a4cr7HOs6N6qeadWcG1UmVXO1id90nSPr4/nv+EmR3/EBENjUDepQovwAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFRSURBVFhH7ZUxSwNBEIXvFyiJtpYWFqI2IiGSRgzY+jPs8hPsRZAELQ5EJJAmpLGz0V+28kbfMXnukeLmBOE+eCS7Nztvbm7vtig6Ojo6/iP9eZmg3sujaXf5atK4VqB5v3z4Fsfzsv0CaLT9dP9LGhvG8HNcJedd03RndlcJcdR6hoYM3y6rxDlj6Px9bDqYHKXTxSi2AIAikHhrcpOuZ3v264XrMN+/PYw3ByzAuuF08jxIg9WFCQWEt19IAIX8tHlt3ErrBTM9np6ZOP4r84LGo48rE8d4DJDGh8M7VWPI7xFdFwI3HUzYAYjmKMhvTl3fGJ/Yb7q6tyO8CJ+UjwBSc40NI2eQk8aGkTPISWPDYFK0nJ9ejvkf836sORrhk+Lw0bMAwrzGhqOnYE66JhQ1y0nXhIG2wgCvnxrVzYdS91zd4dQOfqPpNbDp+ia+AOV2zUwhdMziAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFUSURBVFhH7ZWxSgQxFEXnCxRXW0sLC1EbkWVlG3HB1s+w20+wF0FctBhYFlmwERs7G/2ykfvcO2SuMU1eRGEOXLKZJO++fZNMqqqnp+c/MljWDbSxuDdtPT+adF4RaD6ob7/E/rIunwCN1h9uvknnujH6mLTB+a9pujm7boV5VDdCJqPXszZwzBg6eZuYdqf7zdHT2DcBgCQQeG162VzMtq0NhXGY71zt+ZsDJmDVCHQ4HzbDl1MTEnAvv9AAJLIqc6dfpPSCmR7cHZvY/y3zisbj93MT+3gNkM53hXsAUmOIe0LXucDNBlMkwApAoXmxJJgA++Gm++l0dCNkognwFbAial48ATWLqRshkz+RAMSzzk8vn8V+a4wsNCguH70LILsRSyRAYMA2JV3niprFpGtcgQFKTCO0OI76vBip95sacyNlkhpzY3UNRwlPhI5lUzL4J7hEz3xR+HlDAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFPSURBVFhH7ZUxSwNBEIXvFyhGW0sLC9E0IiGSRgzY+jPs8hPsgyAGLQ5CkICN2NjZ6C9beaPvmLysWNysINwHj2T3ZufNze3dVlVHR0fHf6a3rBO0tbg37Tw/mjSuCDTv1bdf4nhZly+ARpsPN2vS2DCGH+MmOe+aptuzaSPEUasZWjJ8PW8S54yh07exaX9ymI6fRrEFABSBxBuTq3Q527VfL1yH+d71Qbw5YAHWDaf+fJAGL2cmFBDefiEBFPLd5pVxkdYLZnp0d2Li+K/MKxqP3i9MHOMxQBofDu9UjSG/R3RdCNx0MGEHIJqjIL85dX1rfGK/6X56O8KL8En5CCA119gwcgY5aWwYOYOcNDYMJkXL+enlmP8x78eaoxU+KQ4fPQsgzGtsOHoK5qRrQlGznHRNKDDA66dGfr5Y+z3uQFqjeAF+4+k18Nt18glB7c1MGTzTCwAAAABJRU5ErkJggg=="]};
+GIFSPRITES.skelet={w:32,h:32,delays:[200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200],frames:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHGSURBVFhHvZVBSgNBEEVzE8mZ3LkQl+LGKwS8gYgieAHBhQjiwq0guBARssrCjeAxIn/IC99KzUxPpuOHpjPVNf1fV3WSyWQLvb3cLr8Wr8uf7/mfoZjWYn5VyeDx/nrDnJjmnUH4yR3CPysHyPj+KGVl91N7HICqENE8QmTmGg93F+MhstO3Abh5NYD5x1Nzss/35xRERqztpAICODrc10bNcHOPawiiOoBOtQ2AzG+uZuMBVAFtOJ3uNcPb4HHWBFzNXOISMlY/NA2Anrkjvl7NHLlB1gpgVJH4blVF038zRjI7OT5oTJlXLdmtdMLL8/K+KndIfqdkTrm1KT9KrOuz/wGRq3gVCL52bAaAG/kdIFYNgApwevVeAxOevQqaeR4F4eY8ZxXIzEZDxN4r1lUBqhAh1MLBAJk5ca+AYl1V4J3B9yGWvk1AdAngvr3W6jP3ysTPmRFt0OzxVG2ld+lE5Gj4fegCiPENubk2zSA4Rd/l8/y+A61FMpvGl1gHgt66udZj/tnstJnbINdygDZzN4iK64MBpOwClpYxgyRWZN6mUgCpNG+wSiFK87ZS1p5MAJTkFknGXCTmbGPl6ftekot+AUAo+W0zXf+JAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAG+SURBVFhHvZU9SgRBEIX3JrJnMjMQQzHxCgveQEQRvIBgIIIYmAqCgYiwkYGJ4DFWXrOflDU1Q810jw+anqmq7vfqZ3YXiwl4ebrefH48b76/1n+WbPL5+KYQwf3tZYccm/bZRNjMrQj7rBhE+vNViMpus7Z2BDQV4cm9iIhc6+7mrF5ElH2fAEveTMD67aFk9v76GAoREb5ZKiABB/u7uqgsS27tWhLRXICymiJA5FcXq3oBqoAuXC53yrJtsHZ8EtyMXGAIWdsfmiJA78yI9TcjB5YgagViVBF/tik86b8RA5EdHe4VUvZtS+aFMjw/zfdVsWPiByFyyq1L+VHCr2f7B0Ss7E1E8NlxGQIskZ0BbM0EUAGyV++1IOHdVkE771UiLDnvUQUismoRvveyDVWAKngRauFoARE5dlsB2YaqwJnR8+BLXwMEp+8aQ04VhkAbtHtfB32lt7B+/xxlmp4DS66BikQwA8QRy0B6AZmEfkEwE+0P4WeooumX38efrI7L7r+QDqyAPnJLwHBZ8ioBQjSA2TJGIrGlyPuQFSBk40YjKyIbNwlReyIgIBObgogZJPboYsXpe8/Egh/S1flt7bqxLgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAG8SURBVFhH1ZRBSsRAEEXnJjJncudCXIobrxDwBiKK4AUEFyKIC7eC4EJEmJULN4LHGPlhnlQqlVBJ9wh+KDqpqu7/q7qSxeI/4uXpev358bz+/lp1TD7FfH5ViOD+9rJHjk/r1kTYyq0I+6wcRPr9RYjabqu2fgRUFeHJvYiIXHZ3c1YuIqp+SIAlryZg9fbQVvb++hgKERGxrXRAAg72d3VQa5bc+mUSUV2AqpojQORXF025AHVABy6XO63Za7B+YhJcjVxgCLHNj6YVoHdmxMarkQNLEF0FYtQRv7cqPOmfEYvg/LRpyY4O9zrr5ko6UK7M+2dB5FSrQ/knENez/f+TK38VEUw9hyHAEtkrwFdNAB2gerVeBgnvtgtaeS8SYcl5jzoQkRWL8Hcv31gH6IIXoSucLCAix287IN9YF9gzeR5860uA4PRZU8jpwhi4Bq0+1sNQ6y1s3D9HlabnwJJroCIRzAB55DKQXkCmoF+QzET7TcQZqmj6Fff5J81xu/ovpAcrYIjcEjBclrxIgBANYLaNkUh8KfIhZAUI2bzJyIrI5s1CdD0REJDJTUHEDBJrdLDy9L1ncsEPaF75bR3w9YwAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHASURBVFhH1VW7SgRBELw/kfsmMwMxFBN/YcE/EFEEf0AwEEEMTAXBQES4yMBE8DNOariC2t6euXZmVrCgmd2enqnqx+0tFv8RL0/X68+P5/X312pk8GHPxncFCO5vLyfk9GGdTYRmriL0GTEUac83wSu7Zq1+CugqwpJbER457O7mrF2El31OgJJ3E7B6e0iZvb8+ukJAxL1ZKgABB/u7uCiZkqsfBhHdBSCrGgEgv7oY2gWgArhwudxJpm1QP/cguBs5wCGkbT40SQDeOSO6342cUAKvFRSDitizzcClluxPiAn2/Px0SGRHh3ujddOSERALs/4qsALRC1kZfBuiZ7Kw5Fj5UWIMnvUPiOTNArT3ehEFaKZ2BvBOUVUiSuToPYxZ8l2rwDuqRdjSq9+rQI4IPgyq9ReRIwdKFWAV7DncF56HXOl1XysA37YqMN76J1ByZJMToaCIEtgGnQ8XFMBy5gRoheyzl2l4DlRAjpwtIDHjOQ9WwLaWTlAaQO5xqLzhw76NPxmO0+oNaBiaCX0cLiWfRUC0jJ5I+qrJgagAIBr3a0RFROOqUBpQBQVEYkMAMQeJq3cx4vB7j8QSP5+E88knIQGGAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHKSURBVFhHvVXLSgNBEMyfSL7JmwfxKLn4Cwv+gYgS8AcCHoIgHrwKggcRIaccvAT8jEgNqVDb6dntzM5aMMxud89U9SObyaQAH2+L7c/6ffu7WbUWbPDZ+KoAwfNyfkBOG/bRRGjmKkKfEUOR9vwgeGXXrNVOAVVFWHIrwiPHenq8HS7Cyz4nQMmrCVh9vaTMvj9fXSEgom+UCkDAxfkpLkpLydWOBRHVBSCrEgEgf7hvhgtABXDhdHqSlrZB7fRBcDVygEPItfvQJAF454yovxo5oQReKygGFbFnq8KS/hsxCO5umkQ2uzxr7buWjAeQM1vrywFisay9CJz66IUUi49T9EwnWAFmxa8i/XjWf0CSVxGg5LRRgGZqhxDvFFUsQnvPS3Aphg+LWfJdq8DzxSI8ctq9CuSIYMMMWXsvvNIDXRVgFewZ3HXUPOTI6bMV6KsC463dRa70CvXbZ4+IbdD5cKHkKGdOBDLS7LUdXQKs/QAUwH56AphFpPeM76voHirAO0A/RbC3Sg6/jb9urtKeE9lCbgA1E7UrrL9IgIdoGT2RtBWTA1EBQDTuaERFROOKkJsPCwqIxIYAYg4Sd+9ixOH3Hokl/gDsP/lthXG0/wAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHKSURBVFhHvVUxSgRBELyfyL3JzEAMDxO/sOAPRJQDPyAYiCAGpoJgICJcZGAi+IyVGq6ktu2Z7Z2ds6DZ3Z6eruqevrnFogIvT9f958dz//21GRh8WLPxTQGC+9v1H3L68NyZCK1cReg7YijS7p8Fr+1atfopoKkIS25FeOSwu5vz+SK86nMClLyZgM3bQ6rs/fXRFQIiru2kAxBwdLiPRMmUXP0wiGguAFXVCAD51WU3XwA6gITL5V4yPQb1cw2Cm5EDHELa9qJJAvDNGdH1ZuSEEnhHQTHoiN3bFJb034gJkB2vDhIpn9sjGeDirOth1l8NVBhNyM7gbojuKQLkTIqEvJS4jnf9AyJ5MwH82TEZBWildgbwTVGzRbADrB5nD2OV/NYucN9sEUrOb68DOSL40EHrD8GePXylDrALlgx5Js+DR06/dgC+sS4w3vqLsK3PgSJK4DHofBQxRq6dse9epZPmINd6BVrKGJjOgxUQyfcLDUZSbxPbGB0+5DjtTtLTixmAG5jUCuA6RXC4NDHWbXyVgBy5Elh469w3Sk54Axg9x4jIKkQFANG4yYiKiMZVwTseDxQQiQ0BxJxkPr3EiMOFE4klfgC1D/ltgJkysgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHGSURBVFhHvZVBSgNBEEVzE8mZ3LkQl+LGKwS8gYgieAHBhQjiwq0guBARssrCjeAxIn/IC99KzUxPpuOHpjPVNf1fV3WSyWQLvb3cLr8Wr8uf7/mfoZjWYn5VyeDx/nrDnJjmnUH4yR3CPysHyPj+KGVl91N7HICqENE8QmTmGg93F+MhstO3Abh5NYD5x1Nzss/35xRERqztpAICODrc10bNcHOPawiiOoBOtQ2AzG+uZuMBVAFtOJ3uNcPb4HHWBFzNXOISMlY/NA2Anrkjvl7NHLlB1gpgVJH4blVF038zRjI7OT5oTJlXLdmtdMLL8/K+KndIfqdkTrm1KT9KrOuz/wGRq3gVCL52bAaAG/kdIFYNgApwevVeAxOevQqaeR4F4eY8ZxXIzEZDxN4r1lUBqhAh1MLBAJk5ca+AYl1V4J3B9yGWvk1AdAngvr3W6jP3ysTPmRFt0OzxVG2ld+lE5Gj4fegCiPENubk2zSA4Rd/l8/y+A61FMpvGl1gHgt66udZj/tnstJnbINdygDZzN4iK64MBpOwClpYxgyRWZN6mUgCpNG+wSiFK87ZS1p5MAJTkFknGXCTmbGPl6ftekot+AUAo+W0zXf+JAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHKSURBVFhHvVUxSgRBELyfyL3JzEAMDxO/sOAPRJQDPyAYiCAGpoJgICJcZGAi+IyVGq6ktu2Z7Z2ds6DZ3Z6eruqevrnFogIvT9f958dz//21GRh8WLPxTQGC+9v1H3L68NyZCK1cReg7YijS7p8Fr+1atfopoKkIS25FeOSwu5vz+SK86nMClLyZgM3bQ6rs/fXRFQIiru2kAxBwdLiPRMmUXP0wiGguAFXVCAD51WU3XwA6gITL5V4yPQb1cw2Cm5EDHELa9qJJAvDNGdH1ZuSEEnhHQTHoiN3bFJb034gJkB2vDhIpn9sjGeDirOth1l8NVBhNyM7gbojuKQLkTIqEvJS4jnf9AyJ5MwH82TEZBWildgbwTVGzRbADrB5nD2OV/NYucN9sEUrOb68DOSL40EHrD8GePXylDrALlgx5Js+DR06/dgC+sS4w3vqLsK3PgSJK4DHofBQxRq6dse9epZPmINd6BVrKGJjOgxUQyfcLDUZSbxPbGB0+5DjtTtLTixmAG5jUCuA6RXC4NDHWbXyVgBy5Elh469w3Sk54Axg9x4jIKkQFANG4yYiKiMZVwTseDxQQiQ0BxJxkPr3EiMOFE4klfgC1D/ltgJkysgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHKSURBVFhHvVXLSgNBEMyfSL7JmwfxKLn4Cwv+gYgS8AcCHoIgHrwKggcRIaccvAT8jEgNqVDb6dntzM5aMMxud89U9SObyaQAH2+L7c/6ffu7WbUWbPDZ+KoAwfNyfkBOG/bRRGjmKkKfEUOR9vwgeGXXrNVOAVVFWHIrwiPHenq8HS7Cyz4nQMmrCVh9vaTMvj9fXSEgom+UCkDAxfkpLkpLydWOBRHVBSCrEgEgf7hvhgtABXDhdHqSlrZB7fRBcDVygEPItfvQJAF454yovxo5oQReKygGFbFnq8KS/hsxCO5umkQ2uzxr7buWjAeQM1vrywFisay9CJz66IUUi49T9EwnWAFmxa8i/XjWf0CSVxGg5LRRgGZqhxDvFFUsQnvPS3Aphg+LWfJdq8DzxSI8ctq9CuSIYMMMWXsvvNIDXRVgFewZ3HXUPOTI6bMV6KsC463dRa70CvXbZ4+IbdD5cKHkKGdOBDLS7LUdXQKs/QAUwH56AphFpPeM76voHirAO0A/RbC3Sg6/jb9urtKeE9lCbgA1E7UrrL9IgIdoGT2RtBWTA1EBQDTuaERFROOKkJsPCwqIxIYAYg4Sd+9ixOH3Hokl/gDsP/lthXG0/wAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHASURBVFhH1VW7SgRBELw/kfsmMwMxFBN/YcE/EFEEf0AwEEEMTAXBQES4yMBE8DNOariC2t6euXZmVrCgmd2enqnqx+0tFv8RL0/X68+P5/X312pk8GHPxncFCO5vLyfk9GGdTYRmriL0GTEUac83wSu7Zq1+CugqwpJbER457O7mrF2El31OgJJ3E7B6e0iZvb8+ukJAxL1ZKgABB/u7uCiZkqsfBhHdBSCrGgEgv7oY2gWgArhwudxJpm1QP/cguBs5wCGkbT40SQDeOSO6342cUAKvFRSDitizzcClluxPiAn2/Px0SGRHh3ujddOSERALs/4qsALRC1kZfBuiZ7Kw5Fj5UWIMnvUPiOTNArT3ehEFaKZ2BvBOUVUiSuToPYxZ8l2rwDuqRdjSq9+rQI4IPgyq9ReRIwdKFWAV7DncF56HXOl1XysA37YqMN76J1ByZJMToaCIEtgGnQ8XFMBy5gRoheyzl2l4DlRAjpwtIDHjOQ9WwLaWTlAaQO5xqLzhw76NPxmO0+oNaBiaCX0cLiWfRUC0jJ5I+qrJgagAIBr3a0RFROOqUBpQBQVEYkMAMQeJq3cx4vB7j8QSP5+E88knIQGGAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAG8SURBVFhH1ZRBSsRAEEXnJjJncudCXIobrxDwBiKK4AUEFyKIC7eC4EJEmJULN4LHGPlhnlQqlVBJ9wh+KDqpqu7/q7qSxeI/4uXpev358bz+/lp1TD7FfH5ViOD+9rJHjk/r1kTYyq0I+6wcRPr9RYjabqu2fgRUFeHJvYiIXHZ3c1YuIqp+SIAlryZg9fbQVvb++hgKERGxrXRAAg72d3VQa5bc+mUSUV2AqpojQORXF025AHVABy6XO63Za7B+YhJcjVxgCLHNj6YVoHdmxMarkQNLEF0FYtQRv7cqPOmfEYvg/LRpyY4O9zrr5ko6UK7M+2dB5FSrQ/knENez/f+TK38VEUw9hyHAEtkrwFdNAB2gerVeBgnvtgtaeS8SYcl5jzoQkRWL8Hcv31gH6IIXoSucLCAix287IN9YF9gzeR5860uA4PRZU8jpwhi4Bq0+1sNQ6y1s3D9HlabnwJJroCIRzAB55DKQXkCmoF+QzET7TcQZqmj6Fff5J81xu/ovpAcrYIjcEjBclrxIgBANYLaNkUh8KfIhZAUI2bzJyIrI5s1CdD0REJDJTUHEDBJrdLDy9L1ncsEPaF75bR3w9YwAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAG+SURBVFhHvZU9SgRBEIX3JrJnMjMQQzHxCgveQEQRvIBgIIIYmAqCgYiwkYGJ4DFWXrOflDU1Q810jw+anqmq7vfqZ3YXiwl4ebrefH48b76/1n+WbPL5+KYQwf3tZYccm/bZRNjMrQj7rBhE+vNViMpus7Z2BDQV4cm9iIhc6+7mrF5ElH2fAEveTMD67aFk9v76GAoREb5ZKiABB/u7uqgsS27tWhLRXICymiJA5FcXq3oBqoAuXC53yrJtsHZ8EtyMXGAIWdsfmiJA78yI9TcjB5YgagViVBF/tik86b8RA5EdHe4VUvZtS+aFMjw/zfdVsWPiByFyyq1L+VHCr2f7B0Ss7E1E8NlxGQIskZ0BbM0EUAGyV++1IOHdVkE771UiLDnvUQUismoRvveyDVWAKngRauFoARE5dlsB2YaqwJnR8+BLXwMEp+8aQ04VhkAbtHtfB32lt7B+/xxlmp4DS66BikQwA8QRy0B6AZmEfkEwE+0P4WeooumX38efrI7L7r+QDqyAPnJLwHBZ8ioBQjSA2TJGIrGlyPuQFSBk40YjKyIbNwlReyIgIBObgogZJPboYsXpe8/Egh/S1flt7bqxLgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGcSURBVFhH1ZQxSgRBEEX3JrJnMjMQQzHxCgPeQEQRvIBgIIIYmAqCgYiw0QYmgsdY+c0+KcsamZ6pXvFD0T1d3fV/Vdf0bPaf8PRwuXpbPq4+3hffTGvy+f2pEMHt9fkPctY0NhNhM7ci7Fx7EOnPT0JUdpu1XUdAqghP7kVE5LKbq5PpIqLs+wRY8jQBi5e7ktnr830oRET4mlRAAvZ2txWomCW36zKJSBegrMYIEPnFWTddgCqggPP5VjF7DXYdnwSnkQs0IbZ+aIoAfdMj1p9GDixBdBWIUUX82VR40o0RA5Ed7O8UUsb1lWwGp8fd15ugudY015q+WWsKBHAFft5UhMhVepnIZJpD3lQAD0xUAZ5gxnQRCiqyvgpgzUQgwFdAPl8Fmf6ONAGQ1wTUmZR+gLxPAFXw8L/qKFhyOl0BrSA/h5Rr0OjjDgYCaDCIlB3E+GlILyClAj577td2Py+hPccZH7cKtgEJio97jsiPusMyWt9o1GT05wIE9qeQg7Eihu4fBNsP3hcBATVnQoiYO2X8LSC/YM2ZT2RpeKN0kcJdAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGuSURBVFhH1ZRNSsRAEIVzE5kzuXMhLsWNVwh4AxFF8AKCCxHEhVtBcCEizMqFG8FjRF6YD96UnZn8VAQfFN3p6tR7/bqSqvpveHm6bj4/npvvr+VaaE25uD8VIri/vfxFzprG2UT4yV2Ez7UHkfH9SSjZ7qf2dQSkiojkUUSJXHF3czZdROn0XQKcPE3A8u2hPdn762NRiIjIzeKABBzs76pQG07u6wqJSBegU40RIPKri3q6ADmggovFTht+Db5OToLTyAWakFj9aFoBeqZHPJ9GDpygdBWIkSPx3VRE0j8jBiI7OtxrSRlXV1Kdn9aNIr6TChHwT2BNc9zQfFYRshoBTso4qwDIZb0CQp7Ja0wXoaJ89yUH/BecLgJyxSYHFJCrOdMFqGB0QPnoAvtS+sHJY05ARAQiu97rBbfeC/lanEPKNWhcr9oTTq67dRE6HTny9EMUMNoBBNBc0YVS85Hvcm4QXACFODl7uOcS+Ul93I6eGwxvwGh73AtSBThcgOYxD5RHRBq5sO3kDlyL65OAgD6Ft/07RmFIUe+VPvs3QsQ0FGNXUb79vvvBD3BskyW4XsXdAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAG6SURBVFhHvZQxSgRBEEX3JrJnMjMQQzHxCgPeQEQRvIBgIIIYmAqCgYiwkYGJ4DFG/rAPav72DLvTNX5opre7p/6r6ppdLHbU28tt+/312v7+rHpDa9rz86mSweP99YY5a3rOBhEzjxBxrjNA+vtVKpU9Zh3XAUiFcHOHKJlrPNxd1EOUsh8CiOZpAKuPpy6zz/fnIoiM2JulAgI4OtxXoG5E87iuIYh0AGU1BUDmN1dNPYAqoIDL5V434jXEdfYEnGYu0YSM9R9NB6Df9EjcTzNH0aB0FcCoIv5uqty0ZHx53rQa/TcTJBOZnRwf9J7rK+kElD7LdAiZKSj/CaxrzveP+SwAGAAQs41XoDlAaRDRXKXXIFN+Y8r5NAjMNQjsFSiZ0TNVANGc+x+qAFVwiKp+AIAAXgGtjVWBs5MA3HyKuAZ6Y2t56X0fUYUhTeqDaK57dYgI5vNY7m2T2BAv0lgeQPdKYM5hzJMYZ81p9/TmHFUEcHPk3U8FPPtJANJQA5I9czKmGvEsMXY2H5KXXmveB/5OqiKA5lr7V4BSmaXY7b6XqrFMvQln0VBjAkbH+361ZEzwOUz+AIKuyIEl25PzAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAG4SURBVFhHxVVBSgQxENyfyL7JmwfxKF78woA/EFEW/IDgQQTx4FUQPIgIe9qDlwWfMVJhC2p6ehJ30sGCMNlOp6tS6ZldLPbA++td/71563+268FADGs2PxQgeHpYjcgZw7OZCD25itA5cijS7q+CZ7ueWuMUECrCklsRHjnG4/1VvQjv9FMClDxMwPrzOZ3s6+PFFQIirjVxAAJOjg9RKA0l1zgGRIQLwKnmCAD57U1XLwAOoOByeZCGXoPGuQbBYeQAm5Bj96FJAvCbPaLrYeSEEnhXQTFwhHuuL7seY1ipEpbUI9Y8vB1hIkACsrPTo8FzdyUDkDxUAJsPBfld4Brm9j8Ac8ZCRKCQFaBW22vgnhARlhz2Y9Bm/rYucC/cmy2A5BTAU1kHcidFfFY/WHLEcg7QBUtEwTZehFqvMXUAsZILvAZ7PVl45B4oIoe9+8CzXqFrdm6tLtUaQTfgTr2NsJo5zGM/qADWuujO09PrjxG4iU3lCQC0+bDuFa8WMEVOsGAuj/X+RE6UGpBXoD1gc5rBI58S2gT/LkAt1zfG5jWDPXWpCcOhDUoxfM2aigAxiaIJfwEQ+8m0dlREmwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAG5SURBVFhHvVRBSgQxEJyfyL7JmwfxKF78woA/EFEEPyB4EEE8eBUEDyLCnjx4EXzGSIUtqOntzGQzHQuazHSSrkqlZ7quAG8vt8P31+vw+7MeBXKYs+tDAYLH++stcuYwNhOhJ1cR+ow1FGn3L4Jnu55a8xQQKsKSWxEeOeLh7mK5CO/0OQFKHiZg/fGUTvb5/uwKARHnmjgAAUeH+yiUQsk1j4CIcAE4VY0AkN9c9csFwAEUXK32Uug1aJ5zEBxGDrAJGZsfTRKAd/aIzoeRE0rgXQXFwBG7NwwobknniC/P+wFh81WgAyfHB6NxcyUdPkX9DVMg8iEi6ACL8d+gROoEcyECPHI4gCAJ39UFjHyvFqF3zyIsbB3wyBaJ8MiBKQfoghWBfqkWYDdaB5CbcoF7duqHHHktKLioXs76HOjCFHgNGO3cCEqO+8yJUIH22TtpcR9QABsqJwCWKqk2pBWwk6MqYG4DyTF63Q+w3ll/mkZvzRZKGlCtZ/d766sEzEHJWYxXYtcCFBFCDlgBJGfY9U2gjaUC8GzXNoM24b+dnOCJ2VwQEXK/NSj5apoAxHRAnbDrSvEHqj688QX+J4cAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAG5SURBVFhH1VQ7SgVBEHw3kXcmMwMxFBOvsOANRBTBCwgGIoiBqSAYiAgveoGJ4DFWarCkrDeffbu9gQXN7HbPdFX39O5i8R/w8nTdf6yf+6/P1R+DDzHfHwoQ3N9ebpDTh3U2EVq5itBn7KFIPz8JubZr1eqngFARTu4icuSwu5uz6SJy1ZcEKHmYgNXbQ6rs/fUxKwREjM3SAQg42N9FomRKrn4YRIQLQFVjBID86qKbLgAdQMLlcieZXoP6GYPgMHKAQ0j7+dEkAXjnjGg8jJxQgtxVUAw64mdD4aQt4vPTroe5fzRAdnS4l0i58hP1XzAFIhYiAsmZlKRK4l2gP0wApx/kqB5GAr57F/BM32QR7ACTegdKRCEiSI4EtQ6wC06E8+ig+wdB7x4JvAPY0+oC82w9D07ucYJCaqDoWp4NaOs9psL8OUfEa8Cq/iJq5AAqIjFMZ6ImwP1ZDG09Yq0BBIbmS9DNSFo6xHZj5QDm9jHfSXec1tK+X/AAq8oJ0HtXP+C+SQJa5B4riWLOJjlRG8CaAL0+9YejRlQSFw4dQvVvNfFjQQIOlhMxnovNCv5sKKwksIRvAyvX5FWv1SIAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAG9SURBVFhH1ZQxSgRBEEX3JrJnMjMQQzHxCgPeQEQRvIBgIIIYmAqCgYiw0QYmgsdY+cM++FtbOzs90yv4oeiZ6ur+v3/XzGTyn/D2crv4mr8ufr5nK6Gc5mJ9VYjg8f56jZycxp2J8JO7CH9WDSLj+lHIbPdTex4BVUVE8igiI1c83F2MF5GdfpMAJ68mYPbx1J7s8/05FSIi5nbigAQcHe5rozac3PMKiaguQKcaIkDkN1fNeAFyQBtOp3tt+DV4njkJrkYu0ITE8kfTCtA7PeLz1ciBE2RXgRg5EtdWRST9M2JBJCI7OT5YGZdXsoLL82ahiPnBELlOq035JzCnZ///44zy1UTQ+S7AifwKyFUVgAMil/UKSHh3FzTyPlqE28/G0YGMrIoIyN3+TQ7gQhSh6xskIJKTcweU63KBNYP6wa2PcyVAcNE+fclxoQtcg8Y4lyKz3uFz8Tk7aVEfOLmaKoqgB6ihjoaMArYdZg0soKt9IXM0VVf3U6fxrDltx1iTwgVk5Apqaa64MXWDBAixAUtt9Hqee5NnKBUglNZvRamI0vpeiFezDQgoWZNCxDQSY9eGqtd3X7LmF5C58IBp5OhIAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHASURBVFhH1ZQxSgRBEEX3JrJnMjMQQzHxCgPeQEQRvIBgIIIYmAqCgYiwkYGJ4DFGfrMP/pbdvTszvYIfiu6trq7/q7p2ZrP/hpen6/7z47n//lqsmHw6i/FNIYL728tf5Pi0bk2EV+4ifK8YRMb7k5Bru1ftfgQ0FRHJo4gcuezu5my6iFz1JQFO3kzA4u0hVfb++pgVIiLOttIBCTjY31WiZE7ufplENBegqsYIEPnVRTddgDqghPP5TjJ/BvdzJsHNyAWGEFt+aJIA/WZG/LwZOXCC3FMgRh2Jd5sikv4ZMRDZ0eFeImVdPskKzk+7Xhb9k6AqlZRvAn7t/ftPZ+RvKoLpR4AT+RPgay5AJCJX62WQ8Nu7QCxdi7kGQ4lUGYljB3JkzURATvtLHaALUYSebrQAJ1eS2AHF1LpAjtHzgIDSZUTUgOBSjiJK5N6RuM8R8Qxa3V9FbL2fqSLOZD4PNQHRX4STK3lOxLrhA7VCiuASyblM5cTxtpGcGPKcdMdpjXFFuIBIjsU7wCsdLUCIA+gCtI/xgJgoYhB5Dusqd7iAZoiV1RC71wRDkiJ20/gqRMwQsZaS8n/fNB78AEblzAJVOHPqAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGxSURBVFhHvZRBSgRBDEXnJjJncudCXA5uvEKDNxBRBryA4EIEceFWEFyICLNy4UbwGC2/mAeZmO6xp1J+CF2dVOX/pNI9m03Ey9N1//nx3H9/rTZMPsX8/lSI4P52+Yscn57NRNjKrQi71h5E+vNViNpuq7Z+BKSK8OReREQuu7s5rxcRVT8kwJKnCVi9PZTK3l8fQyEiItakAxJwdLivRMUsufXLJCJdgKraRYDIry67egHqgBLO53vF7DVYPzEJTiMXGEJs/aMpAvTOjNh4GjmwBNFVIEYd8WdT4Ukj4ouzrpdtnkyCyI4XB4WU5/pKChClz7KJCCXln4BPa75/yJsJoGIR2GrtFWiNoHQRSqzWy6iUd0i1r4kIfjBRByIyvatjKQK437EO0AUvonoeIJf5Dig+1gX2pgjYJQnXwGxMxjZyujCEqjmwrbcJrM+vbbuHzv8J9rCGyybRvRIjDjFPzp92J+Xph3MrSMB0+yr89NMBX32KgKh61lRMN6Ick8mBH0Dfevn8HPgcqbACtJbvXwVEbRbswPpYKsYq9UPYBH4mAMKYeB+vhohJ3oLkB4pZtQOToqTEAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGtSURBVFhHxZQxSgRBEEX3JrJnMjMQw8XEKwx4AxFlwQsIBiKIgakgGIgIGxmYCB5j5DX74W/Zo+NONX5ouqerp//r6pqZzf6gp4fL/v3tsf/8WG005ojF9anC4PZ6+c1cc/TNIPzkDuFj1ggyvj9JtbT7qX1eAKkQ0TxC1MxpN1en0yFqpx8CcPM0gNXLXTnZ6/N9FQQjxZpkAICD/V02Ks3NfZ4GRDoAp9oGAPOL8246ABlgw/l8pzS/Bp9XDOA0c6QiVFv/aAoAz6oRj6eZS25QuwrBkJH4bqqiac347KTraZtvJgmzw8VeMVW/vpIiQfFZNoNgY/0XNMeYOZk3BSDdAvAT6xoUp0+H0Oakn6bT6tn/hOkQbKZvv5aBaMiYGkkBkDntpwwoCw6RUg8CYKOYAeJDWdC6SQBuHmNIEDXpGuhjbJQ89Q7gc3HsJ55UB27O3TqEvnmPqx4EMAQ/WtpAxRU38uJjPhYf64+7o9J7bLQcIJpL2jjGUwDQUAHqCrwGPI707tbmQ6qZpxr8pn8H8JR7pcd1zRRPXSvCpvLCFIyqvSkExjLKNvwCPPGnIq+zna8AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGnSURBVFhHvZQ9SgRBFITnJrJnMjMQQzHxCgPeQEQRvIBgIIIYmAqCgYiw0QYmgscYqWE/KJ9vl5md7il4dE//Vb3qN900A/D2ctt9rV67n+/ln9CY5uL6ohDB4/31P3LG1FYT4Zm7CO9rDSLj/knIbPesfRwBRUVE8igiI1c83F1MF5Flv0mAkxcTsPx46jP7fH9OhYiIuSoOSMDR4b4O6sPJfVwhEcUFKKtdBIj85qqdLkAO6MDFYq8PvwYfZ06Ci5ELFCGxfmh6AfqmRny+GDlwguwqECNH4t6iiKSbiC/P207hY0UgspPjg56Udn0ljX5F9RGm7yoiAG+DE8oJ+lUFiFwOKCDjm8eItooICKIDTlpVxDYHcAERqpOiAnjp3AGNZy6wvlg9UGSKoQcidOj6rUBAPAwXMnAN8a0YjUjuTsS+Z1ykDjLreXQg9YJEQLZvNPwQkfhhkKv16vd9Z+1p3/rcKHAQvxiEbj3V7wRVBGTk8UqyvTuTg1iAUQDkRNxfBV4bLkD9uLYavAhnyxyQMUVGbcR1syDWyGwQMQ64E3HdUPwCqgSUDwMBtWYAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGdSURBVFhH1ZQxSgUxFEX/TuSvyc5CLMXGLQy4AxFFcAOChQhiYSsIFiLCryxsBJcxcoIXrs9kkJmXwguPzLxkck+SN1mt/oOeHi7H97fH8fNj8yPI0RfHpwqD2+vzX+bK0XaD8JU7hD8zRpDx+0Wqbbuv2vMCSIWI5hGiZk7cXJ0sh6itvgXg5mkAm5e7srLX5/sqCEbq67IDAOztbjNRCTf3PAFEOgCrmgOA+cXZsByAHWDC9XqrhB+D59UHcJo5UhEqvi+aAsC7asT708wlN6gdhWDYkfhtqqJpND49HkYifpcmzA72d4qpWv2iAuK5KwSqmartDoA5qydkqHeOQpdRNwiZxB3wW7ArxNQOEDKnPtIBfIXaAfJxFzCmTa8HJsUsTioQlyDj2NmK5jp/3uMzxjqGlMtJ5g7ACpUjvCYcYPEOuDkmDkEbC1DnH4FnS5PJRJNqu2lVgG5+NByWVvk475/lANGcaI1PA0BegG4eJ1Ze41PMo6YA/Ow9n64poxZcurwIPZ/6B7QkAxVaNFJ/ra+rdPkIrAXY0heqM4JGFmHKEAAAAABJRU5ErkJggg=="]};
 const EGG_COST=150;
 /* ---- Créatures animées par GIF (créations de l'utilisateur, frames pré-extraites) ---- */
 const GIFRT={};
@@ -2136,11 +2211,13 @@ function gifFrame(id,moving){
   if(wLen&&r.idx<wS){r.idx=wS;r.acc=0;}
   const now=performance.now();
   if(!r.last)r.last=now;
-  /* ×3 pendant 2 s au clic sur la créature. `walkSpeed` s'y ajoute pour accélérer le SEUL
-     cycle de marche (`wLen` non nul) : les délais du module restent ceux que l'utilisateur
-     a dessinés, c'est l'horloge de lecture qui accélère — et la respiration immobile
-     conserve son rythme d'origine. */
-  const speed=(now<r.boostUntil?3:1)*((wLen&&cr.walkSpeed)?cr.walkSpeed:1);
+  /* Trois facteurs se multiplient, du plus général au plus ciblé :
+       • ×3 pendant 2 s au clic sur la créature ;
+       • `animSpeed` — accélère TOUS les régimes de la créature, immobile compris ;
+       • `walkSpeed` — n'accélère que le cycle de marche (`wLen` non nul).
+     Dans tous les cas les délais du module restent ceux que l'utilisateur a dessinés :
+     c'est l'horloge de lecture qui change de rythme, jamais le fichier. */
+  const speed=(now<r.boostUntil?3:1)*(cr.animSpeed||1)*((wLen&&cr.walkSpeed)?cr.walkSpeed:1);
   r.acc+=(now-r.last)*speed;r.last=now;
   let guard=0;
   while(r.acc>=g.delays[r.idx]&&guard++<64){r.acc-=g.delays[r.idx];
@@ -2562,14 +2639,14 @@ function statusCard(it,status,info,retouchable){
    qui ne récompense jamais une journée ordinaire. Trois quêtes suffisent maintenant à
    gagner la journée et à faire monter la série ; le reste est du bonus. */
 function objBloc(){
-  const n=questesDuJour(), fait=n>=OBJ_JOUR;
+  const n=questesDuJour(), fait=n>=objJour();
   const d=document.createElement("div");
   d.className="obj"+(fait?" done":"");
   d.id="objBloc";                       // cible du trophée qui s'envole (voir volTrophee)
   d.innerHTML=`<div class="obj-top">
       <span>${fait?"🏆 Journée gagnée":"🏆 Objectif du jour"}</span>
-      <b>${n} / ${OBJ_JOUR}</b></div>
-    <span class="obj-bar"><i style="width:${(Math.min(1,n/OBJ_JOUR)*100).toFixed(0)}%"></i></span>`;
+      <b>${n} / ${objJour()}</b></div>
+    <span class="obj-bar"><i style="width:${(Math.min(1,n/objJour())*100).toFixed(0)}%"></i></span>`;
   return d;
 }
 /* ---- Le trophée qui s'envole ----
@@ -2618,7 +2695,7 @@ function feteObjectif(){
   ov.innerHTML=`<div class="loot-box">
     <div class="loot-ttl">✦ JOURNÉE GAGNÉE ✦</div>
     <div class="loot-items">
-      <div class="loot-it" style="animation-delay:.08s"><span class="ic">🎯</span><b>${OBJ_JOUR}</b></div>
+      <div class="loot-it" style="animation-delay:.08s"><span class="ic">🎯</span><b>${objJour()}</b></div>
       <div class="loot-it" style="animation-delay:.22s"><span class="ic">🔥</span><b>+1</b></div>
     </div>
     <div class="loot-note">Ta série montera d'un cran cette nuit. Le reste est du bonus.</div>
@@ -2909,7 +2986,10 @@ function repousser(it){
 
    Une quête expirée compte comme un refus : elle nourrit le Manxiety, comme si on avait
    appuyé sur « Refuser ». Elle ne casse PAS la série — seule une journée à zéro le fait. */
-const QUETE_GRACE=60;          // minutes de battement après l'échéance
+const QUETE_GRACE=60;          // minutes de battement par DÉFAUT, surchargeable
+/* Lu à la place de la constante partout où l'échéance se calcule. Plage bornée : une
+   sauvegarde abîmée ne doit pas pouvoir faire expirer une quête à la seconde. */
+function graceMin(){const v=(typeof S!=="undefined"&&S)?S.expireDelai:0;return (v>=5&&v<=1440)?v:QUETE_GRACE;}
 const SNOOZE_SURSIS=120;       // minutes gagnées en repoussant
 function expireActif(){ return !(S.settings&&S.settings.expire===false); }
 function minutesDuJour(){ const n=new Date(); return n.getHours()*60+n.getMinutes(); }
@@ -2919,7 +2999,7 @@ function echeanceDe(it){
   const deb=minDe(it.time), fin=minDe(finDe(it));
   const ref=(fin!=null)?fin:deb;
   if(ref==null)return null;
-  let lim=ref+QUETE_GRACE;
+  let lim=ref+graceMin();
   /* une séance qui passe minuit (23 h → 0 h 30) ne doit pas expirer le matin même */
   if(deb!=null&&fin!=null&&fin<deb)lim+=1440;
   const minuit=new Date(today()+"T00:00").getTime();
@@ -2930,7 +3010,7 @@ function echeanceDe(it){
        dans les vingt secondes, avant même d'avoir été lue. */
   const repli=(t,sursis)=>{ if(t)lim=Math.max(lim,Math.floor((t-minuit)/60000)+sursis); };
   if(estRepoussee(it))repli(it.snoozeT,SNOOZE_SURSIS);
-  repli(it.creeT,QUETE_GRACE);
+  repli(it.creeT,graceMin());
   return lim;
 }
 function questeExpiree(it){
@@ -3801,6 +3881,11 @@ function applyTheme(){
   try{ majCielAccueil(); if(launchOpen){drawCiel(0);renderAccueil();} }catch(e){}
   try{ updateAmbience(); }catch(e){}
 }
+/* ================= Réglages, en quatre onglets =================
+   La liste plate mélangeait l'apparence, le son et la destruction de la sauvegarde sur le
+   même écran. On sépare : Général (ce qu'on voit), Son (la table de mixage), Jeu (les
+   règles qu'on s'impose) et Données (ce qui touche à la sauvegarde). */
+let setOnglet="general";
 function renderSettings(){
   const el=document.getElementById("quests");el.innerHTML="";
   const row=(icon,label,desc,val,fn)=>{
@@ -3808,21 +3893,196 @@ function renderSettings(){
     d.innerHTML=`<div class="q-ic">${icon}</div><div class="q-body"><div class="q-title">${label}</div><div class="list-sub" style="margin-top:2px">${desc}</div></div><button class="sw ${val?"on":""}"><i></i></button>`;
     d.querySelector(".sw").onclick=fn; return d;
   };
+  /* barre d'onglets */
+  const nav=document.createElement("div");nav.className="subtabs";
+  [["general","⚙️","Général"],["son","🔊","Son"],["jeu","🎯","Jeu"],["donnees","💾","Données"]]
+    .forEach(([id,ic,lib])=>{
+      const b=document.createElement("button");
+      b.className="subtab pix"+(setOnglet===id?" on":"");
+      b.innerHTML=ic+" "+lib;
+      b.onclick=()=>{setOnglet=id;sfxPage();renderSettings();};
+      nav.appendChild(b);
+    });
+  el.appendChild(nav);
+  if(setOnglet==="son")     return setSon(el,row);
+  if(setOnglet==="jeu")     return setJeu(el,row);
+  if(setOnglet==="donnees") return setDonnees(el);
+  return setGeneral(el,row);
+}
+/* ---- onglet Général ---- */
+function setGeneral(el,row){
   el.appendChild(row("🌙","Mode sombre","Bascule le parchemin en version nuit.",S.settings.theme==="dark",()=>{S.settings.theme=(S.settings.theme==="dark"?"light":"dark");applyTheme();save();renderSettings();}));
-  el.appendChild(row("🔊","Sons","Jingles, cris des créatures et ambiance du camp.",S.settings.sound,()=>{S.settings.sound=!S.settings.sound;save();renderSettings();try{updateAmbience();}catch(e){}}));
   el.appendChild(row("🎉","Animations & confettis","Effets de récompense et avatar qui célèbre.",S.settings.anim,()=>{S.settings.anim=!S.settings.anim;save();renderSettings();}));
   el.appendChild(row("🏕️","Écran d'accueil","Afficher le camp au lancement de l'appli.",S.settings.splash,()=>{S.settings.splash=!S.settings.splash;save();renderSettings();}));
-  /* Réglage à part : c'est le seul mécanisme de l'application qui retire quelque chose
-     sans qu'on ait rien fait. Il doit pouvoir être coupé sans discussion. */
+  const p=document.createElement("div");p.className="list-sub";p.style.cssText="margin:18px 2px 0;line-height:1.5";
+  p.innerHTML="Le son a son propre onglet — tu peux y régler chaque piste séparément.";
+  el.appendChild(p);
+}
+
+/* ---- onglet Son : la table de mixage ---- */
+function setSon(el,row){
+  const a=S.audio||(S.audio=audioDef());
+  const coupeTout=S.settings.sound===false;
+  /* la coupure générale reste `S.settings.sound` : un seul interrupteur commande tout,
+     et le code écrit avant la table de mixage continue de le lire */
+  el.appendChild(row("🔊","Son général",coupeTout?"Tout est coupé.":"Coupe toutes les pistes d'un coup.",
+    !coupeTout,()=>{S.settings.sound=coupeTout;save();mixApplique();renderSettings();
+      try{updateAmbience();}catch(e){}}));
+
+  const piste=(cle,def,essai)=>{
+    const c=a[cle]||(a[cle]={v:1,mute:false});
+    const d=document.createElement("div");d.className="box quest";
+    d.style.cssText="animation:none;flex-direction:column;align-items:stretch;gap:0";
+    if(coupeTout)d.style.opacity=".45";
+    d.innerHTML=`<div style="display:flex;gap:11px;align-items:flex-start">
+        <div class="q-ic">${def.ic}</div>
+        <div class="q-body"><div class="q-title">${def.nom}</div>
+          <div class="list-sub" style="margin-top:2px">${def.desc}</div></div>
+        <button class="sw ${c.mute?"":"on"}" aria-label="Couper cette piste"><i></i></button>
+      </div>
+      <div class="mix-row">
+        <input class="mix-slider" type="range" min="0" max="100" step="5"
+               value="${Math.round((c.v!=null?c.v:1)*100)}" aria-label="Volume de ${def.nom}">
+        <b class="mix-val">${Math.round((c.v!=null?c.v:1)*100)}%</b>
+        <button class="btn ghost pix mix-test">▶</button>
+      </div>`;
+    d.querySelector(".sw").onclick=()=>{c.mute=!c.mute;save();mixApplique();renderSettings();
+      try{updateAmbience();}catch(e){}};
+    const sl=d.querySelector(".mix-slider"), val=d.querySelector(".mix-val");
+    /* `input` et non `change` : le volume suit le doigt, on entend ce qu'on règle */
+    sl.oninput=()=>{c.v=(+sl.value)/100;val.textContent=sl.value+"%";mixApplique();};
+    sl.onchange=()=>{save();};
+    d.querySelector(".mix-test").onclick=()=>{ if(c.mute||coupeTout){toast("Cette piste est coupée");return;} essai(); };
+    return d;
+  };
+  /* Chaque piste s'écoute : un bouton ▶ qui joue un son représentatif de la voie. */
+  const cris=()=>{const l=(S.creatures&&S.creatures.owned)||["heros"];sfxCry(l[(Math.random()*l.length)|0]);};
+  el.appendChild(piste("ambiance", MIX.ambiance, ()=>{try{ambStop();updateAmbience();}catch(e){}
+    toast(launchOpen?"Ambiance relancée 🌿":"L'ambiance ne joue que dans le camp");}));
+  el.appendChild(piste("creatures",MIX.creatures,cris));
+  el.appendChild(piste("interface",MIX.interface,()=>{sfxCrayon();setTimeout(sfxPage,220);}));
+  el.appendChild(piste("recompense",MIX.recompense,()=>{victorySound();setTimeout(sfxCling,300);}));
+  el.appendChild(piste("camp",      MIX.camp,     ()=>{sfxPoc();setTimeout(sfxMagic,260);}));
+
+  const p=document.createElement("div");p.className="list-sub";p.style.cssText="margin:16px 2px 0;line-height:1.5";
+  p.innerHTML="L'ambiance du camp ne joue que camp ouvert, onglet visible et après un premier geste de ta part — les navigateurs interdisent le son avant.";
+  el.appendChild(p);
+}
+
+/* ---- onglet Jeu : les règles qu'on s'impose ---- */
+function setJeu(el,row){
+  const choix=(icon,titre,desc,valeurs,actuel,fn)=>{
+    const d=document.createElement("div");d.className="box quest";
+    d.style.cssText="animation:none;flex-direction:column;align-items:stretch;gap:0";
+    d.innerHTML=`<div style="display:flex;gap:11px;align-items:flex-start">
+        <div class="q-ic">${icon}</div>
+        <div class="q-body"><div class="q-title">${titre}</div>
+          <div class="list-sub" style="margin-top:2px">${desc}</div></div>
+      </div><div class="q-actions" style="margin-top:10px"></div>`;
+    const act=d.querySelector(".q-actions");
+    valeurs.forEach(([v,lib])=>{
+      const b=document.createElement("button");
+      b.className="btn pix"+(v===actuel?" gold":" ghost");b.textContent=lib;
+      b.onclick=()=>{fn(v);save();renderSettings();renderTabs();renderHUD();};
+      act.appendChild(b);
+    });
+    return d;
+  };
+  el.appendChild(choix("🏆","Objectif du jour",
+    "Nombre de quêtes qui fait monter ta série d'un cran. En dessous, elle tient ; à zéro quête, elle retombe.",
+    [[1,"1"],[2,"2"],[3,"3"],[4,"4"],[5,"5"]], objJour(), v=>{S.objJour=v;}));
   el.appendChild(row("⌛","Expiration automatique",
-    "Une quête non validée "+(QUETE_GRACE/60)+" h après son heure passe en abandon (2 h de sursis si tu la repousses). Les quêtes sans heure ne sont jamais concernées.",
+    "Une quête non validée "+graceMin()+" min après son heure passe en abandon. Les quêtes sans heure ne sont jamais concernées.",
     expireActif(),
     ()=>{S.settings.expire=!expireActif();save();renderSettings();renderTabs();}));
-  const notif=document.createElement("button");notif.className="btn pix wide";notif.style.margin="12px 0 0";notif.style.cssText+=";justify-content:center;display:flex";notif.textContent="🔔 Activer les rappels";notif.onclick=askNotif;el.appendChild(notif);
-  const reset=document.createElement("button");reset.className="btn no pix wide";reset.style.cssText="margin:10px 0 0;justify-content:center;display:flex";reset.textContent="🗑 Réinitialiser toute la progression";reset.onclick=confirmReset;el.appendChild(reset);
+  if(expireActif())el.appendChild(choix("⏱","Délai avant expiration",
+    "Le temps de battement après l'heure de fin. Repousser une quête ajoute toujours 2 h par-dessus.",
+    [[30,"30 min"],[60,"1 h"],[120,"2 h"],[240,"4 h"]], graceMin(), v=>{S.expireDelai=v;}));
   const p=document.createElement("div");p.className="list-sub";p.style.cssText="margin:18px 2px 0;line-height:1.5";
-  p.innerHTML="D'autres réglages possibles (dis-moi lesquels t'intéressent) : rappel quotidien à heure fixe · objectif d'XP par jour · jour(s) de repos hebdo · taille du texte · changer de direction artistique · export de la sauvegarde.";
+  p.innerHTML="Ton <b>jeton de pardon</b> se recharge chaque lundi : il absorbe une journée à zéro quête sans casser la série. Il t'en reste "
+    +(((S.serie||{}).pardon)||0)+" cette semaine.";
   el.appendChild(p);
+}
+
+/* ---- onglet Données : tout ce qui touche à la sauvegarde ---- */
+function setDonnees(el){
+  const bouton=(cls,txt,fn,marge)=>{const b=document.createElement("button");
+    b.className="btn pix wide "+cls;
+    b.style.cssText="margin:"+(marge||"0 0 10px")+";justify-content:center;display:flex";
+    b.textContent=txt;b.onclick=fn;el.appendChild(b);return b;};
+  const note=(html,couleur)=>{const p=document.createElement("div");p.className="list-sub";
+    p.style.cssText="margin:0 2px 16px;line-height:1.5"+(couleur?";color:"+couleur:"");
+    p.innerHTML=html;el.appendChild(p);};
+
+  bouton("","🔔 Activer les rappels",askNotif);
+  note("Les notifications ne fonctionnent que si l'application est ouverte dans un onglet.");
+
+  bouton("gold","⬇️ Exporter ma sauvegarde",exportSauvegarde);
+  note("Télécharge un fichier avec toute ta progression : niveau, pièces, jetons, créatures, quêtes, carnet et historique. À faire de temps en temps — une sauvegarde de navigateur peut disparaître.");
+
+  bouton("","⬆️ Importer une sauvegarde",importSauvegarde);
+  note("Remplace <b>entièrement</b> la progression actuelle par celle du fichier. Une confirmation est demandée.");
+
+  bouton("no","🗑 Réinitialiser toute la progression",confirmReset,"6px 0 10px");
+  note("Efface tout et repart de zéro. Irréversible — pense à exporter d'abord.","var(--red)");
+}
+
+/* Export : un fichier daté, lisible, qui contient l'état complet. */
+function exportSauvegarde(){
+  try{
+    const brut=localStorage.getItem(KEY)||JSON.stringify(S);
+    const nom="journal-de-quetes-"+today()+".json";
+    const b=new Blob([brut],{type:"application/json"});
+    const u=URL.createObjectURL(b);
+    const a=document.createElement("a");a.href=u;a.download=nom;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u),4000);
+    toast("Sauvegarde exportée ⬇️ "+nom);
+  }catch(e){ toast("Export impossible : "+e.message); }
+}
+/* Import : on VALIDE le fichier avant de toucher à quoi que ce soit, et on confirme en
+   annonçant ce qu'il contient — remplacer une progression sans la décrire serait brutal. */
+function importSauvegarde(){
+  const inp=document.createElement("input");inp.type="file";inp.accept="application/json,.json";
+  inp.onchange=()=>{
+    const f=inp.files&&inp.files[0]; if(!f)return;
+    const fr=new FileReader();
+    fr.onload=()=>{
+      let d;
+      try{ d=JSON.parse(fr.result); }catch(e){ toast("Fichier illisible : ce n'est pas du JSON"); return; }
+      if(!d||typeof d!=="object"||!Array.isArray(d.quests)){
+        toast("Ce fichier n'est pas une sauvegarde du Journal de Quêtes"); return; }
+      const li=levelInfo(d.xpTotal||0);
+      openModal(`
+        <h2>⬆️ Importer cette sauvegarde ?</h2>
+        <p class="hint">Le fichier contient :</p>
+        <div class="obj" style="margin-bottom:12px">
+          <div class="obj-top"><span>Niveau ${li.level}</span><b>${d.xpTotal||0} XP</b></div>
+          <div class="obj-top" style="margin-top:5px"><span>🪙 ${d.coins||0} · 🎟️ ${d.jetons||0}</span>
+            <b>${(d.creatures&&d.creatures.owned||[]).length} créatures</b></div>
+          <div class="obj-top" style="margin-top:5px"><span>${d.quests.length} quêtes</span>
+            <b>série ${d.streak||0}</b></div>
+        </div>
+        <p class="hint" style="color:var(--red)">Ta progression actuelle (niveau ${levelInfo(S.xpTotal).level}, ${S.coins} 🪙) sera <b>entièrement remplacée</b>.</p>
+        <div class="modal-actions">
+          <button class="btn ghost pix" id="cancel">Annuler</button>
+          <button class="btn gold pix" id="ok">Remplacer</button>
+        </div>`);
+      document.getElementById("cancel").onclick=closeModal;
+      document.getElementById("ok").onclick=()=>{
+        try{
+          localStorage.setItem(KEY,JSON.stringify(d));
+          S=load(); MIXBUS=null;
+          try{feuMaj();}catch(e){}
+          applyTheme();renderHUD();renderTabs();renderList();
+          campStaticKey=""; if(launchOpen)drawHub(0);
+          closeModal(); toast("Sauvegarde importée ✓");
+        }catch(e){ closeModal(); toast("Import impossible : "+e.message); }
+      };
+    };
+    fr.readAsText(f);
+  };
+  inp.click();
 }
 function confirmReset(){
   openModal(`<h2>Réinitialiser ?</h2><p class="hint">Cela efface définitivement toute ta progression (niveau, quêtes, série, objectifs, boutique). Action irréversible.</p>
@@ -3881,6 +4141,42 @@ function audioCtx(){
   if(AC.state==="suspended"){try{const p=AC.resume();if(p&&p.catch)p.catch(()=>{});}catch(e){}}
   return AC;
 }
+/* ================= Table de mixage =================
+   Tous les sons passaient directement par `AC.destination`, donc il n'y avait qu'un seul
+   interrupteur pour l'ensemble. On interpose cinq VOIES, chacune avec son volume et sa
+   coupure, réunies dans une sortie générale. Le découpage suit ce qu'on peut réellement
+   dissocier dans le code, pas des catégories inventées :
+     ambiance   → le lit sonore du camp (ambStart : vent, oiseaux, grillons, chouette)
+     creatures  → sfxCry, le cri propre à chaque créature
+     interface  → sfxCrayon et sfxPage, le papier et le crayon du journal
+     recompense → playSound (jingle de victoire) et sfxCling (le trophée)
+     camp       → sfxFlame, sfxPoc, sfxThud, sfxMagic : le feu et l'éclosion des œufs
+   `S.settings.sound` reste la coupure générale héritée : la voie « générale » du mixeur
+   la pilote, pour qu'un seul réglage commande tout et que le code existant continue de
+   fonctionner tel quel. */
+let MIXBUS=null;
+/* Renvoie le nœud d'entrée d'une voie ; crée la table au premier son joué. */
+function mixVoie(cat){
+  const ac=audioCtx(); if(!ac)return null;
+  if(!MIXBUS||MIXBUS.ctx!==ac){
+    MIXBUS={ctx:ac,master:ac.createGain(),voies:{}};
+    MIXBUS.master.connect(ac.destination);
+    Object.keys(MIX).forEach(k=>{const g=ac.createGain();g.connect(MIXBUS.master);MIXBUS.voies[k]=g;});
+    mixApplique();
+  }
+  return MIXBUS.voies[cat]||MIXBUS.master;
+}
+/* Recopie l'état sauvegardé dans les gains. Appelée à chaque mouvement de curseur. */
+function mixApplique(){
+  if(!MIXBUS)return;
+  const a=S.audio||audioDef();
+  const gen=(S.settings&&S.settings.sound===false)?0:Math.max(0,Math.min(1,(a.master&&a.master.v!=null)?a.master.v:1));
+  MIXBUS.master.gain.value=gen;
+  Object.keys(MIX).forEach(k=>{
+    const c=a[k]||{v:1,mute:false};
+    MIXBUS.voies[k].gain.value=c.mute?0:Math.max(0,Math.min(1,c.v!=null?c.v:1));
+  });
+}
 function playSound(id){
   if(reduce||(S.settings&&!S.settings.sound))return;
   try{audioCtx();
@@ -3889,7 +4185,7 @@ function playSound(id){
     else if(id==="power")seq=[[392,0],[523,0.06],[659,0.12],[784,0.18],[1047,0.24]];
     else seq=[[523.25,0],[659.25,0.09],[783.99,0.18],[1046.5,0.27]];
     seq.forEach(([f,dt])=>{const o=AC.createOscillator(),g=AC.createGain();
-      o.type="square";o.frequency.value=f;o.connect(g);g.connect(AC.destination);
+      o.type="square";o.frequency.value=f;o.connect(g);g.connect(mixVoie("recompense"));
       const t=AC.currentTime+dt;g.gain.setValueAtTime(.0001,t);
       g.gain.exponentialRampToValueAtTime(.12,t+0.02);
       g.gain.exponentialRampToValueAtTime(.0001,t+0.16);
@@ -3923,7 +4219,7 @@ function sfxPage(){
     const hp=AC.createBiquadFilter();hp.type="highpass";hp.frequency.value=180;
     const lp=AC.createBiquadFilter();lp.type="lowpass";lp.frequency.value=2100;
     const g=AC.createGain();g.gain.value=.18;
-    src.connect(f);f.connect(hp);hp.connect(lp);lp.connect(g);g.connect(AC.destination);src.start(t);
+    src.connect(f);f.connect(hp);hp.connect(lp);lp.connect(g);g.connect(mixVoie("interface"));src.start(t);
   }catch(e){}
 }
 /* Un coup de crayon sur le papier — version DOUCE (le réglage d'origine, passe-bande à
@@ -3950,7 +4246,7 @@ function sfxCrayon(){
     f.frequency.exponentialRampToValueAtTime(380,t+dur);
     const lp=AC.createBiquadFilter();lp.type="lowpass";lp.frequency.value=1900;
     const g=AC.createGain();g.gain.value=.15;
-    src.connect(f);f.connect(lp);lp.connect(g);g.connect(AC.destination);src.start(t);
+    src.connect(f);f.connect(lp);lp.connect(g);g.connect(mixVoie("interface"));src.start(t);
   }catch(e){}
 }
 /* « Cling » : une clochette claire, trois partiels harmoniques qui s'éteignent vite.
@@ -3966,7 +4262,7 @@ function sfxCling(){
       g.gain.setValueAtTime(.0001,t);
       g.gain.exponentialRampToValueAtTime(.15*k,t+0.006);
       g.gain.exponentialRampToValueAtTime(.0001,t+0.55);
-      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+0.6);
+      o.connect(g);g.connect(mixVoie("recompense"));o.start(t);o.stop(t+0.6);
     });
   }catch(e){}
 }
@@ -3980,7 +4276,7 @@ function sfxPoc(){        // petit "poc" : l'œuf se pose
     g.gain.setValueAtTime(.0001,t);
     g.gain.exponentialRampToValueAtTime(.22,t+0.008);
     g.gain.exponentialRampToValueAtTime(.0001,t+0.13);
-    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+0.15);
+    o.connect(g);g.connect(mixVoie("camp"));o.start(t);o.stop(t+0.15);
   }catch(e){}
 }
 function sfxThud(){       // choc sourd : le maillet écrase
@@ -3994,13 +4290,13 @@ function sfxThud(){       // choc sourd : le maillet écrase
     g.gain.setValueAtTime(.0001,t);
     g.gain.exponentialRampToValueAtTime(.5,t+0.012);
     g.gain.exponentialRampToValueAtTime(.0001,t+0.36);
-    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+0.38);
+    o.connect(g);g.connect(mixVoie("camp"));o.start(t);o.stop(t+0.38);
     const len=Math.floor(AC.sampleRate*0.2), buf=AC.createBuffer(1,len,AC.sampleRate), d=buf.getChannelData(0);
     for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);
     const src=AC.createBufferSource();src.buffer=buf;
     const f=AC.createBiquadFilter();f.type="lowpass";f.frequency.value=1500;
     const ng=AC.createGain();ng.gain.value=.3;
-    src.connect(f);f.connect(ng);ng.connect(AC.destination);src.start(t);
+    src.connect(f);f.connect(ng);ng.connect(mixVoie("camp"));src.start(t);
   }catch(e){}
 }
 function sfxMagic(){      // scintillement : la créature apparaît
@@ -4013,7 +4309,7 @@ function sfxMagic(){      // scintillement : la créature apparaît
       g.gain.setValueAtTime(.0001,t);
       g.gain.exponentialRampToValueAtTime(.15,t+0.02);
       g.gain.exponentialRampToValueAtTime(.0001,t+0.5);
-      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+0.55);});
+      o.connect(g);g.connect(mixVoie("camp"));o.start(t);o.stop(t+0.55);});
     const o2=AC.createOscillator(),g2=AC.createGain();
     o2.type="sine";
     o2.frequency.setValueAtTime(1046,t0+.2);
@@ -4021,7 +4317,7 @@ function sfxMagic(){      // scintillement : la créature apparaît
     g2.gain.setValueAtTime(.0001,t0+.2);
     g2.gain.exponentialRampToValueAtTime(.09,t0+.3);
     g2.gain.exponentialRampToValueAtTime(.0001,t0+.88);
-    o2.connect(g2);g2.connect(AC.destination);o2.start(t0+.2);o2.stop(t0+.92);
+    o2.connect(g2);g2.connect(mixVoie("camp"));o2.start(t0+.2);o2.stop(t0+.92);
   }catch(e){}
 }
 /* ---- Cris personnels des créatures (style Game Boy 8-bit) ----
@@ -4042,7 +4338,7 @@ function sfxCry(id,gain){
       g.gain.setValueAtTime(.0001,t);
       g.gain.exponentialRampToValueAtTime(vol*K,t+0.012);
       g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur+.03);
+      o.connect(g);g.connect(mixVoie("creatures"));o.start(t);o.stop(t+dur+.03);
     };
     /* N = souffle de bruit filtré (grondements, flammes, parasites robot) */
     const N=(dt,dur,vol,fq,type)=>{
@@ -4051,7 +4347,7 @@ function sfxCry(id,gain){
       const s=AC.createBufferSource();s.buffer=buf;
       const f=AC.createBiquadFilter();f.type=type||"lowpass";f.frequency.value=fq;
       const g=AC.createGain();g.gain.value=vol*K;
-      s.connect(f);f.connect(g);g.connect(AC.destination);s.start(t0+dt);
+      s.connect(f);f.connect(g);g.connect(mixVoie("creatures"));s.start(t0+dt);
     };
     const CRIES={
       heros:  ()=>{V("square",523,523,0,.09,.15);V("square",784,784,.10,.16,.15);},           // « ta-daa » héroïque
@@ -4082,6 +4378,12 @@ function sfxCry(id,gain){
       /* Kappa : un petit cri de bec vibré, puis le « plouf » de l'eau qu'il porte sur la tête. */
       kappa:  ()=>{V("triangle",430,780,0,.12,.13,[15,26]);V("triangle",700,480,.14,.14,.10);
                    V("sine",300,150,.30,.16,.09);N(.30,.16,.08,650);},
+      /* Skelet : cliquetis d'os secs — trois claquements filtrés très haut, sans hauteur
+         définie, puis un souffle creux. Pas d'oscillateur mélodique : un squelette n'a
+         pas de cordes vocales, il claque. */
+      skelet: ()=>{N(0,.05,.15,3400,"highpass");N(.09,.05,.13,2600,"highpass");
+                   N(.19,.06,.11,4200,"highpass");
+                   V("triangle",150,96,.28,.26,.09,[7,12]);N(.28,.24,.06,420);},
       /* Gobelin : ricanement nasillard en deux temps, plus une petite quinte moqueuse. */
       gobelin:()=>{V("square",520,700,0,.07,.11,[24,30]);V("square",620,430,.09,.09,.11,[20,26]);
                    V("square",760,560,.22,.08,.09);N(.32,.10,.05,1400,"bandpass");},
@@ -4124,7 +4426,7 @@ function ambStart(day){
     AC=AC||new(window.AudioContext||window.webkitAudioContext)();
     if(AC.state==="suspended"){ambNeedGesture();return;}
     ambStop();ambMode=day?"day":"night";
-    const master=AC.createGain();master.gain.value=.0001;master.connect(AC.destination);
+    const master=AC.createGain();master.gain.value=.0001;master.connect(mixVoie("ambiance")||AC.destination);
     master.gain.exponentialRampToValueAtTime(1,AC.currentTime+1.4);   // fondu d'entrée
     ambMaster=master;
     const alive=()=>ambMaster===master;
@@ -6316,7 +6618,7 @@ function sfxFlame(on){
     f.frequency.setValueAtTime(on?700:900,t);
     f.frequency.exponentialRampToValueAtTime(on?2200:220,t+(on?0.3:0.24));
     const g=AC.createGain();g.gain.value=on?.3:.26;
-    src.connect(f);f.connect(g);g.connect(AC.destination);src.start(t);
+    src.connect(f);f.connect(g);g.connect(mixVoie("camp"));src.start(t);
   }catch(e){}
 }
 /* Le feu ne se rallume PLUS tout seul : c'est le bois — donc les quêtes réelles — qui le
@@ -7278,9 +7580,9 @@ function renderAccueil(){
   $("accCoins").textContent="🪙 "+S.coins;
 
   /* --- objectif du jour, en une pastille --- */
-  {const n=questesDuJour(), fait=n>=OBJ_JOUR;
+  {const n=questesDuJour(), fait=n>=objJour();
    const e=$("accTroph");
-   e.textContent="🏆 "+n+"/"+OBJ_JOUR;
+   e.textContent="🏆 "+n+"/"+objJour();
    e.classList.toggle("done",fait);}
   try{drawAvatar(mood(),"accAvatar");}catch(e){}
 
@@ -7552,6 +7854,9 @@ try{
   }
 }catch(e){}
 try{manxTick();}catch(e){}
+/* La table de mixage se construit au premier son joué ; si le contexte audio existe déjà
+   (une page rechargée le réutilise), on lui recopie tout de suite les réglages sauvegardés. */
+try{mixApplique();}catch(e){}
 if(S.settings.splash)showLaunch();
 /* Filet de sécurité : sauvegarde forcée quand l'app passe en arrière-plan ou se ferme
    (sur iOS, "pagehide"/"visibilitychange" sont les seuls signaux fiables avant fermeture) */
