@@ -863,10 +863,108 @@
   .tv-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
 
   /* ======= Le Nid : œufs + collection de créatures ======= */
-  .nest{position:fixed;inset:0;z-index:83;display:none;overflow-y:auto;
+  /* ⚠️ LE NID NE DÉFILE PLUS. C'était une page de 2082 px pour une fenêtre de 812 : on
+     traversait 1436 px de collection pour atteindre le bouton de retour, et le panneau
+     des camps — la partie avec laquelle on interagit — tombait à cheval sur deux écrans.
+     C'est désormais une COLONNE FLEX à la hauteur exacte de la fenêtre : tout est à
+     taille fixe, et la seule zone qui défile est la collection (.ns-coll), qui absorbe
+     la différence entre un petit et un grand téléphone. */
+  .nest{position:fixed;inset:0;z-index:83;display:none;flex-direction:column;overflow:hidden;
     background:
       radial-gradient(120% 55% at 50% -6%, rgba(232,169,46,.10), transparent 55%),
       linear-gradient(#2a1c10,#20140a)}
+  /* --- barre de titre : l'enseigne, les pièces et l'œuf, en 56 px au lieu de 210 --- */
+  /* ⚠️ GRILLE À TROIS COLONNES, PAS UN FLEX NI UN CENTRAGE ABSOLU.
+     En flex, l'œuf se décalait de la différence de largeur entre l'enseigne et le
+     compteur de pièces — et ce décalage bougeait à chaque changement de montant.
+     En absolu, il était bien centré mais passait PAR-DESSUS l'enseigne et les pièces.
+     Avec `1fr auto 1fr`, les deux côtés font toujours la même largeur : la colonne du
+     milieu tombe donc exactement au centre de la barre, et l'espace lui est réservé. */
+  .ns-bar{position:relative;flex:0 0 auto;display:grid;
+    grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;
+    padding:9px 10px 8px;min-height:66px}
+  .ns-ttl{grid-column:1;grid-row:1;min-width:0;font-family:var(--mono);font-size:15px;letter-spacing:3px;
+    color:#f0ddac;text-shadow:0 1px 0 #000;line-height:1}
+  /* le sous-titre ne doit jamais élargir la colonne : il se coupe plutôt que de pousser */
+  .ns-ttl span{display:block;font-size:8.5px;letter-spacing:0;color:#8a6a3c;margin-top:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ns-or{grid-column:3;grid-row:1;text-align:right;font-family:var(--mono);font-size:12px;color:#ffd24d}
+  .ns-egg2{grid-column:2;grid-row:1;min-height:52px;padding:0 18px;
+    font-family:var(--mono);font-size:15px;font-weight:700;
+    letter-spacing:.5px;background:linear-gradient(#6a4326,#4a2c16);
+    border:2px solid #b07d14;border-radius:4px;color:#ffd24d;cursor:pointer;z-index:2;
+    box-shadow:0 2px 0 rgba(0,0,0,.45),inset 0 1px 0 rgba(255,235,180,.18)}
+  .ns-egg2:active{transform:translateY(1px)}
+  .ns-egg2:disabled{opacity:.45;cursor:default}
+  /* --- aide, titre de collection, pied --- */
+  .cp-aide{flex:0 0 auto;display:flex;align-items:center;gap:7px;margin:7px 8px 0;padding:5px 7px;
+    background:rgba(176,125,20,.16);border:1.5px solid #b07d14;border-radius:3px}
+  .cp-aide span{flex:1;font-family:var(--mono);font-size:9.5px;color:#ffd24d}
+  .cp-annul{flex:0 0 auto;min-height:44px;padding:0 10px;font-family:var(--mono);font-size:10px;
+    background:#54341e;border:1.5px solid #8a6a3c;border-radius:3px;color:#f0ddac;cursor:pointer}
+  .ns-colttl{flex:0 0 auto;display:flex;align-items:baseline;gap:7px;padding:8px 10px 5px;
+    font-family:var(--mono);font-size:11px;letter-spacing:2px;color:#c8ab72;text-transform:uppercase}
+  .ns-colttl b{font-size:12px;color:#ffd24d}
+  .ns-colttl .sp{flex:1}
+  .ns-tri{flex:0 0 auto;min-height:34px;padding:0 10px;font-family:var(--mono);font-size:9px;
+    letter-spacing:.5px;background:#3a2716;border:1.5px solid #5a3a22;border-radius:3px;
+    color:#c8ab72;cursor:pointer;align-self:center}
+  .ns-tri:active{transform:translateY(1px)}
+  .ns-coll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 8px 6px}
+  .ns-pied{flex:0 0 auto;padding:5px 10px 9px}
+  .ns-back{width:100%;min-height:44px;font-family:var(--mono);font-size:11px;letter-spacing:1px;
+    background:#54341e;border:1.5px solid #8a6a3c;border-radius:3px;color:#f0ddac;cursor:pointer}
+  /* --- cartes de collection : 4 éléments, la carte entière est la cible --- */
+  .ns-grid2{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .ns-c{position:relative;min-height:96px;padding:5px 4px 8px;background:linear-gradient(#3a2716,#2c1c0f);
+    border:2px solid #5a3a22;border-radius:3px;display:flex;flex-direction:column;align-items:center;
+    gap:3px;cursor:pointer;overflow:hidden}
+  .ns-c canvas{margin-top:2px}
+  .ns-c-nom{font-family:var(--sans);font-size:10px;color:#f0ddac;line-height:1.1;max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ns-c-job{font-family:var(--mono);font-size:9px;color:#c8ab72;line-height:1}
+  .ns-c-lieu{position:absolute;top:0;left:0;padding:1px 3px;font-family:var(--mono);font-size:7.5px;
+    line-height:1.4;border-radius:2px 0 3px 0;max-width:78%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ns-c-nb{position:absolute;top:0;right:0;padding:1px 3px;font-family:var(--mono);font-size:8px;
+    line-height:1.4;background:#20140a;color:#ffd24d;border-radius:0 2px 0 3px}
+  .ns-c-bas{position:absolute;left:0;right:0;bottom:0;height:3px}
+  .ns-vide{grid-column:1/-1;text-align:center;font-family:var(--mono);font-size:10px;color:#c8ab72;
+    padding:16px 8px;border:1px dashed #5a3a22;border-radius:3px}
+  /* --- les non possédées : une ligne repliée, au lieu de 700 px de cases vides --- */
+  .ns-verr{width:100%;display:flex;align-items:center;gap:7px;min-height:44px;margin-top:6px;
+    padding:0 9px;background:rgba(20,12,6,.5);border:1.5px dashed #4a3018;border-radius:3px;
+    font-family:var(--mono);font-size:9.5px;color:#8a6a3c;cursor:pointer}
+  .ns-verr span{flex:1;text-align:left}
+  .ns-verrl{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;padding:6px;
+    background:rgba(20,12,6,.35);border:1px solid #3a2716;border-radius:3px}
+  .ns-vc{width:44px;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:1px;background:rgba(20,12,6,.6);border:1.5px solid #3a2716;border-radius:3px}
+  .ns-vc span{font-size:13px;opacity:.35}
+  .ns-vc b{font-family:var(--mono);font-size:7px;letter-spacing:.5px;font-weight:400}
+  /* --- fiche : tout ce qui n'a pas besoin d'être permanent --- */
+  .ns-fond{position:absolute;inset:0;background:rgba(12,7,3,.74);z-index:30}
+  .ns-fiche{position:absolute;left:0;right:0;bottom:0;z-index:31;padding:12px 12px 14px;
+    background:linear-gradient(#3a2716,#241608);border-top:2px solid #b07d14;border-radius:5px 5px 0 0;
+    box-shadow:0 -8px 24px rgba(0,0,0,.6);animation:nsSheet .2s ease-out}
+  @keyframes nsSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .ns-f-haut{display:flex;align-items:center;gap:10px}
+  .ns-f-img{width:56px;height:56px;flex:0 0 auto;display:grid;place-items:center;
+    background:linear-gradient(#54341e,#3a2716);border:2px solid #8a6a3c;border-radius:3px}
+  .ns-f-txt{flex:1;min-width:0}
+  .ns-f-nom{font-family:var(--sans);font-size:14px;color:#f0ddac}
+  .ns-f-rar{font-family:var(--mono);font-size:9.5px;margin-top:3px;letter-spacing:.5px}
+  .ns-f-job{font-family:var(--mono);font-size:9.5px;color:#c8ab72;margin-top:2px}
+  .ns-f-x{flex:0 0 auto;width:44px;height:44px;font-size:13px;background:#54341e;
+    border:1.5px solid #8a6a3c;border-radius:3px;color:#f0ddac;cursor:pointer}
+  .ns-f-etat{margin-top:10px;padding:7px 9px;background:rgba(20,12,6,.45);border:1px solid #4a3018;
+    border-radius:3px;font-family:var(--mono);font-size:9.5px;line-height:1.6;color:#c8ab72}
+  .ns-f-etat b{color:#9ad48a}
+  .ns-f-etat .ko{color:#ff9a7a}
+  .ns-f-act{display:flex;gap:6px;margin-top:10px}
+  .ns-f-go{flex:1;min-height:46px;padding:0 8px;font-family:var(--mono);font-size:10px;
+    background:#54341e;border:1.5px solid #b07d14;border-radius:3px;color:#ffd24d;cursor:pointer}
+  .ns-f-no{flex:0 0 auto;min-height:46px;padding:0 13px;font-family:var(--mono);font-size:10px;
+    background:#54341e;border:1.5px solid #a8362a;border-radius:3px;color:#ff9a7a;cursor:pointer}
   .ns-inner{max-width:440px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top,0px)) 15px calc(26px + env(safe-area-inset-bottom,0px))}
   .ns-sign{width:78%;margin:2px auto 0;text-align:center;position:relative;
     background:linear-gradient(#6a4a2c,#5a3a22);border:2px solid #2a180c;border-radius:4px;
@@ -907,6 +1005,117 @@
   .ns-stock{display:flex;justify-content:center;gap:18px;margin:10px auto 2px;max-width:340px;
     font-family:var(--mono);font-size:11px;color:#c8ab72}
   .ns-stock b{color:#ffd24d}
+  /* ═══ PANNEAU DES CAMPS : onglets de biome + postes ═══════════════════════════════
+     ⚠️ LES NOMS SONT EN BLANC AVEC UN CONTOUR SOMBRE. Demande utilisateur : du blanc,
+     pour rester lisible sur les pastilles colorées. Mais l'onglet Banquise EST blanc —
+     du blanc sur blanc serait invisible. Le contour porté par `text-shadow` règle les
+     deux cas d'un coup : le texte reste blanc partout, et détaché de son fond. */
+  .cp{margin:10px auto 2px;max-width:340px}
+  .cp-tabs{display:flex;gap:3px}
+  /* ⚠️ 44 px MINIMUM, en min-height + centrage flex. Les onglets faisaient 26 px de haut :
+     sous le seuil confortable au pouce, et le gabarit dérivait dès que le texte changeait
+     (« Prairie » contre « 🔒 »). La couleur du texte vient de `--t`, calculée par biome —
+     du blanc sur le blanc de la Banquise serait invisible. */
+  .cp-tab{flex:1;position:relative;min-height:44px;display:flex;align-items:center;
+    justify-content:center;padding:0 2px;border:1.5px solid rgba(0,0,0,.45);
+    border-bottom:none;border-radius:4px 4px 0 0;background:var(--c);
+    color:var(--t,#fff);font-family:var(--mono);font-size:9.5px;font-weight:700;cursor:pointer;
+    text-shadow:0 1px 0 rgba(0,0,0,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    filter:saturate(.75) brightness(.72);transition:filter .12s}
+  .cp-tab.on{filter:none;z-index:2}
+  .cp-tab.clos{filter:grayscale(1) brightness(.45);cursor:default}
+  .cp-tab i{position:absolute;top:-4px;right:-2px;background:#2c1c0f;border:1px solid #8a6a3c;
+    border-radius:7px;min-width:13px;height:13px;line-height:11px;font-size:8px;font-style:normal;color:#ffd24d}
+  .cp-body{border:1.5px solid var(--bio);border-radius:0 0 4px 4px;background:rgba(0,0,0,.26);
+    padding:7px 6px 8px;box-shadow:0 0 0 1px rgba(0,0,0,.4) inset}
+  .cp-barre{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+  .cp-etat{flex:1;font-family:var(--mono);font-size:9px;text-align:center}
+  /* 44 px de haut, 74 de large : c'est un bouton qu'on touche souvent, il ne doit pas
+     être plus petit que les cases qu'il remplit */
+  .cp-auto{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    min-height:44px;min-width:74px;padding:0 10px;background:#54341e;
+    border:1.5px solid #b07d14;border-radius:3px;color:#ffd24d;
+    font-family:var(--mono);font-weight:700;font-size:10.5px;letter-spacing:.5px;cursor:pointer}
+  .cp-auto:active{transform:translateY(1px)}
+  .cp-auto:disabled{opacity:.4;cursor:default}
+  .ns-vide{grid-column:1/-1;text-align:center;font-family:var(--mono);font-size:10px;
+    color:#c8ab72;padding:16px 8px;border:1px dashed #5a3a22;border-radius:3px}
+  .cp-ok{color:#9ad48a}  .cp-ko{color:#ff9a7a}
+  .cp-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  .cp-col{background:rgba(0,0,0,.24);border:1px solid #5a3a22;border-radius:3px;padding:5px 3px 6px}
+  .cp-colttl{font-family:var(--mono);font-size:8px;color:#c8ab72;text-align:center;
+    text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+  .cp-cases{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
+  /* 44 px : la cible tactile minimale confortable au pouce */
+  .cp-case{position:relative;width:44px;height:44px;padding:0;display:grid;place-items:center;
+    background:linear-gradient(#3a2716,#2c1c0f);border:2px solid #5a3a22;border-radius:3px;
+    color:#8a6a3c;font-size:19px;font-family:var(--mono);cursor:pointer}
+  .cp-case canvas{image-rendering:pixelated;max-width:36px;max-height:36px}
+  .cp-case.vide{border-style:dashed;color:#7a6244}
+  .cp-case.sel{border-color:#ffd24d!important;box-shadow:0 0 0 2px rgba(255,210,77,.35),0 0 10px rgba(255,210,77,.5)!important;
+    animation:cpPulse 1s ease-in-out infinite}
+  @keyframes cpPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  .cp-niv{position:absolute;top:-5px;right:-5px;background:#2c1c0f;border:1px solid #8a6a3c;
+    border-radius:7px;min-width:15px;height:15px;line-height:13px;font-size:8.5px;
+    font-family:var(--mono);font-weight:700;color:#ffd24d}
+  .cp-rang{position:absolute;bottom:-4px;left:-4px;background:#2c1c0f;border:1px solid #8a6a3c;
+    border-radius:6px;min-width:13px;height:13px;line-height:11px;font-size:8px;
+    font-family:var(--mono);color:#f0ddac}
+  /* ⚠️ LES CASES SONT CENTRÉES DANS LA BANDE ENTIÈRE. Le libellé « 🐾 2/3 » est sorti du
+     flux : laissé dedans, il poussait les trois cases vers la droite de sa propre
+     largeur, et ce décalage changeait avec le compteur. */
+  .cp-bal{position:relative;margin-top:5px;background:rgba(0,0,0,.24);border:1px solid #5a3a22;
+    border-radius:3px;padding:5px 4px 6px;display:flex;align-items:center;min-height:56px}
+  .cp-baltl{position:absolute;left:6px;top:50%;transform:translateY(-50%);
+    font-family:var(--mono);font-size:8px;color:#c8ab72;text-transform:uppercase;
+    letter-spacing:.5px;line-height:1.3;text-align:center}
+  .cp-bal .cp-cases{flex:1;justify-content:center}
+  .cp-aide{margin-top:7px;font-family:var(--mono);font-size:8.5px;color:#ffd24d;text-align:center}
+  .cp-annul{background:none;border:1px solid #8a6a3c;border-radius:3px;color:#c8ab72;
+    font-family:var(--mono);font-size:8px;padding:2px 6px;margin-left:4px;cursor:pointer}
+  /* la carte devient choisissable quand un emplacement attend */
+  .ns-card.cpOk{border-color:#ffd24d;box-shadow:0 0 0 1px #ffd24d,0 0 12px rgba(255,210,77,.35) inset}
+  .ns-card.cpNon{opacity:.35}
+  /* ---- Tableau de bord de la chaîne de production ----
+     Les trois maillons sont alignés dans l'ordre du flux, séparés par des flèches : la
+     lecture se fait de gauche à droite comme la matière circule. Un maillon SANS personne
+     passe au rouge — c'est le seul endroit qui doit crier, parce que c'est lui qui arrête
+     tout le reste. */
+  .ns-chaine{margin:10px auto 2px;max-width:340px;background:rgba(0,0,0,.22);
+    border:1.5px solid #5a3a22;border-radius:3px;padding:8px 6px 7px}
+  .ns-chaine.froid{border-color:#4a3550;background:rgba(30,16,40,.3)}
+  .ch-ttl{font-family:var(--mono);font-size:10px;color:#c8ab72;text-align:center;margin-bottom:7px}
+  .ch-ttl b{color:#ffd24d}
+  .ns-chaine.froid .ch-ttl b{color:#c9a0ff}
+  .ch-flux{display:flex;align-items:stretch;justify-content:center;gap:2px}
+  .ch-m{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;
+    background:rgba(0,0,0,.25);border:1px solid #5a3a22;border-radius:2px;padding:4px 2px}
+  .ch-m.vide{border-color:#a8452e;background:rgba(140,40,24,.18)}
+  .ch-ic{font-size:14px;line-height:1}
+  .ch-n{font-family:var(--mono);font-size:11px;font-weight:700;color:#ffd24d}
+  .ch-m.vide .ch-n{color:#ff9a7a}
+  .ch-d{font-family:var(--mono);font-size:8px;color:#c8ab72;white-space:nowrap}
+  .ch-t{font-family:var(--mono);font-size:7.5px;color:#8a7550;text-transform:uppercase;letter-spacing:.5px}
+  .ch-fl{align-self:center;color:#8a6a3c;font-size:12px}
+  .ch-coffre{font-family:var(--mono);font-size:9px;color:#c8ab72;text-align:center;margin-top:7px}
+  .ch-coffre b{color:#ffd24d}
+  /* ---- Fenêtre du coffre : la réserve du camp, en trois lignes ----
+     Chaque ressource a sa ligne, sa jauge et une phrase qui dit QUI la produit : c'est ce
+     rappel qui fait comprendre pourquoi une réserve stagne (« 0 en poste »). */
+  .cf-ligne{display:flex;align-items:center;gap:8px;margin-top:10px;font-family:var(--mono)}
+  .cf-ligne.or{margin-top:14px;border-top:1px dashed rgba(58,42,18,.28);padding-top:12px}
+  .cf-ic{font-size:18px;line-height:1}
+  .cf-nom{flex:1;font-size:12px;color:var(--ink)}
+  .cf-val{font-size:13px;font-weight:700;color:var(--gold)}
+  .cf-jauge{height:6px;background:rgba(58,42,18,.16);border-radius:3px;overflow:hidden;margin-top:4px}
+  .cf-jauge i{display:block;height:100%;background:linear-gradient(90deg,#c8922a,#e8b64a)}
+  .cf-sous{font-family:var(--mono);font-size:9.5px;color:rgba(58,42,18,.62);margin-top:3px}
+  /* ligne d'état sous chaque créature : cadence, compte à rebours, ou raison de l'arrêt */
+  .ns-etat{margin-top:3px;min-height:11px;display:flex;flex-direction:column;gap:1px}
+  .ns-prod{font-family:var(--mono);font-size:7.5px;color:#9ad48a}
+  .ns-bloc{font-family:var(--mono);font-size:7.5px;color:#ff9a7a}
+  .ns-tot{font-family:var(--mono);font-size:7.5px;color:#c8ab72}
+  .ns-task.stop{background:#4a2418;border-color:#a8452e;color:#ffd0c0}
   .ne-ov{position:fixed;inset:0;z-index:95;background:rgba(10,6,2,.72);display:grid;place-items:center}
   .ne-box{width:min(320px,88vw);background:linear-gradient(#3a2716,#2c1c0f);border:2px solid #8a6a3c;
     padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.6)}
@@ -1170,7 +1379,7 @@
     <button class="hub-spot" id="hsJournal" aria-label="Ouvrir le journal de quêtes" onclick="hubGo('journal')"></button>
     <button class="hub-spot" id="hsNid" aria-label="Le Nid — créatures" onclick="openNest()"></button>
     <button class="hub-spot" id="hsTente" aria-label="Réglages" onclick="hubGo('parametres')"></button>
-    <button class="hub-spot" id="hsCoffre" aria-label="Récupérer le butin du coffre" onclick="collectChest()"></button>
+    <button class="hub-spot" id="hsCoffre" aria-label="Ouvrir le coffre du camp" onclick="openCoffre()"></button>
     <button class="hub-spot" id="hsAvatar" aria-label="Ta créature n°1" onclick="hubAvatarTap(0)" style="z-index:1"></button>
     <button class="hub-spot" id="hsAvatar2" aria-label="Ta créature n°2" onclick="hubAvatarTap(1)" style="z-index:1"></button>
     <button class="hub-spot" id="hsAvatar3" aria-label="Ta créature n°3" onclick="hubAvatarTap(2)" style="z-index:1"></button>
@@ -1700,7 +1909,28 @@ function objAtteint(){return questesDuJour()>=objJour();}
    Seul `dayRollover` déplace ce repère, une fois la journée bel et bien archivée. */
 /* `bioCacheVide()` : tout changement de S peut compléter un biome (achat d'habillage),
    ce qui débloque le suivant — le cache de `biomeComplet` doit repartir de zéro. */
-function save(){try{bioCacheVide();}catch(e){}localStorage.setItem(KEY,JSON.stringify(S))}
+/* Signalé UNE fois par session : répété à chaque sauvegarde, l'avertissement noierait
+   l'écran de messages alors que le joueur ne peut rien y faire sur le moment. */
+let saveKO=false;
+function save(){
+  try{bioCacheVide();}catch(e){}
+  /* ⚠️ CETTE ÉCRITURE NE DOIT JAMAIS LEVER. `localStorage.setItem` échoue quand le
+     stockage est plein, désactivé par le navigateur, ou en navigation privée sur iOS.
+     L'exception remontait alors à l'appelant et INTERROMPAIT l'action en cours :
+     mesuré sur `award()`, les pièces étaient versées et le compteur incrémenté, mais la
+     quête n'était ni retirée de la liste ni réaffichée — l'application restait à
+     mi-chemin, sans rien dire. Une sauvegarde manquée et signalée vaut mieux qu'un état
+     à moitié appliqué. */
+  try{
+    localStorage.setItem(KEY,JSON.stringify(S));
+    saveKO=false;
+  }catch(e){
+    if(!saveKO){
+      saveKO=true;
+      try{toast("⚠️ Sauvegarde impossible : stockage plein ou bloqué");}catch(_){}
+    }
+  }
+}
 
 /* ================= Niveaux / XP ================= */
 function xpForLevel(l){return 120+(l-1)*45}          // coût du niveau l
@@ -2254,45 +2484,91 @@ function creatureOu(id){
    grillés, et les grillés nourrissent les explorations. Explo de base = 10 min ;
    chaque 🍢 donné ajoute 10 min. L'or récolté = minutes × rendement, et le rendement
    dépend de la stat d'exploration. Les réserves sont plafonnées : il faut gérer. */
+/* ═══ LA CHAÎNE DE PRODUCTION DU CAMP ════════════════════════════════════════════════
+   Les créatures ne partent plus « pour X minutes » : elles tiennent un POSTE et
+   travaillent en boucle tant que le feu brûle. Chacune répète son cycle :
+     🎣 pêcheur     : ramène 1 🐟 au coffre
+     🍲 cuisinier   : prend 1 🐟 au coffre, y remet 1 🍢
+     🧭 explorateur : prend 1 🍢 au coffre, en rapporte de l'or
+   Tout transite par le COFFRE : personne n'attend le joueur pour repartir.
+
+   ÉQUILIBRAGE — les trois nombres qui comptent sont ci-dessous, et voici le calcul qui
+   les justifie. Une équipe complète (2 pêcheurs, 1 cuisinier, 2 explorateurs) au niveau
+   1 est limitée par le CUISINIER, seul poste unique : 3 🍢 par heure. Le feu tient 4 h
+   par bûche et une quête donne une bûche, soit ~12 h de feu pour une journée à trois
+   quêtes → ~36 voyages, donc ~180 🪙 par jour à `or:5`. Une journée de quêtes rapporte
+   ~180 🪙 elle aussi : le camp DOUBLE le revenu sans le remplacer, et il ne tourne que
+   si le feu brûle — c'est-à-dire que si le travail réel a été fait.
+   Pour rendre le camp plus généreux ou plus avare, un seul chiffre suffit : `explo.or`. */
+const PROD={
+  /* ⚠️ LES TROIS CADENCES SONT ACCORDÉES SUR LES NOMBRES DE POSTES (2 / 1 / 2). Avec une
+     équipe complète au niveau 1, chaque maillon débite exactement 3 unités par heure :
+     2 pêcheurs à 40 min, 1 cuisinier à 20 min, 2 explorateurs à 40 min. Aucun poste ne
+     tourne dans le vide et aucun ne fait goulot — c'est ce qui rend l'affectation
+     intéressante : il faut les TROIS métiers, et un seul manquant arrête la chaîne.
+     (Premier essai à 20/20/20 : les deux pêcheurs saturaient le coffre en 🐟 pendant que
+     les explorateurs attendaient des 🍢 — mesuré, un pêcheur restait bloqué toute la
+     journée. Le second poste de pêche ne servait à rien.) */
+  peche:  {cycle:40*60},            // 1 🐟 toutes les 40 min au niveau 1
+  cuisine:{cycle:20*60},            // 1 🍢 toutes les 20 min au niveau 1
+  explo:  {cycle:40*60, or:5},      // 1 voyage toutes les 40 min, 5 🪙 au niveau 1
+  /* Le niveau accélère les cycles — mais PLAFONNÉ : le cuisinier est le goulot de la
+     chaîne, le laisser doubler de vitesse ferait doubler toute l'économie d'un coup. */
+  vitesseParNiveau:0.06, vitesseMax:2.2,
+  /* C'est surtout la VALEUR du voyage qui monte avec le niveau : la progression se voit
+     sans emballer la cadence. */
+  orParNiveau:0.9
+};
+/* Combien de fois plus vite cette créature travaille, par rapport au niveau 1. */
+function prodVitesse(id){
+  return Math.min(PROD.vitesseMax,1+PROD.vitesseParNiveau*(talentLvl(id)-1));
+}
+/* Durée d'un cycle, en SECONDES. */
+function prodCycle(tal,id){
+  const b=(tal==="peche"?PROD.peche:tal==="cuisine"?PROD.cuisine:PROD.explo).cycle;
+  return Math.max(30,Math.round(b/prodVitesse(id)));
+}
+/* Or rapporté par un voyage d'exploration. */
+function orVoyage(id){
+  return Math.max(1,Math.round(PROD.explo.or+PROD.orParNiveau*(talentLvl(id)-1)));
+}
 const TASK_BASE={
-  cuisine:    {perFish:15*60},                   // niv. 1 : 1 🍢 toutes les 15 min, plus vite ensuite
-  peche:      {stepMin:15, maxMin:120},          // on choisit la DURÉE (15 à 120 min)
-  exploration:{base:10*60, perFish:10*60}        // 10 min + 10 min par 🍢 embarqué
+  cuisine:    {perFish:15*60},                   // (hérité) repli si un ancien code le lit
+  peche:      {stepMin:15, maxMin:120},
+  exploration:{base:10*60, perFish:10*60}
 };
 const FISH_CAP=20, GRILL_CAP=10;
 const MAX_TAL={peche:2, cuisine:1, exploration:2};   // un seul cuisinier à la fois
 /* niveaux de base : les épiques (8) et légendaires (12) sont bien plus durs à obtenir */
 function talentLvl(id){const cr=CREATURES[id];if(!cr)return 1;
   return [1,2,3,8,12][RARITY_ORDER.indexOf(cr.rar)]+Math.max(0,(S.creatures.counts[id]||1)-1);}
-/* Pêche : on choisit la durée, le NIVEAU dope le rendement (poissons ramenés).
-   Cuisine : le niveau accélère le gril. Exploration : le niveau dope l'or par minute. */
-/* rendement : 1 🐟 par 15 min de base, +1 tous les 2 niveaux (nv2=2, nv4=3, nv6=4…) */
-function fishYield(id,min){return Math.max(1,Math.round(min/15*(1+Math.floor(talentLvl(id)/2))));}
-function cookPer(id){return Math.round(TASK_BASE.cuisine.perFish*Math.max(.4,1-0.07*(talentLvl(id)-1)));}
-function taskDur(id,fish){
-  const b=TASK_BASE.exploration;
-  return b.base+b.perFish*(fish||0);
-}
-function explGain(id,fish){
-  const min=taskDur(id,fish)/60;
-  /* même taux que les quêtes (voir TAUX_PIECES) : si la journée de quêtes vaut 1,5 fois
-     plus de pièces, une expédition qui rapportait 45 pièces pour une heure ne doit pas
-     rester le parent pauvre — sinon plus personne n'envoie de créature explorer. */
-  return Math.round(min*(0.5+0.25*talentLvl(id))*TAUX_PIECES);
-}
-function startTask(id,param){
+/* (retirés) fishYield / taskDur / explGain / cookPer : ils calculaient le rendement d'une
+   mission à durée choisie. Les postes travaillent maintenant en boucle et leur cadence
+   vient de PROD — plus personne ne les lisait. */
+/* `bioCible` : le panneau des camps affecte dans le biome de l'onglet ouvert, qui n'est
+   pas forcément celui où l'on se trouve. Sans lui, tout atterrissait dans le campement
+   courant — le panneau n'aurait servi qu'à regarder. */
+/* `slotVoulu` : le panneau du Nid pose à une CASE précise (celle qu'on a touchée), pas à
+   la première libre. `muet` tait le message quand l'appelant en produit déjà un. */
+function startTask(id,bioCible,slotVoulu,muet){
   S.tasks=S.tasks||{};S.res=S.res||{fish:0,grilled:0};
   if(S.tasks[id])return;
+  /* ⚠️ LE BIOME VISÉ D'ABORD : c'est lui qui décide des postes disponibles ET de la garde
+     ci-dessous. Depuis le panneau des camps, on affecte dans le biome de l'onglet. */
+  const B=(bioCible&&BIOMES[bioCible])?bioCible:hubBiome();
+  const duPanneau=!!bioCible;
   /* La boucle se referme ICI : sans feu, personne ne part. Et le feu ne tient que par
-     les quêtes accomplies dans la vraie vie. */
-  if(!feuAllume()){
+     les quêtes accomplies dans la vraie vie.
+     Le feu se juge sur le camp COURANT — c'est le seul dont on connaisse l'état ; depuis
+     le panneau on laisse donc passer, la production de chaque biome se coupera d'elle-même
+     si son foyer est froid (voir checkTasks). */
+  if(!duPanneau&&!feuAllume()){
     toast("Le feu est éteint 💨 — accomplis une quête pour lui donner du bois 🪵");
     return;
   }
-  /* MULTI-BIOME : la tâche appartient au biome où elle est lancée, et une créature
-     qui vit ailleurs (balade ou quête d'un autre biome) doit d'abord y être gérée. */
-  const B=hubBiome();
-  if(gardeBiome(id))return;
+  if(duPanneau){
+    if(!biomeDebloque(B)){toast("🔒 Débloque d'abord "+bioNom(B));return;}
+  }else if(gardeBiome(id))return;
   const tal=CREATURES[id].tal, tk={start:Date.now(),tal,biome:B};
   /* les postes (2 pêcheurs, 1 cuisinier, 2 explorateurs) se comptent PAR BIOME */
   const pris=Object.values(S.tasks).filter(k=>k.tal===tal&&(k.biome||"prairie")===B);
@@ -2300,42 +2576,41 @@ function startTask(id,param){
     toast(MAX_TAL[tal]===1?"Il y a déjà un cuisinier au feu !"
       :`Déjà ${MAX_TAL[tal]} créatures en ${TALENTS[tal].name.toLowerCase()} !`);return;
   }
-  tk.slot=pris.some(k=>(k.slot||0)===0)?1:0;   // poste attitré : gauche (0) puis droite (1)
-  if(tal==="peche"){
-    const min=Math.max(TASK_BASE.peche.stepMin,Math.min(TASK_BASE.peche.maxMin,param||TASK_BASE.peche.stepMin));
-    tk.dur=min*60;
-    tk.yield=fishYield(id,min);
-  }else if(tal==="cuisine"){
-    if(S.res.fish<1){toast("Aucun poisson à griller — envoie d'abord un pêcheur ! 🐟");return;}
-    tk.done=0;                                   // 🍢 déjà grillés (versés au coffre au fil de l'eau)
-    tk.last=Date.now()+9000;                     // le gril démarre après le trajet
-    setTimeout(ensureCookFire,9500);             // s'il arrive devant un feu froid, il le rallume
-  }else{
-    tk.fish=Math.max(0,Math.min(param||0,S.res.grilled));  // autant de 🍢 qu'on en possède
-    S.res.grilled-=tk.fish;                      // provisions consommées au départ
-    tk.dur=taskDur(id,tk.fish);
-    tk.gain=explGain(id,tk.fish);
-  }
+  tk.slot=(slotVoulu!=null&&slotVoulu>=0&&slotVoulu<MAX_TAL[tal])
+    ? slotVoulu                                 // case désignée par le panneau du Nid
+    : (pris.some(k=>(k.slot||0)===0)?1:0);      // sinon : gauche (0) puis droite (1)
+  /* ⚠️ PLUS DE DURÉE NI DE PROVISIONS AU DÉPART. La créature prend son poste et y reste :
+     c'est `checkTasks` qui fait tourner les cycles tant que le feu brûle. `last` = date du
+     dernier cycle abouti ; `done` = ce qu'elle a produit depuis sa prise de poste (elle
+     l'annonce en rentrant). Le trajet d'installation compte comme un premier cycle : on
+     ne verse rien dans la seconde qui suit l'affectation. */
+  tk.last=Date.now(); tk.done=0;
   S.tasks[id]=tk;save();
-  toast(`${TALENTS[tal].ic} ${CREATURES[id].name} `+(
-    tal==="peche"?`part pêcher ${Math.round(tk.dur/60)} min (≈${tk.yield} 🐟) !`
-    :tal==="cuisine"?`s'installe au gril — tant qu'il y a du poisson, ça grille !`
-    :`part en exploration${tk.fish?` avec ${tk.fish} 🍢 (${Math.round(tk.dur/60)} min)`:""} !`));
+  if(tal==="cuisine")setTimeout(ensureCookFire,9500);   // s'il arrive devant un feu froid, il le rallume
+  if(muet)return;
+  const c=Math.round(prodCycle(tal,id)/60);
+  toast(`${TALENTS[tal].ic} ${CREATURES[id].name} prend son poste — `+(
+    tal==="peche"?`1 🐟 toutes les ${c} min`
+    :tal==="cuisine"?`1 🍢 toutes les ${c} min`
+    :`+${orVoyage(id)} 🪙 toutes les ${c} min`));
 }
-/* Arrêter le cuisinier (bouton du Nid) — ou fin naturelle quand il n'y a plus de poisson. */
-function stopCooking(id,auto){
-  const tk=S.tasks&&S.tasks[id];if(!tk||tk.tal!=="cuisine")return;
-  /* on ne range le gril que depuis SON biome (sauf arrêt automatique, qui vient du moteur) */
+/* Rappeler une créature de son poste (bouton du Nid). Un seul chemin pour les trois
+   métiers : les postes se libèrent tous de la même façon, on en envoie un autre.
+   `stopCooking` reste comme alias — d'anciens appels le nomment encore. */
+function stopTask(id,auto){
+  const tk=S.tasks&&S.tasks[id];if(!tk)return;
+  /* on ne rappelle une créature que depuis SON biome (sauf rappel automatique du moteur) */
   {const b=tk.biome||BIOME_ORDRE[0];
-   if(!auto&&b!==hubBiome()){toast(`Le gril est ${bioNom(b)} ${bioIc(b)} — va l'arrêter là-bas !`);return;}}
+   if(!auto&&b!==hubBiome()){toast(`${CREATURES[id].name} travaille ${bioNom(b)} ${bioIc(b)} — va la chercher là-bas !`);return;}}
   delete S.tasks[id];
-  HUB_DROPS.push({id,tal:"cuisine",slot:tk.slot||0,t0:Date.now(),biome:tk.biome||"prairie"});
-  toast(auto?`🍲 ${CREATURES[id].name} a tout grillé (${tk.done||0} 🍢) !`
-            :`🍲 ${CREATURES[id].name} range son gril (${tk.done||0} 🍢 au coffre)`);
+  HUB_DROPS.push({id,tal:tk.tal,slot:tk.slot||0,t0:Date.now(),biome:tk.biome||"prairie"});
+  const u=tk.tal==="peche"?"🐟":tk.tal==="cuisine"?"🍢":"🪙";
+  toast(`${TALENTS[tk.tal].ic} ${CREATURES[id].name} quitte son poste — ${tk.done||0} ${u} rapportés`);
   save();campStaticKey="";
   const n=document.getElementById("nest");
   if(n&&n.style.display==="block")openNest();
 }
+function stopCooking(id,auto){return stopTask(id,auto);}
 /* À la fin d'une tâche, la créature va déposer son butin dans le COFFRE près de la
    tente (animation courte), et le coffre s'entrouvre. Le joueur clique dessus pour
    tout récupérer — c'est là que les plafonds de réserve s'appliquent. */
@@ -2343,51 +2618,103 @@ let HUB_DROPS=[];
 function checkTasks(){
   if(!S.tasks)return;
   S.chest=S.chest||{coins:0,fish:0,grilled:0};S.res=S.res||{fish:0,grilled:0};
+  const now=Date.now();
   let changed=false;
+  /* MIGRATION, UNE SEULE FOIS. Les poissons et brochettes que le joueur avait déjà mis
+     de côté rejoignent le coffre, qui devient l'unique entrepôt : rien n'est perdu, et
+     l'ancienne réserve personnelle n'a plus de raison d'être (voir chestPrenable). */
+  if(!S.camp||!S.camp.prodV2){
+    S.camp=S.camp||{};
+    S.chest.fish=Math.min(FISH_CAP,(S.chest.fish||0)+(S.res.fish||0));
+    S.chest.grilled=Math.min(GRILL_CAP,(S.chest.grilled||0)+(S.res.grilled||0));
+    S.res.fish=0; S.res.grilled=0;
+    S.camp.prodV2=1; changed=true;
+  }
+  /* ⚠️ ON RELÈVE L'ÉTAT DU FEU AVANT `feuMaj`, qui va le consommer. Sans cela, impossible
+     de savoir À QUEL INSTANT le feu s'est éteint pendant une absence — et la production
+     rattraperait tout l'intervalle, y compris les heures de cendres froides. */
+  const feuReste0=(S.feu&&S.feu.reste)||0, feuMaj0=(S.feu&&S.feu.maj)||now;
+  const finFeu=feuMaj0+feuReste0;          // instant où la dernière bûche s'éteint
+  try{feuMaj();}catch(e){}
+  const tFin=Math.min(now,finFeu);         // la production s'arrête là
+  /* --- remise en état des tâches (migrations, formats périmés) --- */
   Object.keys(S.tasks).forEach(id=>{
     const tk=S.tasks[id];
-    /* migration multi-biome : les tâches d'avant les biomes vivaient en prairie */
     if(tk&&!tk.biome){tk.biome="prairie";changed=true;}
-    /* auto-réparation : une tâche d'un ancien format (durée manquante, talent inconnu…)
-       resterait coincée À VIE et bloquerait la balade de la créature — on la libère. */
-    if(!tk||!TALENTS[tk.tal]||!CREATURES[id]||(tk.tal!=="cuisine"&&!isFinite(tk.dur))){
+    if(!tk||!TALENTS[tk.tal]||!CREATURES[id]){
       delete S.tasks[id];changed=true;
       if(CREATURES[id])toast(`${CREATURES[id].name} rentre au camp (mission expirée)`);
       return;
     }
-    if(tk.tal==="cuisine"){
-      /* gril CONTINU : consomme la réserve de 🐟, verse les 🍢 au coffre au fil de l'eau */
-      if(!S.camp.fire){tk.last=Math.max(tk.last||Date.now(),Date.now());ensureCookFire();return;}  // feu éteint : pause + rallumage
-      const per=cookPer(id)*1000;
-      let n=Math.floor((Date.now()-(tk.last||tk.start))/per);
-      if(n>0){
-        const can=Math.min(n,S.res.fish);
-        if(can>0){
-          S.res.fish-=can;S.chest.grilled+=can;
-          tk.done=(tk.done||0)+can;tk.last=(tk.last||tk.start)+can*per;
-          changed=true;campStaticKey="";
-        }
-        if(S.res.fish<=0){changed=true;stopCooking(id,true);}
-        else if(can<n)tk.last=Date.now();
-      }
-      return;
+    /* ANCIEN FORMAT (mission à durée) → poste permanent. On ne perd rien : la créature
+       garde son poste et repart en boucle, c'est tout le sens de la mise à jour. */
+    if(tk.dur!=null||tk.last==null){
+      delete tk.dur; delete tk.yield; delete tk.gain; delete tk.fish;
+      tk.last=now; tk.done=tk.done||0; changed=true;
     }
-    if(Date.now()-tk.start>=tk.dur*1000){
-      changed=true;delete S.tasks[id];
-      if(tk.tal==="peche"){
-        const n=tk.yield!=null?tk.yield:3;
-        S.chest.fish+=n;
-        toast(`🎣 ${CREATURES[id].name} dépose ${n} 🐟 dans le coffre`);
-      }else{
-        const g=tk.gain!=null?tk.gain:35;S.chest.coins+=g;
-        toast(`🧭 ${CREATURES[id].name} dépose ${g} 🪙 dans le coffre`);
-      }
-      HUB_DROPS.push({id,tal:tk.tal,slot:tk.slot||0,t0:Date.now(),biome:tk.biome||"prairie"}); // repart de SON poste
-    }});
+  });
+  /* ═══ SIMULATION DE LA CHAÎNE, DANS L'ORDRE DU TEMPS ══════════════════════════════
+     Chaque poste a un prochain cycle à échéance `last + durée`. On traite toujours le
+     plus PROCHE, puis on recommence : c'est ce qui rend le rattrapage exact après une
+     absence. Traiter les postes l'un après l'autre donnerait un résultat faux — le
+     cuisinier ne peut griller que le poisson déjà pêché à cet instant-là, et
+     l'explorateur ne part qu'avec une brochette déjà prête.
+     Un poste qui ne peut pas travailler (coffre plein, réserve vide) consomme quand même
+     son cycle et retente au suivant : il patiente à son poste, il ne rattrape pas. */
+  const ch=S.chest;
+  const recolte={};                        // ce qui est tombé pendant CE passage, pour le résumé
+  let garde=0;
+  for(;;){
+    if(++garde>4000)break;                 // filet : jamais de boucle infinie
+    let quoi=null, quand=Infinity;
+    for(const id of Object.keys(S.tasks)){
+      const tk=S.tasks[id]; if(!tk)continue;
+      const t=(tk.last||now)+prodCycle(tk.tal,id)*1000;
+      if(t<=tFin&&t<quand){quand=t;quoi=id;}
+    }
+    if(!quoi)break;
+    const tk=S.tasks[quoi];
+    let ok=false, raison="";
+    if(tk.tal==="peche"){
+      if((ch.fish||0)<FISH_CAP){ch.fish=(ch.fish||0)+1;ok=true;}
+      else raison="coffre plein de 🐟";
+    }else if(tk.tal==="cuisine"){
+      if((ch.fish||0)<1)raison="plus de 🐟 à griller";
+      else if((ch.grilled||0)>=GRILL_CAP)raison="coffre plein de 🍢";
+      else {ch.fish--;ch.grilled=(ch.grilled||0)+1;ok=true;}
+    }else{
+      /* ⚠️ PAS DE BROCHETTE, PAS D'EXPÉDITION. C'est la règle qui tient toute la chaîne :
+         sans cuisinier, les explorateurs s'arrêtent — et l'or avec eux. */
+      if((ch.grilled||0)<1)raison="plus de 🍢 pour partir";
+      else {ch.grilled--;ch.coins=(ch.coins||0)+orVoyage(quoi);ok=true;}
+    }
+    tk.last=quand;
+    if(ok){
+      tk.done=(tk.done||0)+1; tk.bloque=null;
+      recolte[tk.tal]=(recolte[tk.tal]||0)+(tk.tal==="exploration"?orVoyage(quoi):1);
+      changed=true;
+    }else tk.bloque=raison;
+  }
+  /* Feu éteint : les postes sont à l'arrêt. On recale leur horloge sur MAINTENANT, sinon
+     la première bûche rejetée déclencherait d'un coup toute la production des heures de
+     froid — un jackpot pour avoir laissé le feu mourir. */
+  if(now>finFeu){
+    for(const id of Object.keys(S.tasks)){
+      const tk=S.tasks[id]; if(!tk)continue;
+      tk.last=now; tk.bloque="le feu est éteint";
+    }
+  }
+  if(Object.keys(recolte).length){
+    const l=[];
+    if(recolte.peche)l.push(`+${recolte.peche} 🐟`);
+    if(recolte.cuisine)l.push(`+${recolte.cuisine} 🍢`);
+    if(recolte.exploration)l.push(`+${recolte.exploration} 🪙`);
+    /* un seul message pour toute la récolte : un toast par poisson noierait l'écran */
+    toast(`Le camp a travaillé : ${l.join(" · ")}`);
+  }
   if(changed){save();renderHUD();
     const n=document.getElementById("nest");
-    if(n&&n.style.display==="block"&&!document.getElementById("nsExpl")
-       &&Date.now()-(window.nestTouchT||0)>1200)openNest();
+    if(n&&n.style.display==="block"&&Date.now()-(window.nestTouchT||0)>1200)openNest();
     campStaticKey="";}
 }
 /* Y a-t-il quelque chose à PRENDRE, là, maintenant ? Différent de « le coffre contient
@@ -2395,27 +2722,64 @@ function checkTasks(){
    puisse en sortir un seul. C'est ce cas qui donnait l'impression d'un coffre qui brille
    pour rien — la lueur pulsée est une invitation à cliquer, elle ne doit apparaître que
    si le clic sert à quelque chose. */
-function chestPrenable(){
-  const ch=S.chest||{}, res=S.res||{};
-  return (ch.coins||0)>0
-    || Math.min(ch.fish||0,   FISH_CAP -(res.fish||0))   >0
-    || Math.min(ch.grilled||0,GRILL_CAP-(res.grilled||0))>0;
+/* ⚠️ SEUL L'OR SE RAMASSE DÉSORMAIS. Poissons et brochettes sont le STOCK DE TRAVAIL de
+   la chaîne : ils vivent dans le coffre, où le cuisinier vient prendre son poisson et
+   l'explorateur sa brochette. Les empocher casserait la production — et obligerait le
+   joueur à faire la navette, exactement ce que cette mise à jour supprime. */
+function chestPrenable(){ return ((S.chest||{}).coins||0)>0; }
+/* ═══ LE COFFRE, ENTREPÔT DU CAMP ══════════════════════════════════════════════════════
+   Le clic ne ramasse plus directement : il OUVRE le coffre. On y voit la réserve — le
+   poisson cru que les pêcheurs déposent, les brochettes que le cuisinier y remet, et l'or
+   des explorateurs — puis on encaisse l'or si on en veut.
+   Pourquoi une consultation plutôt qu'un ramassage direct : poisson et brochettes ne se
+   ramassent pas (ils font tourner la chaîne), donc un clic qui « prend le butin » ne
+   pouvait rien faire la plupart du temps. Regarder son stock, en revanche, a du sens à
+   tout moment — et c'est la seule fenêtre où l'on voit la chaîne se remplir. */
+function openCoffre(){
+  S.chest=S.chest||{coins:0,fish:0,grilled:0};
+  const ch=S.chest;
+  const B=hubBiome();
+  const postes=Object.values(S.tasks||{}).filter(k=>(k.biome||"prairie")===B);
+  const nb=t=>postes.filter(k=>k.tal===t).length;
+  const jauge=(n,max)=>{
+    const p=Math.max(0,Math.min(1,max?n/max:0));
+    return `<div class="cf-jauge"><i style="width:${Math.round(p*100)}%"></i></div>`;
+  };
+  openModal(`
+    <h2>🧰 Le coffre du camp</h2>
+    <p class="hint">Les créatures déposent et reprennent ici, sans t'attendre. Le poisson et
+       les brochettes font tourner la chaîne — seul l'or se ramasse.</p>
+    <div class="cf-ligne"><span class="cf-ic">🐟</span>
+      <span class="cf-nom">Poisson cru</span>
+      <span class="cf-val">${ch.fish||0} / ${FISH_CAP}</span></div>
+    ${jauge(ch.fish||0,FISH_CAP)}
+    <div class="cf-sous">déposé par les pêcheurs (${nb("peche")}/${MAX_TAL.peche} en poste)</div>
+    <div class="cf-ligne"><span class="cf-ic">🍢</span>
+      <span class="cf-nom">Brochettes</span>
+      <span class="cf-val">${ch.grilled||0} / ${GRILL_CAP}</span></div>
+    ${jauge(ch.grilled||0,GRILL_CAP)}
+    <div class="cf-sous">grillées par le cuisinier (${nb("cuisine")}/${MAX_TAL.cuisine} en poste) —
+      il en faut au moins une pour qu'un explorateur parte</div>
+    <div class="cf-ligne or"><span class="cf-ic">🪙</span>
+      <span class="cf-nom">Or rapporté</span>
+      <span class="cf-val">${ch.coins||0}</span></div>
+    <div class="cf-sous">ramené par les explorateurs (${nb("exploration")}/${MAX_TAL.exploration} en poste)</div>
+    <div class="modal-actions">
+      <button class="btn pix" id="cfFermer">Fermer</button>
+      <button class="btn go pix" id="cfOr" ${ch.coins>0?"":"disabled"}>💰 Prendre ${ch.coins||0} 🪙</button>
+    </div>`);
+  document.getElementById("cfFermer").onclick=closeModal;
+  document.getElementById("cfOr").onclick=()=>{ closeModal(); collectChest(); };
 }
 function collectChest(){
-  S.chest=S.chest||{coins:0,fish:0,grilled:0};S.res=S.res||{fish:0,grilled:0};
-  const ch=S.chest, got=[];
-  if(ch.coins>0){S.coins+=ch.coins;got.push(`+${ch.coins} 🪙`);ch.coins=0;}
-  const f=Math.min(ch.fish,FISH_CAP-S.res.fish);
-  if(f>0){S.res.fish+=f;ch.fish-=f;got.push(`+${f} 🐟`);}
-  const g=Math.min(ch.grilled,GRILL_CAP-S.res.grilled);
-  if(g>0){S.res.grilled+=g;ch.grilled-=g;got.push(`+${g} 🍢`);}
-  if(!got.length){
-    toast((ch.fish>0||ch.grilled>0)?"Réserves pleines — utilise des poissons d'abord !":"Le coffre est vide.");
-    return;
-  }
+  S.chest=S.chest||{coins:0,fish:0,grilled:0};
+  const ch=S.chest;
+  if(!(ch.coins>0)){ openCoffre(); return; }   /* rien à prendre : on montre la réserve */
+  const got=[`+${ch.coins} 🪙`];
+  S.coins+=ch.coins; ch.coins=0;
   save();renderHUD();campStaticKey="";if(launchOpen)drawHub(0);
   try{sfxMagic();}catch(e){}
-  showLoot(got,(ch.fish>0||ch.grilled>0));
+  showLoot(got,false);
 }
 /* Petit cadre de butin : ce que le coffre vient de donner, ligne par ligne */
 function showLoot(got,reste){
@@ -3632,8 +3996,13 @@ function piecesPour(gain){return Math.round(gain*TAUX_PIECES);}
    la validation se fait à 4 étoiles (voir completeFlow) et la série est connue — le
    chiffre affiché sur le billet est donc exactement celui qui tombera. */
 function gainPrevu(it){
+  /* ⚠️ MÊME SOURCE QUE `award`, sans exception. Une valeur 40 était écrite en dur ici
+     pour les événements, alors qu'`award` lit TYPES : les deux tombaient juste par
+     coïncidence (TYPES.evenement.base vaut 40), mais retoucher ce barème n'aurait changé
+     que le montant VERSÉ — le billet aurait continué d'annoncer l'ancien. Le chiffre
+     affiché doit venir d'où vient le chiffre payé. */
   const b=(it.base!=null)?it.base
-        :(it.type==="evenement"?40:((TYPES[it.type]&&TYPES[it.type].base)!=null?TYPES[it.type].base:25));
+        :((TYPES[it.type]&&TYPES[it.type].base!=null)?TYPES[it.type].base:25);
   return Math.round(b*(0.5+4*0.1)*multiplier());
 }
 /* Pastille « ce que ça rapporte » : XP, pièces, et le multiplicateur de série quand il
@@ -4834,16 +5203,50 @@ function setDonnees(el){
 
 /* Export : un fichier daté, lisible, qui contient l'état complet. */
 function exportSauvegarde(){
+  /* ⚠️ LE TÉLÉCHARGEMENT PEUT NE JAMAIS PARTIR, SANS LEVER D'ERREUR. Quand l'app tourne
+     dans une page hébergée (l'artifact), le bac à sable interdit tout téléchargement
+     déclenché par la page : le clic sur le lien ne fait rien du tout, et l'ancien code
+     annonçait pourtant « Sauvegarde exportée ✓ ». On croyait avoir une copie, on n'en
+     avait aucune — le pire des défauts pour une sauvegarde.
+     On tente donc le téléchargement (il marche en navigateur normal et en app
+     installée) MAIS on montre toujours le texte, sélectionnable et copiable : ce
+     chemin-là, lui, marche partout. */
+  let brut="";
+  try{ brut=localStorage.getItem(KEY)||JSON.stringify(S); }
+  catch(e){ toast("Export impossible : "+e.message); return; }
+  const nom="journal-de-quetes-"+today()+".json";
   try{
-    const brut=localStorage.getItem(KEY)||JSON.stringify(S);
-    const nom="journal-de-quetes-"+today()+".json";
     const b=new Blob([brut],{type:"application/json"});
     const u=URL.createObjectURL(b);
     const a=document.createElement("a");a.href=u;a.download=nom;
     document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(u),4000);
-    toast("Sauvegarde exportée ⬇️ "+nom);
-  }catch(e){ toast("Export impossible : "+e.message); }
+  }catch(e){}
+  openModal(`
+    <h2>💾 Sauvegarde</h2>
+    <p class="hint">Si le fichier <b>${esc(nom)}</b> ne s'est pas téléchargé (c'est le cas
+       quand le journal tourne dans une page web), copie le texte ci-dessous et colle-le
+       dans un fichier ou une note. C'est ta sauvegarde complète.</p>
+    <textarea id="expTxt" readonly rows="6"
+      style="width:100%;font-family:var(--mono);font-size:11px;resize:vertical"></textarea>
+    <div class="modal-actions">
+      <button class="btn pix" id="expCopie">📋 Copier</button>
+      <button class="btn go pix" id="expOk">Fermer</button>
+    </div>`);
+  const zone=document.getElementById("expTxt");
+  zone.value=brut;                      /* posé en JS : aucun échappement à rater */
+  document.getElementById("expOk").onclick=closeModal;
+  document.getElementById("expCopie").onclick=()=>{
+    zone.select(); zone.setSelectionRange(0,brut.length);
+    let ok=false;
+    try{ ok=document.execCommand("copy"); }catch(e){}
+    if(ok){ toast("Sauvegarde copiée 📋"); return; }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(brut)
+        .then(()=>toast("Sauvegarde copiée 📋"))
+        .catch(()=>toast("Copie refusée — sélectionne le texte à la main"));
+    }else toast("Copie refusée — sélectionne le texte à la main");
+  };
 }
 /* Import : on VALIDE le fichier avant de toucher à quoi que ce soit, et on confirme en
    annonçant ce qu'il contient — remplacer une progression sans la décrire serait brutal. */
@@ -6699,11 +7102,6 @@ function bioAnimDessine(x,P,day){
     g.globalCompositeOperation="destination-in";
     g.drawImage(r.masqueBin||r.masque,0,0);
     g.globalCompositeOperation="source-over";
-    /* ⚠️ ON NE DESCEND PAS JUSQU'AU BORD. Les dernières rangées de l'image sont le bord
-       dentelé, en demi-teinte : le masque n'y coupe qu'à moitié, et le remplissage
-       opaque qu'exige le JPEG (des colonnes de couleur propagées vers le bas) passait
-       au travers en stries claires, juste au-dessus du raccord. On s'arrête 7 px plus
-       haut et on laisse ces rangées au décor figé, dont le PNG a l'alpha exact. */
     /* ⚠️ ON NE DESCEND PAS JUSQU'AU BORD. Les dernières rangées de l'image sont le bord
        dentelé, en demi-teinte : le masque n'y coupe qu'à moitié, et le remplissage
        opaque qu'exige le JPEG (des colonnes de couleur propagées vers le bas) passait
@@ -8607,13 +9005,27 @@ function buildHub(W,H,day){
     const c2=(i,k)=>Math.round(parseInt(h.slice(i,i+2),16)*k/255).toString(16).padStart(2,"0");
     return "#"+c2(1,82)+c2(3,92)+c2(5,120);
   };
+  /* ⚠️ LA PARURE DORÉE NE PARAÎT QUE S'IL Y A DE L'OR. Le coffre garde en permanence le
+     poisson et les brochettes de la chaîne : s'il se parait d'or pour ça, il appellerait
+     le joueur pour rien, et le vrai signal — « il y a des pièces à prendre » — se
+     noierait. Ferrures dorées et couvercle relevé disent UNE chose : viens encaisser.
+     Le reste du temps, c'est un coffre de bois ordinaire, qu'on peut ouvrir pour
+     consulter la réserve. */
+  const fer=ckFull?"#d8a83a":"#8a6a3c", ferHi=ckFull?"#ffd873":"#a8895c";
+  const bord=ckFull?"#8a6a2c":"#6e4a2c";
   t.ell(ckX+15,ckY+2,19,4.5,"rgba(0,0,0,.20)");
   t.poly([[ckX+6,ckY-12],[ckX+1,ckY-15],[ckX+1,ckY-1],[ckX+6,ckY+2]],nuitBois("#3e2814"));  // côté fuyant
   t.R(ckX+6,ckY-12,24,14,nuitBois("#5a3a22"));                                       // face avant
   for(let j=0;j<3;j++)t.R(ckX+6,ckY-10+j*4,24,1,nuitBois("#4a3018"));                // lattes
-  t.R(ckX+6,ckY-12,24,2,nuitBois("#6e4a2c"));
-  t.R(ckX+16,ckY-12,4,14,nuitBois("#8a6a3c"));t.R(ckX+17,ckY-12,2,14,nuitBois("#a8895c")); // ferrure
+  t.R(ckX+6,ckY-12,24,2,nuitBois(bord));
+  t.R(ckX+16,ckY-12,4,14,nuitBois(fer));t.R(ckX+17,ckY-12,2,14,nuitBois(ferHi));     // ferrure
   t.R(ckX+17,ckY-6,2,4,nuitBois("#5e4020"));t.P(ckX+18,ckY-5,nuitBois("#2e1c0c"));   // serrure
+  /* cornières dorées aux angles : le détail qui fait « coffre au trésor » sans repeindre
+     le bois — visible de jour comme de nuit, mais seulement quand il y a de l'or */
+  if(ckFull){
+    t.R(ckX+6,ckY-12,2,14,nuitBois(fer)); t.R(ckX+28,ckY-12,2,14,nuitBois(fer));
+    t.P(ckX+6,ckY-12,ferHi); t.P(ckX+29,ckY-12,ferHi);
+  }
   const lidUp=ckFull?4:0, lY=ckY-13-lidUp;
   if(ckFull){ /* fente lumineuse entre corps et couvercle — JAMAIS assombrie */
     t.R(ckX+6,ckY-14,24,2,"#ffd873");t.R(ckX+8,ckY-14,20,1,"#fff2b0");
@@ -8623,9 +9035,9 @@ function buildHub(W,H,day){
     if(!day)t.glow(ckX+16,ckY-14,13,"255,216,115",.30);
   }
   t.poly([[ckX+5,lY-4],[ckX,lY-7],[ckX,lY],[ckX+5,lY+2]],nuitBois("#4a3018"));       // côté couvercle
-  t.R(ckX+5,lY-4,26,6,nuitBois("#6e4a2c"));t.R(ckX+5,lY-4,26,1,nuitBois("#8a6444")); // couvercle
+  t.R(ckX+5,lY-4,26,6,nuitBois("#6e4a2c"));t.R(ckX+5,lY-4,26,1,nuitBois(ckFull?"#d8a83a":"#8a6444")); // couvercle
   t.R(ckX+8,lY-6,20,2,nuitBois("#5e3e24"));                                          // dos bombé
-  t.R(ckX+16,lY-4,4,6,nuitBois("#a8895c"));t.R(ckX+17,lY+1,2,1,nuitBois("#5e4020")); // ferrure couvercle
+  t.R(ckX+16,lY-4,4,6,nuitBois(ferHi));t.R(ckX+17,lY+1,2,1,nuitBois("#5e4020"));     // ferrure couvercle
   /* ---- TABLEAU perché à droite (pieds sur la MÊME ligne de sol que la tente : gy(406)) ---- */
   const pbB=gy(406), bdT=pbB-96;
   hubDrawBoard(x,bdT,pbB);
@@ -11374,164 +11786,444 @@ function nestEquip(id){
   if(launchOpen){campStaticKey="";drawHub(0);}
   openNest();
 }
+/* ═══ LE NID — ÉCRAN À HAUTEUR FIXE ═══════════════════════════════════════════════════
+   Refonte d'après la maquette de Claude Design, traduite dans l'idiome de l'app (la
+   maquette était écrite dans un langage de composants qui ne tourne pas ici).
+
+   LE PRINCIPE, ET LE CHIFFRE QUI LE JUSTIFIE : l'écran mesurait 2082 px pour une fenêtre
+   de 812 — deux écrans et demi de défilement, avec la grille de collection qui mangeait
+   69 % de la page et le panneau des camps à cheval sur deux écrans. Ici, la page fait
+   EXACTEMENT la hauteur de la fenêtre : le Nid est une colonne flex, tout est à taille
+   fixe, et la SEULE zone qui défile est la collection. Le panneau des camps — la partie
+   avec laquelle on interagit — est intégralement au-dessus de la ligne de flottaison.
+
+   Ce qui a été rendu au budget : l'encart « Œuf mystère » (102 px) et son bouton (46 px)
+   fusionnent dans la barre de titre en un bouton `🥚 150` ; la carte de créature passe de
+   neuf éléments sur 108×162 à quatre sur ~99×96, le reste allant dans une FICHE qui
+   s'ouvre au toucher ; les créatures non possédées quittent la grille pour une ligne
+   repliée en bas.
+
+   Toutes les cibles tactiles font au moins 44 px, en `min-height` + centrage flex : le
+   gabarit ne dérive pas quand le texte change. */
+let nestBiome=null;    /* onglet de biome ouvert */
+let nestSel=null;      /* emplacement armé : {bio, tal|"balade", idx} */
+let nestFiche=null;    /* id de la créature dont la fiche est ouverte */
+let nestVerrous=false; /* la bande des créatures à découvrir est-elle dépliée ? */
+/* Tri de la collection. Trois façons de chercher, selon ce qu'on a en tête : « la plus
+   forte », « il me faut un cuisinier », « qu'est-ce que j'ai de légendaire ». Un seul
+   bouton qui tourne entre les trois — trois boutons pour 26 créatures prendraient plus
+   de place qu'ils n'en font gagner. */
+let nestTri="niveau";
+const NS_TRIS=[
+  {c:"niveau", t:"↓ Niveau"},
+  {c:"metier", t:"⚒ Métier"},
+  {c:"rarete", t:"✦ Rareté"}
+];
+function nestBio(){
+  if(!nestBiome||!BIOMES[nestBiome])nestBiome=hubBiome();
+  return nestBiome;
+}
+/* Couleurs des onglets — elles ne viennent PAS de BIOMES : la palette du décor (vert
+   olive pour la forêt, bleu pâle pour la banquise) ne donnerait pas cinq pastilles
+   franches. `texte` est calculé pour rester lisible sur chaque fond, y compris le blanc
+   de la Banquise où du blanc sur blanc serait invisible. */
+const CP_BIO={
+  prairie   :{nom:"Prairie", fond:"#3fae5a", texte:"#ffffff"},
+  glace     :{nom:"Banquise",fond:"#eef4f8", texte:"#20140a"},
+  plage     :{nom:"Plage",   fond:"#2f8fd8", texte:"#ffffff"},
+  foretnoire:{nom:"Forêt",   fond:"#241c1c", texte:"#e8dcc0"},
+  volcanyon :{nom:"Volcan",  fond:"#e0592a", texte:"#ffffff"}
+};
+/* Vignette d'une créature : le canvas est peint après coup par paintStill (voir la fin
+   d'openNest), comme partout ailleurs dans le jeu. */
+function nsVignette(id,px){
+  const cr=CREATURES[id]; if(!cr)return "";
+  const g=cr.gif?(gifData(id)||{w:32,h:32}):{w:18,h:18};
+  return `<canvas width="${g.w}" height="${g.h}" data-cr="${id}"
+    style="max-width:${px}px;max-height:${px}px;image-rendering:pixelated"></canvas>`;
+}
+/* Qui occupe le poste (biome, métier, index) ? On lit `tk.slot`, la place ATTITRÉE
+   enregistrée dans la tâche — et non l'ordre d'itération, qui pouvait faire sauter une
+   créature d'une case à l'autre au moindre remaniement. */
+function nsOccupant(bio,tal,idx){
+  for(const id of Object.keys(S.tasks||{})){
+    const k=S.tasks[id];
+    if(k&&(k.biome||"prairie")===bio&&k.tal===tal&&(k.slot||0)===idx)return id;
+  }
+  return null;
+}
+function nsBalade(bio){ return ((S.cosmetics&&S.cosmetics.modelsBio)||{})[bio]||[]; }
+/* Où vit cette créature ? Sert à l'étiquette de coin des cartes et à la fiche. */
+function nsLieu(id){
+  const k=(S.tasks||{})[id];
+  if(k){ const b=k.biome||"prairie", B=CP_BIO[b]||{nom:b,fond:"#54341e",texte:"#f0ddac"};
+    return {court:B.nom, long:`Au travail — ${bioNom(b)} · ${TALENTS[k.tal].name}`,
+            fond:B.fond, couleur:B.texte, occupee:true}; }
+  const mb=(S.cosmetics&&S.cosmetics.modelsBio)||{};
+  for(const b of Object.keys(mb)){
+    const i=(mb[b]||[]).indexOf(id);
+    if(i>=0)return {court:i===0?"N°1 ★":"N°"+(i+1),
+      long:`En balade — ${bioNom(b)}${i===0?" · tient le cadre du journal":""}`,
+      fond:"rgba(176,125,20,.9)", couleur:"#20140a", occupee:false};
+  }
+  return {court:"", long:"Au repos au Nid — disponible",
+          fond:"rgba(20,12,6,.75)", couleur:"#8a6a3c", occupee:false};
+}
+/* Débit d'or réel du camp : le maillon le plus lent commande toute la chaîne. Afficher
+   la somme des vitesses individuelles serait un mensonge — et l'intérêt du chiffre est
+   justement de récompenser l'équilibrage. */
+function nsOrParHeure(bio){
+  let F=0,C=0,E=0,tot=0;
+  for(let i=0;i<MAX_TAL.peche;i++){const id=nsOccupant(bio,"peche",i);
+    if(id)F+=3600/prodCycle("peche",id);}
+  for(let i=0;i<MAX_TAL.cuisine;i++){const id=nsOccupant(bio,"cuisine",i);
+    if(id)C+=3600/prodCycle("cuisine",id);}
+  for(let i=0;i<MAX_TAL.exploration;i++){const id=nsOccupant(bio,"exploration",i);
+    if(id){const v=3600/prodCycle("exploration",id); E+=v; tot+=v*orVoyage(id);}}
+  if(!E)return 0;
+  return Math.round(Math.min(F,C,E)/E*tot);
+}
+function cpEligible(id){
+  if(!nestSel||!S.creatures.owned.includes(id))return false;
+  if(nestSel.tal!=="balade"&&CREATURES[id].tal!==nestSel.tal)return false;
+  return true;
+}
+/* Détacher une créature de PARTOUT — poste et balade, tous biomes confondus. */
+function cpLibere(id){
+  if((S.tasks||{})[id])stopTask(id,true);
+  const mb=(S.cosmetics.modelsBio=S.cosmetics.modelsBio||{});
+  for(const b of Object.keys(mb)){
+    const i=(mb[b]||[]).indexOf(id);
+    if(i>=0){mb[b].splice(i,1);delete hubWalks[id];}
+  }
+}
+/* Poser une créature à un emplacement précis. ÉCHANGE plutôt que renvoi : si la place
+   est prise et que l'arrivante venait elle-même d'un poste, l'occupant prend la place
+   libérée. Deux créatures permutent d'un geste, au lieu qu'une se retrouve au repos
+   sans qu'on l'ait demandé. */
+function cpPoserA(id,bio,tal,idx,muet){
+  if(!S.creatures.owned.includes(id)){toast("Créature non possédée");return false;}
+  if(!biomeDebloque(bio)){toast("🔒 Débloque d'abord "+bioNom(bio));return false;}
+  if(tal!=="balade"&&CREATURES[id].tal!==tal){
+    toast(`${CREATURES[id].name} est ${TALENTS[CREATURES[id].tal].ic} ${TALENTS[CREATURES[id].tal].name.toLowerCase()} — poste incompatible`);
+    return false;
+  }
+  const source=(S.tasks||{})[id]
+    ? {bio:(S.tasks[id].biome||"prairie"),tal:S.tasks[id].tal,idx:(S.tasks[id].slot||0)} : null;
+  const occ=(tal==="balade")?(nsBalade(bio)[idx]||null):nsOccupant(bio,tal,idx);
+  if(occ===id)return false;
+  cpLibere(id);
+  if(occ){
+    cpLibere(occ);
+    /* l'occupant reprend la place que l'arrivante vient de quitter, si elle lui convient */
+    if(source&&source.tal!=="balade"&&CREATURES[occ].tal===source.tal)
+      startTask(occ,source.bio,source.idx);
+  }
+  if(tal==="balade"){
+    const mb=(S.cosmetics.modelsBio=S.cosmetics.modelsBio||{});
+    mb[bio]=mb[bio]||[];
+    mb[bio].splice(Math.min(idx,mb[bio].length),0,id);
+    if(mb[bio].length>MAX_DEPLOY)mb[bio].length=MAX_DEPLOY;
+    if(bio===hubBiome()&&mb[bio][0])S.cosmetics.model=mb[bio][0];
+    try{sfxCry(id,1.4);}catch(e){}
+    if(!muet)toast(`🐾 ${CREATURES[id].name} → balade ${bioNom(bio)}${idx===0?" (n°1 ★)":""}`);
+  }else{
+    startTask(id,bio,idx,true);
+    if(!muet)toast(`${TALENTS[tal].ic} ${CREATURES[id].name} → ${bioNom(bio)} · ${TALENTS[tal].name}`);
+  }
+  nestSel=null; nestFiche=null; save(); renderHUD();
+  if(launchOpen){campStaticKey="";drawHub(0);}
+  return true;
+}
+function cpPoser(id){
+  const s=nestSel; if(!s)return;
+  if(!cpEligible(id)){
+    toast(s.tal==="balade"?"Créature non possédée"
+      :`${CREATURES[id].name} est ${TALENTS[CREATURES[id].tal].ic} ${TALENTS[CREATURES[id].tal].name.toLowerCase()} — pas ${TALENTS[s.tal].ic}`);
+    return;
+  }
+  cpPoserA(id,s.bio,s.tal,s.idx);
+  openNest();
+}
+/* ⚡ AUTO : la meilleure équipe possible, d'un geste. On ne pille PAS les autres biomes —
+   optimiser un camp en cassant silencieusement la chaîne d'un autre serait un très
+   mauvais service, et rien à l'écran ne le montrerait. */
+function cpAuto(){
+  const B=nestBio();
+  if(!biomeDebloque(B)){toast("🔒 Débloque d'abord "+bioNom(B));return;}
+  const ailleurs=new Set();
+  for(const [id,k] of Object.entries(S.tasks||{})) if((k.biome||"prairie")!==B)ailleurs.add(id);
+  const mb=S.cosmetics.modelsBio||{};
+  for(const b of Object.keys(mb)) if(b!==B)(mb[b]||[]).forEach(id=>ailleurs.add(id));
+  let bouges=0, vides=0, retenues=0;
+  for(const tal of ["peche","cuisine","exploration"]){
+    const cand=(S.creatures.owned||[]).filter(id=>CREATURES[id]&&CREATURES[id].tal===tal&&!ailleurs.has(id))
+                 .sort((a,b)=>talentLvl(b)-talentLvl(a));
+    retenues+=(S.creatures.owned||[]).filter(id=>CREATURES[id]&&CREATURES[id].tal===tal&&ailleurs.has(id)).length;
+    const voulu=cand.slice(0,MAX_TAL[tal]);
+    for(let i=0;i<MAX_TAL[tal];i++){
+      const actuel=nsOccupant(B,tal,i), veut=voulu[i]||null;
+      if(actuel===veut)continue;
+      if(actuel)stopTask(actuel,true);
+      if(veut){cpLibere(veut);startTask(veut,B,i,true);}
+      bouges++;
+    }
+    vides+=Math.max(0,MAX_TAL[tal]-voulu.length);
+  }
+  nestSel=null; nestFiche=null; save(); renderHUD();
+  if(launchOpen){campStaticKey="";drawHub(0);}
+  openNest();
+  /* tournure sans accord : les noms de biomes n'ont pas tous le même genre */
+  if(!bouges)toast(`⚡ ${bioNom(B)} : déjà au mieux`);
+  else toast(`⚡ ${bioNom(B)} : ${bouges} changement${bouges>1?"s":""}`
+       +(vides?` · ${vides} poste${vides>1?"s":""} vide${vides>1?"s":""}${retenues?` (${retenues} créature${retenues>1?"s":""} ailleurs)`:""}`:""));
+}
+/* Depuis la fiche : mettre au poste, dans la première case libre du biome ouvert. */
+function cpFichePoste(id){
+  const B=nestBio(), tal=CREATURES[id].tal;
+  for(let i=0;i<MAX_TAL[tal];i++){
+    if(!nsOccupant(B,tal,i)){ if(cpPoserA(id,B,tal,i))openNest(); return; }
+  }
+  /* tout est pris : on arme le premier poste, le joueur choisit qui remplacer */
+  nestSel={bio:B,tal,idx:0}; nestFiche=null; openNest();
+  toast(`Postes ${TALENTS[tal].ic} complets — touche celle à remplacer`);
+}
 function openNest(){
   const nest=document.getElementById("nest");if(!nest)return;
-  const scroll0=nest.scrollTop;                // un re-rendu ne fait pas sauter la page
+  const B=nestBio(), ouvert=biomeDebloque(B);
   const total=Object.keys(CREATURES).length, got=S.creatures.owned.length;
+  const zone=nest.querySelector(".ns-coll");
+  const scroll0=zone?zone.scrollTop:0;   /* un re-rendu ne doit pas faire sauter la liste */
+  /* ---------- barre de titre : enseigne + pièces + œuf ---------- */
   const canBuy=S.coins>=EGG_COST;
-  const cardHTML=id=>{
-    const cr=CREATURES[id], owned=S.creatures.owned.includes(id);
-    const rang=deployList().indexOf(id);   // -1 = pas dehors ICI, 0 = la n°1 du biome courant
-    const eq=rang>=0;
-    const R=RARITY[cr.rar], cnt=S.creatures.counts[id]||0;
-    if(!owned)return `<div class="ns-card locked"><span class="rglow" style="background:${R.col}"></span>
-      <div class="qm">?</div><div class="cn" style="color:#5a4a34">???</div>
-      <div class="cr" style="color:${R.col}">${R.name}</div></div>`;
-    /* MULTI-BIOME : le CADRE prend la couleur du biome où vit la créature (balade OU
-       quête) — demande utilisateur : « quand on va dans l'œuf, on sait qui est où ». */
-    const B=hubBiome(), ou=creatureOu(id);
-    const ailleurs=!!(ou&&ou.biome!==B);
-    const col=ou?((BIOMES[ou.biome]||{}).couleur||"#e8a92e"):null;
-    const cadre=ou?`border-color:${col};box-shadow:0 0 0 1px ${col}, 0 0 12px ${col}44 inset`:"";
-    const tk=(S.tasks||{})[id];
-    const tkIci=!!(tk&&(tk.biome||"prairie")===B);
-    const rest=tk&&tk.dur?Math.max(0,Math.ceil((tk.start+tk.dur*1000-Date.now())/60000)):0;
-    const TL=TALENTS[cr.tal];
-    /* libellé du bouton selon le talent, le biome et l'état des réserves */
-    let btn, stop=false;
-    if(tk&&!tkIci)btn=`${TL.ic} ${cr.tal==="cuisine"?"au gril":"en quête"} — ${(BIOMES[tk.biome||"prairie"]||{}).nom}`;
-    else if(tk&&cr.tal==="cuisine"){btn=`■ Arrêter (${tk.done||0} 🍢)`;stop=true;}   // gril continu, d'ICI
-    else if(tk)btn=`⏳ ${rest>0?rest+" min":"<1 min"}`;
-    else if(cr.tal==="peche")btn=`🎣 Pêcher…`;
-    else if(cr.tal==="cuisine")btn=`🍲 Allumer le gril (1 🍢/${Math.round(cookPer(id)/60)} min)`;
-    else btn=`Explorer… (dès ${Math.round(TASK_BASE.exploration.base/60)} min)`;
-    /* les postes se comptent dans le biome COURANT */
-    const talPlein=!tk&&Object.values(S.tasks||{}).filter(k=>k.tal===cr.tal&&(k.biome||"prairie")===B).length>=MAX_TAL[cr.tal];
-    if(talPlein)btn=cr.tal==="cuisine"?"🍲 gril occupé":`${TL.ic} équipe complète`;
-    const dead=!tk&&(talPlein||(cr.tal==="cuisine"&&!((S.res||{}).fish>0)));
-    /* ⚠️ « en quête » PASSE AVANT « N°x » : une créature partie en mission reste dans
-       la liste de balade de son biome, et l'étiquette de rang masquait le fait
-       qu'elle travaille — on lisait « N°1 ★ » d'une créature qui pêchait. */
-    let tag="";
-    if(tkIci)tag=`<span class="eqtag" style="background:${col}">${TL.ic} En quête</span>`;
-    else if(ailleurs)tag=`<span class="eqtag" style="background:${col}">${bioNom(ou.biome)}</span>`;
-    else if(eq)tag=`<span class="eqtag" style="background:${col}">N°${rang+1}${rang===0?" ★":""}</span>`;
-    return `<div class="ns-card${eq?" eq":""}" data-eq="${id}" style="${cadre}">
-      <span class="rglow" style="background:${R.col}"></span>
-      ${tag}
-      ${cnt>1?`<span class="cnt">×${cnt}</span>`:""}
-      <canvas width="${cr.gif?(gifData(id)||{w:32}).w:18}" height="${cr.gif?(gifData(id)||{h:32}).h:18}" data-cr="${id}"></canvas>
-      <div class="cn">${esc(cr.name)}</div>
-      <div class="cr" style="color:${R.col}">${R.name}</div>
-      <div class="tl">${TL.ic} ${TL.name} · Nv ${talentLvl(id)}</div>
-      <button class="ns-task${tk&&!stop?" busy":""}${stop?" stop":""}" data-task="${id}" ${(tk&&!stop)||dead?"disabled":""}>${btn}</button></div>`;
-  };
-  const order=Object.keys(CREATURES).sort((a,b)=>RARITY_ORDER.indexOf(CREATURES[a].rar)-RARITY_ORDER.indexOf(CREATURES[b].rar));
-  nest.innerHTML=`
-    <div class="ns-inner">
-      <div class="ns-sign">LE NID<small>Fais éclore des œufs, collectionne les créatures</small></div>
-      <div class="ns-egg">
-        <canvas id="nsEggCv" width="26" height="32"></canvas>
-        <div class="txt"><b>Œuf mystère</b><p>Une créature au hasard t'attend à l'intérieur. Plus elle est rare, plus elle est précieuse.</p></div>
-      </div>
-      <button class="ns-buy" id="nsBuy" ${canBuy?"":"disabled"}>🥚 Ouvrir un œuf — 🪙 ${EGG_COST}</button>
-      <div class="ns-stock">
-        <span>🐟 Poissons <b>${(S.res||{}).fish||0} / ${FISH_CAP}</b></span>
-        <span>🍢 Grillés <b>${(S.res||{}).grilled||0} / ${GRILL_CAP}</b></span>
-      </div>
-      <div class="ns-secttl">Ma collection <b>${got} / ${total}</b></div>
-      <div class="ns-stock" style="margin-bottom:8px"><span>🐾 En balade — ${bioNom(hubBiome())} ${bioIc(hubBiome())} <b>${deployList().length} / ${MAX_DEPLOY}</b> — la n°1 tient le cadre du journal</span></div>
-      <div class="ns-grid">${order.map(cardHTML).join("")}</div>
-      <button class="ns-back" id="nsBack">↩ Retour au camp</button>
+  const enTravail=Object.keys(S.tasks||{}).length;
+  const entete=`
+    <div class="ns-bar">
+      <div class="ns-ttl">LE NID<span>${got}/${total} · ${enTravail} au travail</span></div>
+      <div class="ns-or">🪙 ${S.coins}</div>
+      <button class="ns-egg2" id="nsBuy" ${canBuy?"":"disabled"}>🥚 ${EGG_COST}</button>
     </div>`;
-  nest.style.display="block";
-  nest.scrollTop=scroll0;
-  if(!nest._scrollBound){nest._scrollBound=1;   /* un re-rendu pendant une glisse casse le défilement */
+  /* ---------- onglets ---------- */
+  const onglets=BIOME_ORDRE.map(b=>{
+    const o=biomeDebloque(b), C=CP_BIO[b], n=Object.values(S.tasks||{}).filter(k=>(k.biome||"prairie")===b).length;
+    return `<button class="cp-tab${b===B?" on":""}${o?"":" clos"}" data-bio="${b}"
+      style="--c:${C.fond};--t:${C.texte}">${o?esc(C.nom):"🔒"}${(o&&n)?`<i>${n}</i>`:""}</button>`;
+  }).join("");
+  /* ---------- panneau du camp ---------- */
+  const caseHTML=(id,tal,idx,rang)=>{
+    const sel=nestSel&&nestSel.bio===B&&nestSel.tal===tal&&nestSel.idx===idx;
+    if(!id)return `<button class="cp-case vide${sel?" sel":""}" data-slot="${tal}|${idx}">+</button>`;
+    const R=RARITY[CREATURES[id].rar];
+    return `<button class="cp-case${sel?" sel":""}" data-slot="${tal}|${idx}"
+        style="border-color:${R.col}">
+      ${nsVignette(id,30)}
+      <span class="cp-niv">${talentLvl(id)}</span>
+      ${rang!=null?`<span class="cp-rang">${rang===0?"★":rang+1}</span>`:""}</button>`;
+  };
+  const colonne=(tal,nom)=>{
+    const c=[];
+    for(let i=0;i<MAX_TAL[tal];i++)c.push(caseHTML(nsOccupant(B,tal,i),tal,i));
+    return `<div class="cp-col"><div class="cp-colttl">${TALENTS[tal].ic} ${nom}</div>
+      <div class="cp-cases">${c.join("")}</div></div>`;
+  };
+  const bal=nsBalade(B), casesBal=[];
+  for(let i=0;i<MAX_DEPLOY;i++)casesBal.push(caseHTML(bal[i]||null,"balade",i,bal[i]?i:null));
+  const manque=["peche","cuisine","exploration"].filter(t=>{
+    for(let i=0;i<MAX_TAL[t];i++)if(nsOccupant(B,t,i))return false; return true;});
+  const feu=(B===hubBiome())?((typeof feuAllume==="function")&&feuAllume()):null;
+  let etat,etatCls;
+  if(!ouvert){etat="🔒 Biome à débloquer";etatCls="ko";}
+  else if(manque.length){etat=`⛔ Chaîne coupée — il manque ${manque.map(t=>TALENTS[t].ic).join(" ")}`;etatCls="ko";}
+  else if(feu===false){etat="💨 Feu éteint — production à l'arrêt";etatCls="ko";}
+  else etat=`✅ Camp complet — ${nsOrParHeure(B)} 🪙/h`,etatCls="ok";
+  const panneau=`
+    <div class="cp-tabs">${onglets}</div>
+    <div class="cp-body" style="--bio:${CP_BIO[B].fond}">
+      <div class="cp-barre">
+        <div class="cp-etat ${etatCls}">${etat}</div>
+        <button class="cp-auto" id="cpAuto" ${ouvert?"":"disabled"}>⚡ Auto</button>
+      </div>
+      <div class="cp-cols">${colonne("peche","Pêche")}${colonne("cuisine","Cuisine")}${colonne("exploration","Explo")}</div>
+      <div class="cp-bal"><div class="cp-baltl">🐾<br>${bal.length}/${MAX_DEPLOY}</div>
+        <div class="cp-cases">${casesBal.join("")}</div></div>
+      ${ouvert?"":`<div class="cp-verrou"><div>🔒</div><div>Termine le biome précédent pour ouvrir ${esc(bioNom(B))}</div></div>`}
+    </div>`;
+  /* ---------- collection ---------- */
+  let liste=S.creatures.owned.filter(id=>CREATURES[id]);
+  let titre=`Ma collection`, compte=`${got}/${total}`;
+  if(nestSel){
+    liste=liste.filter(id=>cpEligible(id));
+    titre=nestSel.tal==="balade"?"🐾 Qui part en balade ?"
+         :`${TALENTS[nestSel.tal].ic} ${TALENTS[nestSel.tal].name} disponibles`;
+    compte=String(liste.length);
+  }
+  /* Celles qui travaillent DÉJÀ ailleurs passent en fin de liste quel que soit le tri, et
+     s'atténuent : on voit le coût du choix avant de le faire. Le tri choisi départage
+     ensuite — et le niveau reste le départage final des deux autres modes, parce que
+     dans un groupe de pêcheurs on veut toujours le meilleur en tête. */
+  const rangRar=id=>RARITY_ORDER.indexOf(CREATURES[id].rar);
+  const rangJob=id=>["peche","cuisine","exploration"].indexOf(CREATURES[id].tal);
+  liste.sort((a,b)=>{
+    const oa=nsLieu(a).occupee?1:0, ob=nsLieu(b).occupee?1:0;
+    if(oa!==ob)return oa-ob;
+    if(nestTri==="metier"){ const d=rangJob(a)-rangJob(b); if(d)return d; }
+    else if(nestTri==="rarete"){ const d=rangRar(b)-rangRar(a); if(d)return d; }
+    return talentLvl(b)-talentLvl(a);
+  });
+  const carte=id=>{
+    const cr=CREATURES[id], R=RARITY[cr.rar], L=nsLieu(id), n=S.creatures.counts[id]||1;
+    return `<button class="ns-c" data-crea="${id}" style="border-color:${R.col};opacity:${L.occupee?.62:1}">
+      ${L.court?`<span class="ns-c-lieu" style="background:${L.fond};color:${L.couleur}">${esc(L.court)}</span>`:""}
+      ${n>1?`<span class="ns-c-nb">×${n}</span>`:""}
+      ${nsVignette(id,26)}
+      <span class="ns-c-nom">${esc(cr.name)}</span>
+      <span class="ns-c-job">${TALENTS[cr.tal].ic} Nv ${talentLvl(id)}</span>
+      <span class="ns-c-bas" style="background:${R.col}"></span></button>`;
+  };
+  const verrouillees=Object.keys(CREATURES).filter(id=>!S.creatures.owned.includes(id));
+  const bandeVerrous=(!nestSel&&verrouillees.length)?`
+    <button class="ns-verr" id="nsVerr">❔ <span>${verrouillees.length} créature${verrouillees.length>1?"s":""} à découvrir</span> ${nestVerrous?"▾":"▸"}</button>
+    ${nestVerrous?`<div class="ns-verrl">${verrouillees.map(id=>{
+      const cr=CREATURES[id],R=RARITY[cr.rar];
+      return `<div class="ns-vc"><span>${TALENTS[cr.tal].ic}</span><b style="color:${R.col}">${esc(R.name)}</b></div>`;
+    }).join("")}</div>`:""}`:"";
+  /* ---------- fiche ---------- */
+  let fiche="";
+  if(nestFiche&&CREATURES[nestFiche]){
+    const id=nestFiche, cr=CREATURES[id], R=RARITY[cr.rar], L=nsLieu(id);
+    const k=(S.tasks||{})[id];
+    const cyc=Math.round(prodCycle(cr.tal,id)/60);
+    const rend=cr.tal==="peche"?`1 🐟 / ${cyc} min`:cr.tal==="cuisine"?`1 🍢 / ${cyc} min`
+              :`+${orVoyage(id)} 🪙 / ${cyc} min`;
+    const n=S.creatures.counts[id]||1;
+    fiche=`
+      <div class="ns-fond" id="nsFicheFond"></div>
+      <div class="ns-fiche">
+        <div class="ns-f-haut">
+          <div class="ns-f-img" style="border-color:${R.col}">${nsVignette(id,40)}</div>
+          <div class="ns-f-txt">
+            <div class="ns-f-nom">${esc(cr.name)}</div>
+            <div class="ns-f-rar" style="color:${R.col}">${esc(R.name)} · ${n} exemplaire${n>1?"s":""}</div>
+            <div class="ns-f-job">${TALENTS[cr.tal].ic} ${TALENTS[cr.tal].name} · Nv ${talentLvl(id)}</div>
+          </div>
+          <button class="ns-f-x" id="nsFicheX">✕</button>
+        </div>
+        <div class="ns-f-etat">${esc(L.long)}<br><b>${rend}</b>${k&&k.bloque?`<br><span class="ko">⏸ ${esc(k.bloque)}</span>`:""}</div>
+        <div class="ns-f-act">
+          <button class="ns-f-go" id="nsFicheGo">${TALENTS[cr.tal].ic} Mettre au poste — ${esc(CP_BIO[B].nom)}</button>
+          ${(k||nsLieu(id).court)?`<button class="ns-f-no" id="nsFicheNo">■ Rappeler</button>`:""}
+        </div>
+      </div>`;
+  }
+  nest.innerHTML=`
+    ${entete}
+    ${panneau}
+    ${nestSel?`<div class="cp-aide"><span>👇 Choisis une créature ci-dessous${
+       (nestSel.tal==="balade"?(nsBalade(B)[nestSel.idx]||null):nsOccupant(B,nestSel.tal,nestSel.idx))
+         ?" — ou retouche le poste pour la renvoyer au Nid":""}</span>
+       <button class="cp-annul" id="cpAnnul">annuler</button></div>`:""}
+    <div class="ns-colttl"><span>${titre}</span><b>${compte}</b><span class="sp"></span>
+      ${nestSel?"":`<button class="ns-tri" id="nsTri">${NS_TRIS.find(t=>t.c===nestTri).t}</button>`}</div>
+    <div class="ns-coll">
+      <div class="ns-grid2">${liste.length?liste.map(carte).join("")
+        :`<div class="ns-vide">Aucune créature disponible — ouvre un œuf 🥚</div>`}</div>
+      ${bandeVerrous}
+    </div>
+    <div class="ns-pied"><button class="ns-back" id="nsBack">↩ Retour au camp</button></div>
+    ${fiche}`;
+  nest.style.display="flex";
+  const z=nest.querySelector(".ns-coll"); if(z)z.scrollTop=scroll0;
+  if(!nest._scrollBound){nest._scrollBound=1;
     ["scroll","touchstart","touchmove","pointerdown"].forEach(ev=>
       nest.addEventListener(ev,()=>{window.nestTouchT=Date.now();},{passive:true}));}
-  // miniature d'œuf
-  const ec=document.getElementById("nsEggCv");if(ec)drawEgg(ec.getContext("2d"),13,15,1,0);
-  // miniatures créatures possédées : figées, jamais animées
   nest.querySelectorAll("canvas[data-cr]").forEach(cv=>paintStill(cv,cv.dataset.cr));
-  document.getElementById("nsBuy").onclick=buyEgg;
-  document.getElementById("nsBack").onclick=()=>{closeNest();};
-  nest.querySelectorAll("[data-eq]").forEach(c=>c.onclick=()=>nestEquip(c.dataset.eq));
   checkTasks();
-  nest.querySelectorAll("[data-task]").forEach(b=>b.onclick=e=>{
-    e.stopPropagation();                       // ne pas équiper en même temps
-    const id=b.dataset.task, tk2=(S.tasks||{})[id];
-    /* elle vit dans un autre biome (ou on n'est qu'en aperçu) : on explique au lieu
-       d'ouvrir la molette pour rien — même garde que startTask/nestEquip */
-    if(gardeBiome(id))return;
-    if(tk2&&CREATURES[id].tal==="cuisine"){stopCooking(id);return;}   // gril : bouton Arrêter
-    if(tk2)return;
-    const tal=CREATURES[id].tal;
-    if(tal==="exploration"||tal==="peche")openExplChooser(id);
-    else{startTask(id);openNest();}});
+  /* ---------- branchements ---------- */
+  const clic=(sel,f)=>{const e=document.getElementById(sel); if(e)e.onclick=ev=>{ev.stopPropagation();f();};};
+  clic("nsBuy",()=>buyEgg());
+  clic("nsBack",()=>closeNest());
+  clic("cpAuto",()=>cpAuto());
+  clic("cpAnnul",()=>{nestSel=null;openNest();});
+  clic("nsVerr",()=>{nestVerrous=!nestVerrous;openNest();});
+  clic("nsTri",()=>{
+    const i=NS_TRIS.findIndex(t=>t.c===nestTri);
+    nestTri=NS_TRIS[(i+1)%NS_TRIS.length].c;
+    const z2=nest.querySelector(".ns-coll"); if(z2)z2.scrollTop=0;   /* on remonte : la liste a changé d'ordre */
+    openNest();
+    toast("Tri : "+NS_TRIS.find(t=>t.c===nestTri).t.replace(/^[^ ]+ /,"").toLowerCase());
+  });
+  /* ═══ BALAYAGE ENTRE BIOMES ══════════════════════════════════════════════════════════
+     Glisser vers la gauche ou la droite sur le panneau du camp change d'onglet. On écoute
+     sur le PANNEAU seulement, jamais sur la collection : celle-ci défile verticalement, et
+     capter le geste là aurait rendu son défilement capricieux.
+     Un geste ne compte que s'il est franchement horizontal (au moins 40 px, et une fois et
+     demie plus horizontal que vertical) — sinon un pouce qui descend en biais changerait
+     de biome sans qu'on l'ait voulu. */
+  const corps=nest.querySelector(".cp-body");
+  if(corps){
+    let x0=null,y0=null;
+    corps.addEventListener("pointerdown",e=>{x0=e.clientX;y0=e.clientY;},{passive:true});
+    corps.addEventListener("pointerup",e=>{
+      if(x0==null)return;
+      const dx=e.clientX-x0, dy=e.clientY-y0; x0=null;
+      if(Math.abs(dx)<40||Math.abs(dx)<Math.abs(dy)*1.5)return;
+      const i=BIOME_ORDRE.indexOf(nestBio());
+      const j=Math.max(0,Math.min(BIOME_ORDRE.length-1,i+(dx<0?1:-1)));
+      if(j===i)return;
+      nestBiome=BIOME_ORDRE[j]; nestSel=null; nestFiche=null;
+      try{sfxPage();}catch(err){}          /* même feuillet que les onglets du journal */
+      openNest();
+    },{passive:true});
+    corps.addEventListener("pointercancel",()=>{x0=null;},{passive:true});
+  }
+  clic("nsFicheX",()=>{nestFiche=null;openNest();});
+  clic("nsFicheFond",()=>{nestFiche=null;openNest();});
+  clic("nsFicheGo",()=>cpFichePoste(nestFiche));
+  clic("nsFicheNo",()=>{const id=nestFiche;cpLibere(id);nestFiche=null;
+    save();renderHUD();if(launchOpen){campStaticKey="";drawHub(0);}openNest();
+    toast(`${CREATURES[id].name} rentre au Nid`);});
+  nest.querySelectorAll("[data-bio]").forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); nestBiome=b.dataset.bio; nestSel=null; nestFiche=null; openNest();});
+  /* ⚠️ SECOND TOUCHER D'UN POSTE OCCUPÉ = RENVOI AU NID. Retoucher un poste armé se
+     contentait d'annuler la sélection : il manquait le geste inverse du placement —
+     défaire sans avoir à poser quelqu'un d'autre à la place. Sur une case vide il n'y a
+     rien à rendre, on annule simplement (sinon le « + » deviendrait un piège muet). */
+  nest.querySelectorAll("[data-slot]").forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const [tal,idx0]=b.dataset.slot.split("|"), idx=+idx0;
+    if(!biomeDebloque(B)){toast("🔒 Débloque d'abord "+bioNom(B));return;}
+    const deja=nestSel&&nestSel.bio===B&&nestSel.tal===tal&&nestSel.idx===idx;
+    if(deja){
+      const occ=(tal==="balade")?(nsBalade(B)[idx]||null):nsOccupant(B,tal,idx);
+      if(occ){
+        /* la prairie doit garder au moins une créature dehors — c'est elle qui tient
+           le cadre du journal ; la vider laisserait un accueil désert */
+        if(tal==="balade"&&B==="prairie"&&nsBalade(B).length<=1){
+          toast("Il t'en faut au moins une dans la prairie.");
+          nestSel=null; nestFiche=null; openNest(); return;
+        }
+        cpLibere(occ);
+        if(tal==="balade"){
+          const L=nsBalade(B);
+          if(B===hubBiome()&&L[0])S.cosmetics.model=L[0];   /* la n°2 devient n°1 */
+        }
+        save(); renderHUD();
+        if(launchOpen){campStaticKey="";drawHub(0);}
+        toast(`${CREATURES[occ].name} rentre au Nid`);
+      }
+      nestSel=null; nestFiche=null; openNest(); return;
+    }
+    nestSel={bio:B,tal,idx};
+    nestFiche=null; openNest();});
+  /* ⚠️ LE TOUCHER D'UNE CARTE A DEUX SENS : un emplacement attend ? elle S'Y POSE.
+     Sinon, elle ouvre sa fiche — c'est là que vivent le rendement chiffré, la rareté en
+     clair et les boutons, qui n'ont pas à occuper la grille en permanence. */
+  nest.querySelectorAll("[data-crea]").forEach(c=>c.onclick=e=>{
+    e.stopPropagation();
+    const id=c.dataset.crea;
+    if(nestSel)cpPoser(id); else{nestFiche=id;openNest();}});
 }
 function closeNest(){const n=document.getElementById("nest");if(n)n.style.display="none";}
-/* Molette de lancement (exploration ET pêche).
-   Exploration : le chiffre = 🍢 embarqués (icône brochette), à droite durée + or estimé.
-   Pêche : le chiffre = MINUTES de pêche (icône sablier, pas de 15 min), à droite le
-   nombre de 🐟 que ça rapportera — le niveau de talent dope ce rendement. */
-function openExplChooser(id){
-  const nest=document.getElementById("nest");if(!nest)return;
-  document.getElementById("nsExpl")?.remove();
-  const peche=CREATURES[id].tal==="peche";
-  const step=peche?TASK_BASE.peche.stepMin:1;
-  const minN=peche?TASK_BASE.peche.stepMin:0;
-  const maxN=peche?TASK_BASE.peche.maxMin:((S.res||{}).grilled||0);
-  const ov=document.createElement("div");ov.id="nsExpl";ov.className="ne-ov";
-  ov.innerHTML=`<div class="ne-box">
-    <div class="ne-ttl">${peche?"🎣":"🧭"} ${esc(CREATURES[id].name)}</div>
-    <div class="ne-sub">${peche
-      ?"Choisis la durée de pêche — niveau "+talentLvl(id)+" : bon rendement !"
-      :"Chaque 🍢 embarqué = +10 min d'exploration"}</div>
-    <div class="ne-mol-row">
-      <span class="ne-fic">${peche?"⏳":"🍢"}</span>
-      <div class="ne-mol" id="neMol">
-        <button class="ne-step" id="neUp">▲</button>
-        <b id="neN">${minN}</b>
-        <button class="ne-step" id="neDn">▼</button>
-      </div>
-      <div class="ne-trad"><b id="neDur"></b><span id="neOr"></span></div>
-    </div>
-    <div class="ne-hint2">${peche
-      ?`de ${minN} à ${maxN} min · tape ▲▼ ou glisse le chiffre`
-      :`réserve : ${maxN} 🍢 · tape ▲▼ ou glisse le chiffre`}</div>
-    <div class="ne-actions">
-      <button class="ne-cancel">Annuler</button>
-      <button class="ne-go" id="neGo">Envoyer</button>
-    </div></div>`;
-  nest.appendChild(ov);
-  let n=minN;
-  const clamp=v=>Math.max(minN,Math.min(maxN,Math.round(v/step)*step));
-  const maj=()=>{
-    document.getElementById("neN").textContent=n;
-    if(peche){
-      document.getElementById("neDur").textContent=`≈ ${fishYield(id,n)} 🐟`;
-      document.getElementById("neOr").textContent=`en ${n} min`;
-    }else{
-      document.getElementById("neDur").textContent=Math.round(taskDur(id,n)/60)+" min";
-      document.getElementById("neOr").textContent="~"+explGain(id,n)+" 🪙";
-    }
-    document.getElementById("neUp").disabled=n>=maxN;
-    document.getElementById("neDn").disabled=n<=minN;
-  };maj();
-  document.getElementById("neUp").onclick=()=>{n=clamp(n+step);maj();};
-  document.getElementById("neDn").onclick=()=>{n=clamp(n-step);maj();};
-  const mol=document.getElementById("neMol");
-  let y0=null,n0=0;
-  mol.addEventListener("pointerdown",e=>{if(e.target.tagName==="BUTTON")return;
-    y0=e.clientY;n0=n;mol.setPointerCapture(e.pointerId);});
-  mol.addEventListener("pointermove",e=>{if(y0==null)return;
-    n=clamp(n0+Math.round((y0-e.clientY)/22)*step);maj();});
-  mol.addEventListener("pointerup",()=>{y0=null;});
-  ov.addEventListener("wheel",e=>{e.preventDefault();n=clamp(n+(e.deltaY<0?step:-step));maj();},{passive:false});
-  ov.querySelector(".ne-cancel").onclick=()=>ov.remove();
-  ov.onclick=e=>{if(e.target===ov)ov.remove();};
-  document.getElementById("neGo").onclick=()=>{startTask(id,n);ov.remove();openNest();};
-}
 
 /* ---- tirage pondéré par rareté ---- */
 function rollRarity(){let r=Math.random()*100,acc=0;
@@ -12310,8 +13002,7 @@ document.addEventListener("visibilitychange",()=>{
        qu'au prochain battement de 20 s */
     try{expireQuetes();}catch(e){}}});
 setInterval(()=>{const n=document.getElementById("nest");
-  if(n&&n.style.display==="block"&&!document.getElementById("nsExpl")
-     &&Date.now()-(window.nestTouchT||0)>1200)openNest();},30000);
+  if(n&&n.style.display==="block"&&Date.now()-(window.nestTouchT||0)>1200)openNest();},30000);
 /* favicon de l'onglet = la même icône que l'app (une seule source embarquée) */
 try{const fl=document.createElement("link");fl.rel="icon";
   fl.href=document.querySelector('link[rel="apple-touch-icon"]').href;
