@@ -880,22 +880,59 @@
      En absolu, il était bien centré mais passait PAR-DESSUS l'enseigne et les pièces.
      Avec `1fr auto 1fr`, les deux côtés font toujours la même largeur : la colonne du
      milieu tombe donc exactement au centre de la barre, et l'espace lui est réservé. */
+  /* ⚠️ L'ENCOCHE. Le panneau est en `position:fixed;inset:0` sous un viewport déclaré
+     `viewport-fit=cover` : il s'étend donc SOUS la barre d'état et l'encoche du
+     téléphone. Tous les autres panneaux de l'app réservent cette marge ; celui-ci ne le
+     faisait pas, et sa barre de titre était rognée par le haut sur mobile. */
   .ns-bar{position:relative;flex:0 0 auto;display:grid;
     grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;
-    padding:9px 10px 8px;min-height:66px}
+    padding:calc(9px + env(safe-area-inset-top,0px)) 10px 8px;
+    min-height:calc(66px + env(safe-area-inset-top,0px))}
   .ns-ttl{grid-column:1;grid-row:1;min-width:0;font-family:var(--mono);font-size:15px;letter-spacing:3px;
     color:#f0ddac;text-shadow:0 1px 0 #000;line-height:1}
   /* le sous-titre ne doit jamais élargir la colonne : il se coupe plutôt que de pousser */
   .ns-ttl span{display:block;font-size:8.5px;letter-spacing:0;color:#8a6a3c;margin-top:3px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ns-or{grid-column:3;grid-row:1;text-align:right;font-family:var(--mono);font-size:12px;color:#ffd24d}
-  .ns-egg2{grid-column:2;grid-row:1;min-height:52px;padding:0 18px;
-    font-family:var(--mono);font-size:15px;font-weight:700;
-    letter-spacing:.5px;background:linear-gradient(#6a4326,#4a2c16);
-    border:2px solid #b07d14;border-radius:4px;color:#ffd24d;cursor:pointer;z-index:2;
-    box-shadow:0 2px 0 rgba(0,0,0,.45),inset 0 1px 0 rgba(255,235,180,.18)}
-  .ns-egg2:active{transform:translateY(1px)}
-  .ns-egg2:disabled{opacity:.45;cursor:default}
+  /* ⚠️ LE BOUTON DOIT APPELER LE DOIGT. En brun sur brun il se lisait comme un cartouche
+     décoratif ; c'est pourtant la seule action qui fait grandir la collection. Il passe
+     donc en or plein sur texte sombre — le seul aplat clair de tout l'écran — avec un
+     halo qui respire tant qu'on peut se l'offrir et un reflet qui le traverse. Quand les
+     pièces manquent, tout s'éteint : plus de halo, plus de reflet, or délavé. */
+  .ns-egg2{grid-column:2;grid-row:1;position:relative;overflow:hidden;
+    min-height:54px;padding:0 16px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    font-family:var(--mono);font-weight:700;letter-spacing:.5px;line-height:1;
+    background:linear-gradient(#ffe6a8,#f0b93c 46%,#c8860f);
+    border:2px solid #7a4d10;border-radius:5px;color:#3a2408;cursor:pointer;z-index:2;
+    box-shadow:0 3px 0 #6a4326,0 0 16px rgba(240,185,60,.45),
+      inset 0 1px 0 rgba(255,255,255,.55);
+    animation:eggPulse 2.6s ease-in-out infinite}
+  .ns-egg2 b{font-size:12.5px}
+  .ns-egg2 i{font-style:normal;font-size:10.5px;color:#5a3a10}
+  .ns-egg2 .eg{font-size:15px;display:inline-block;animation:eggWiggle 2.6s ease-in-out infinite}
+  /* le reflet : une bande claire en biais qui balaie le bouton */
+  .ns-egg2::after{content:"";position:absolute;top:-60%;left:-70%;width:40%;height:220%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);
+    transform:rotate(18deg);animation:eggShine 3.4s ease-in-out infinite;pointer-events:none}
+  @keyframes eggPulse{
+    0%,100%{box-shadow:0 3px 0 #6a4326,0 0 14px rgba(240,185,60,.38),inset 0 1px 0 rgba(255,255,255,.55)}
+    50%    {box-shadow:0 3px 0 #6a4326,0 0 26px rgba(255,210,77,.85),inset 0 1px 0 rgba(255,255,255,.55)}}
+  @keyframes eggWiggle{0%,72%,100%{transform:rotate(0) scale(1)}
+    80%{transform:rotate(-11deg) scale(1.13)}88%{transform:rotate(9deg) scale(1.13)}}
+  @keyframes eggShine{0%,58%{left:-70%}82%,100%{left:130%}}
+  .ns-egg2:active{transform:translateY(2px);box-shadow:0 1px 0 #6a4326,inset 0 1px 0 rgba(255,255,255,.55)}
+  /* pas assez de pièces : le bouton se tait complètement */
+  .ns-egg2:disabled{cursor:default;animation:none;
+    background:linear-gradient(#7a6136,#5a4526);border-color:#4a3418;color:#a08a5a;
+    box-shadow:0 3px 0 rgba(0,0,0,.35),inset 0 1px 0 rgba(255,235,180,.12)}
+  .ns-egg2:disabled i{color:#8a7448}
+  .ns-egg2:disabled::after,.ns-egg2:disabled .eg{animation:none}
+  .ns-egg2:disabled::after{display:none}
+  /* mouvement réduit : on garde la couleur, on retire ce qui bouge */
+  @media (prefers-reduced-motion:reduce){
+    .ns-egg2,.ns-egg2 .eg,.ns-egg2::after{animation:none}
+    .ns-egg2::after{display:none}}
   /* --- aide, titre de collection, pied --- */
   .cp-aide{flex:0 0 auto;display:flex;align-items:center;gap:7px;margin:7px 8px 0;padding:5px 7px;
     background:rgba(176,125,20,.16);border:1.5px solid #b07d14;border-radius:3px}
@@ -911,7 +948,8 @@
     color:#c8ab72;cursor:pointer;align-self:center}
   .ns-tri:active{transform:translateY(1px)}
   .ns-coll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 8px 6px}
-  .ns-pied{flex:0 0 auto;padding:5px 10px 9px}
+  /* même raison qu'en haut : la barre gestuelle du téléphone mange le bas de l'écran */
+  .ns-pied{flex:0 0 auto;padding:5px 10px calc(9px + env(safe-area-inset-bottom,0px))}
   .ns-back{width:100%;min-height:44px;font-family:var(--mono);font-size:11px;letter-spacing:1px;
     background:#54341e;border:1.5px solid #8a6a3c;border-radius:3px;color:#f0ddac;cursor:pointer}
   /* --- cartes de collection : 4 éléments, la carte entière est la cible --- */
@@ -1308,6 +1346,43 @@
   @media (prefers-reduced-motion:reduce){
     *{animation-duration:.001s!important;transition-duration:.001s!important}
   }
+/* ================= HOUSING V1 =================
+   La collection vit dans le CIEL, au-dessus de l'horizon : elle ne masque donc jamais
+   le terrain que l'on aménage. Les commandes de l'objet et la validation forment un
+   dock séparé, accessible au pouce en bas de l'écran. */
+.housing-ui{position:fixed;inset:0;z-index:9400;display:none;pointer-events:none;color:#fff;font-family:var(--sans)}
+.housing-ui.on{display:block}
+.housing-top{position:absolute;left:50%;top:calc(8px + env(safe-area-inset-top,0px));transform:translateX(-50%);
+  width:min(314px,calc(100vw - 20px));height:46px;padding:0 7px;display:grid;grid-template-columns:42px 1fr 42px;
+  align-items:center;border:2px solid #c89a4c;border-radius:14px;background:linear-gradient(#54391f,#2b1c10);
+  box-shadow:0 4px 12px #0009;pointer-events:auto}
+.housing-top strong{text-align:center;font:700 13px var(--mono);letter-spacing:.8px;text-shadow:0 2px #000}
+.housing-top button,.housing-action{border:1px solid #c9a35e;background:#3d2917;color:#fff;border-radius:10px;min-width:40px;height:36px;font-size:18px}
+.housing-sheet{position:absolute;left:50%;top:calc(62px + env(safe-area-inset-top,0px));transform:translateX(-50%);
+  width:min(330px,calc(100vw - 16px));padding:7px;background:linear-gradient(180deg,#3c2919f2,#21150ded);
+  border:2px solid #c39348;border-radius:13px;box-shadow:0 5px 14px #0009;pointer-events:auto;overflow:hidden}
+.housing-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:5px}
+.housing-tab{height:32px;border:1px solid #8f6a36;border-radius:8px;background:#2d1e13;color:#d9c393;font-weight:700}
+.housing-tab.on{background:#684924;border-color:#e2bc6c;color:#fff;box-shadow:inset 0 0 0 1px #f4d98a55}
+.housing-row{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:1px 1px 5px;overscroll-behavior-x:contain}
+.housing-row::-webkit-scrollbar{display:none}
+.housing-family,.housing-skin{flex:0 0 62px;height:52px;border:1px solid #9c743b;border-radius:9px;background:linear-gradient(#594026,#342216);color:#f9e7bb;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;position:relative}
+.housing-family.on,.housing-skin.on{border:2px solid #ffe08a;background:linear-gradient(#76552d,#442b17)}
+.housing-family b{font-size:21px;line-height:22px}.housing-skin img{width:36px;height:36px;object-fit:contain;image-rendering:pixelated}
+.housing-skin small{position:absolute;right:3px;top:2px;width:16px;height:16px;border-radius:8px;background:#24170dd9;display:grid;place-items:center;font-size:8px}
+.housing-help{height:16px;line-height:16px;margin-top:0;color:#e4d2a7;text-align:center;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.housing-actions{position:absolute;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  display:flex;align-items:center;justify-content:center;gap:9px;padding:7px;border:2px solid #c39348;border-radius:14px;
+  background:linear-gradient(#3c2919ee,#21150df5);box-shadow:0 4px 14px #000a;pointer-events:auto}
+.housing-action{width:62px;height:46px;font-size:19px;box-shadow:0 3px 9px #0009;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:18px}
+.housing-action small{font:700 7px var(--mono);text-transform:uppercase;color:#ead8af;line-height:9px}
+.housing-action.object-only{display:none}.housing-actions.on .housing-action.object-only{display:block}
+.housing-done{width:132px;height:46px;border:2px solid #ffe08a!important;background:linear-gradient(#a66d24,#684016)!important;
+  color:#fff7d1!important;font:700 12px var(--mono)!important;letter-spacing:.5px;box-shadow:0 3px 0 #3b220e,0 0 12px #ffc94c55!important}
+.launch.housing-mode .acc-back,.launch.housing-mode .hub-spot{pointer-events:none!important;opacity:0!important}
+.launch.housing-mode #camp{touch-action:none;cursor:grab}
+.launch.housing-mode #camp:active{cursor:grabbing}
 </style>
 
 <div class="app">
@@ -1434,6 +1509,7 @@
 
     <div class="acc-links">
       <button class="acc-link" onclick="hubGo('history')"><span>📜</span>Historique</button>
+      <button class="acc-link" onclick="openHousing()"><span>🏡</span>Housing</button>
       <button class="acc-link" onclick="hubGo('boutique')"><span>🛍️</span>Boutique</button>
       <button class="acc-link" onclick="hubGo('parametres')"><span>⚙️</span>Réglages</button>
     </div>
@@ -1443,6 +1519,29 @@
     <button class="acc-handle" id="accHandle" aria-label="Voir le camp"><i></i><span>Glisser pour voir le camp</span></button>
   </div>
 </div>
+
+<!-- Éditeur du Refuge : la scène reste visible ; seul ce tiroir reçoit les gestes. -->
+<section class="housing-ui" id="housingUi" aria-label="Mode housing">
+  <div class="housing-top">
+    <button id="housingCancel" aria-label="Retour">‹</button>
+    <strong>AMÉNAGER LE REFUGE</strong>
+    <span aria-hidden="true"></span>
+  </div>
+  <div class="housing-actions" id="housingActions">
+    <button class="housing-action object-only" id="housingDelete" aria-label="Ranger l'objet">🗑<small>Ranger</small></button>
+    <button class="housing-action object-only" id="housingFlip" aria-label="Inverser horizontalement">⇄<small>Inverser</small></button>
+    <button class="housing-action housing-done" id="housingDone" aria-label="Valider l'aménagement">✓ VALIDER</button>
+  </div>
+  <div class="housing-sheet">
+    <div class="housing-tabs">
+      <button class="housing-tab on" data-htab="objets">🏕️ Objets</button>
+      <button class="housing-tab" data-htab="nature">🌳 Nature</button>
+    </div>
+    <div class="housing-row" id="housingFamilies"></div>
+    <div class="housing-row" id="housingSkins"></div>
+    <div class="housing-help" id="housingHelp">Choisis une famille, puis un modèle.</div>
+  </div>
+</section>
 
 <!-- Le Panneau de la Taverne : quêtes du jour -->
 <div class="tavern" id="tavern"></div>
@@ -1559,6 +1658,14 @@ const CAMPOBJ={
      en tient lieu — interchangeable en relançant campskins-injecte.ps1 */
   oeuf:   {nom:"Œuf du nid",         ic:"🥚"},
 };
+/* La refonte Housing remplace le camp préfabriqué. Les calques de terrain restent,
+   mais chaque structure devient un objet libre. Les anciennes garde-robes servent
+   directement de catalogue : aucune image n'est dupliquée dans le fichier. */
+const HOUSING_V1=true;
+function housingDef(){
+  const byBiome={}; BIOME_ORDRE.forEach(b=>byBiome[b]=[]);
+  return {v:1,byBiome};
+}
 function campSkinsDef(){
   const un=()=>({owned:{tente:[0],panneau:[0],journal:[0],oeuf:[0]},
                  equip:{tente:0,panneau:0,journal:0,oeuf:0}});
@@ -1662,6 +1769,7 @@ function seed(){
     settings:{theme:"light",sound:true,anim:true,splash:true,expire:true},
     audio:audioDef(),
     campSkins:campSkinsDef(),
+    housing:housingDef(),
     history:{},
     rewards:[
       rw("Un carré de chocolat","🍫",60),
@@ -1760,6 +1868,10 @@ function load(){
       Object.keys(d[b].owned).forEach(k=>{
         if(!s.campSkins[b].owned[k])s.campSkins[b].owned[k]=[0];
         if(s.campSkins[b].equip[k]==null)s.campSkins[b].equip[k]=0; });});}
+    /* Housing V1 : les maps démarrent volontairement VIDES. L'ancienne composition
+       reste dans la sauvegarde historique, mais n'est pas recréée automatiquement. */
+    if(!s.housing||!s.housing.byBiome)s.housing=housingDef();
+    BIOME_ORDRE.forEach(b=>{if(!Array.isArray(s.housing.byBiome[b]))s.housing.byBiome[b]=[];});
     if(!s.settings.theme)s.settings.theme="light";
     if(!s.history)s.history={};
     if(!s.diary)s.diary={days:{}};
@@ -2201,6 +2313,8 @@ const RARITY={
 const RARITY_ORDER=["commun","rare","tresrare","epique","legendaire"];
 const CREATURES={
   heros: {name:"Héros",      rar:"commun",     skin:"#bfd0e8", useColor:true, tal:"exploration"},
+  /* le blob joue son cycle ENTIER, y compris son bond, même à son poste (choix
+     utilisateur) : `idleStart`/`idleFrames` sont volontairement absents ici */
   slime: {name:"Slime",      rar:"tresrare",   skin:"#8fe6b0", gif:true, gzoom:1.6, tal:"cuisine"},
   chat:  {name:"Chat",       rar:"commun",     skin:"#c8ccd4", gif:true, idleFrames:1, walkFrames:10, profile:true, tal:"peche"},
   robot: {name:"Robot",      rar:"commun",     skin:"#a8b4c8", useColor:true, tal:"exploration"},
@@ -3074,13 +3188,17 @@ function gifFrame(id,moving){
      leurs `idleFrames` premières images ; en déplacement, l'animation complète joue. */
   const cr=CREATURES[id]||{};
   const nIdle=(!moving&&cr.idleFrames)?cr.idleFrames:0;
+  /* `idleStart` : décale la plage immobile quand elle n'est pas en tête du fichier
+     (certains GIF ouvrent sur une retombée ou une pose d'entrée). Optionnel — aucune
+     créature ne s'en sert aujourd'hui, `idleFrames` seul compte depuis le début. */
+  const iS=nIdle?(cr.idleStart||0):0;
   /* en déplacement, `walkFrames` boucle sur les N DERNIÈRES images (cycle de marche) */
   const wLen=(moving&&cr.walkFrames)?cr.walkFrames:0;
   const wS=wLen?g.frames.length-wLen:0;
   /* changement de régime : on saute TOUT DE SUITE dans la bonne plage d'images.
      Sans ça l'index ne bascule qu'au prochain tic (170 ms pour le chat), et la
      créature reste figée un instant sur une pose de marche en s'arrêtant. */
-  if(nIdle&&r.idx>=nIdle){r.idx=0;r.acc=0;}
+  if(nIdle&&(r.idx<iS||r.idx>=iS+nIdle)){r.idx=iS;r.acc=0;}
   if(wLen&&r.idx<wS){r.idx=wS;r.acc=0;}
   const now=performance.now();
   if(!r.last)r.last=now;
@@ -3094,7 +3212,7 @@ function gifFrame(id,moving){
   r.acc+=(now-r.last)*speed;r.last=now;
   let guard=0;
   while(r.acc>=g.delays[r.idx]&&guard++<64){r.acc-=g.delays[r.idx];
-    r.idx=nIdle?(r.idx+1)%nIdle
+    r.idx=nIdle?iS+((r.idx-iS+1)%nIdle)
          :wLen?wS+((((r.idx-wS)+1)%wLen+wLen)%wLen)
          :(r.idx+1)%g.frames.length;}
   const im=r.imgs[r.idx];
@@ -8155,6 +8273,160 @@ function campSkinImg(obj,t,day){
   }
   return r.night;
 }
+
+/* ================= ÉDITEUR DE HOUSING =================
+   Coordonnées persistées : x = largeur normalisée, p = profondeur dans le terrain
+   constructible. La taille est calculée dans le canvas LOGIQUE de 330 px : elle ne
+   dépend jamais de la largeur du navigateur. */
+const HOUSING_MIN=.14, HOUSING_MAX=.45, HOUSING_MULT=4, HOUSING_LIMIT_DY=10;
+let housingEdit=false,housingTab="objets",housingFamily="tente",housingSelected=null;
+let housingDrag=null,housingSnapshot=null,housingRects=[],housingPanelRect=null;
+const housingAlphaCache=new WeakMap();
+function housingListe(b){
+  S.housing=S.housing||housingDef();S.housing.byBiome=S.housing.byBiome||{};
+  return S.housing.byBiome[b]||(S.housing.byBiome[b]=[]);
+}
+function housingZone(P){return {top:P.HZ+HOUSING_LIMIT_DY,bottom:P.H-4};}
+function housingScale(p){return HOUSING_MULT*(HOUSING_MIN+(HOUSING_MAX-HOUSING_MIN)*Math.max(0,Math.min(1,p)));}
+function housingBBox(im){
+  if(!im)return {l:0,t:0,r:1,b:1,cx:.5};
+  const deja=housingAlphaCache.get(im);if(deja)return deja;
+  let box={l:0,t:0,r:1,b:1,cx:.5};
+  try{
+    const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;
+    if(!w||!h)return box;
+    const c=document.createElement("canvas");c.width=w;c.height=h;
+    const g=c.getContext("2d",{willReadFrequently:true});g.drawImage(im,0,0);
+    const d=g.getImageData(0,0,w,h).data;let x0=w,y0=h,x1=-1,y1=-1;
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>10){
+      if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+    if(x1>=0)box={l:x0/w,t:y0/h,r:(x1+1)/w,b:(y1+1)/h,cx:(x0+x1+1)/(2*w)};
+  }catch(e){}
+  housingAlphaCache.set(im,box);return box;
+}
+function housingNatureFamilies(){
+  const b=hubBiome(),B=BIOMES[b]||{}, out=[{id:"arbre",nom:"Arbres",ic:"🌳",vars:[{nom:"Arbre animé",kind:"tree",factor:1}]}];
+  if(B.avantEls&&B.avantEls.length)out.push({id:"rochers",nom:"Rochers",ic:"🪨",
+    vars:B.avantEls.map((e,i)=>({nom:"Rocher "+(i+1),kind:"plan",plan:e.n,factor:Math.max(.35,Math.min(1,e.k||.7))}))});
+  if(typeof BIOMEIMG!=="undefined"&&BIOMEIMG[b]&&BIOMEIMG[b].avant)
+    out.push({id:"vegetation",nom:"Végétation",ic:"🌿",vars:[{nom:"Végétation",kind:"plan",plan:"avant",factor:.5}]});
+  return out;
+}
+function housingFamilies(){
+  if(housingTab==="nature")return housingNatureFamilies();
+  return Object.keys(CAMPOBJ).map(id=>({id,nom:CAMPOBJ[id].nom,ic:CAMPOBJ[id].ic,
+    vars:[0,1,2,3,4].map((skin,i)=>({nom:(campTiers(hubBiome())[i]||{}).nom||("Modèle "+(i+1)),kind:"skin",skin,factor:1}))}));
+}
+function housingVar(it){
+  const f=housingFamilies().find(v=>v.id===it.family);
+  return f&&f.vars[Math.max(0,Math.min(f.vars.length-1,it.skin||0))];
+}
+function housingImg(it,day,t){
+  const v=housingVar(it);if(!v)return null;
+  if(v.kind==="skin")return campSkinImg(it.family,v.skin,day);
+  if(v.kind==="tree"){
+    if(typeof TREE_FR==="undefined"||!TREE_FR.length)return null;
+    const n=TREE_FR.length,phase=Math.floor((t||0)/10)%(n*2-2),i=phase<n?phase:n*2-2-phase;
+    return day===false?treeNightImg(i):TREE_FR[i];
+  }
+  if(v.kind==="plan")return biomePlanImg(v.plan,day);
+  return null;
+}
+function housingItemRect(it,P,day,t){
+  const im=housingImg(it,day,t);if(!im||!(im.naturalWidth||im.width))return null;
+  const v=housingVar(it)||{factor:1},box=housingBBox(im),z=housingZone(P);
+  const p=Math.max(0,Math.min(1,Number(it.p)||0)), sc=housingScale(p)*(v.factor||1);
+  const nw=im.naturalWidth||im.width,nh=im.naturalHeight||im.height,dw=nw*sc,dh=nh*sc;
+  const footY=z.top+p*Math.max(1,z.bottom-z.top),center=it.flip?(1-box.cx):box.cx;
+  const footX=Math.max(0,Math.min(1,Number(it.x)||.5))*P.W;
+  const dx=footX-center*dw,dy=footY-box.b*dh;
+  return {it,im,box,dx,dy,dw,dh,footX,footY,
+    x0:dx+box.l*dw,y0:dy+box.t*dh,x1:dx+box.r*dw,y1:dy+box.b*dh};
+}
+function hubDrawHousing(x,P,t,day){
+  housingRects=[];housingPanelRect=null;
+  const list=housingListe(hubBiome()).slice().sort((a,b)=>(a.p||0)-(b.p||0));
+  list.forEach(it=>{
+    const r=housingItemRect(it,P,day,t);if(!r)return;
+    x.save();
+    if(it.flip){x.translate(r.footX*2,0);x.scale(-1,1);}
+    x.imageSmoothingEnabled=false;x.drawImage(r.im,r.dx,r.dy,r.dw,r.dh);x.restore();
+    housingRects.push(r);
+    if(it.family==="panneau")housingPanelRect=r;
+    if(housingEdit&&it.id===housingSelected){
+      x.save();x.strokeStyle="#fff3b0";x.lineWidth=1;x.setLineDash([4,3]);
+      x.strokeRect(Math.round(r.x0)-3,Math.round(r.y0)-3,Math.round(r.x1-r.x0)+6,Math.round(r.y1-r.y0)+6);x.restore();
+    }
+  });
+}
+function housingPreviewSrc(fam,v){
+  if(v.kind==="skin")return (((CAMPSKINS[hubBiome()]||{})[fam]||{})[v.skin])||"";
+  const fake={family:fam,skin:Math.max(0,(housingFamilies().find(f=>f.id===fam)||{vars:[]}).vars.indexOf(v)),tab:"nature"};
+  const im=housingImg(fake,true,0);return im&&im.src||"";
+}
+function housingRenderUI(){
+  const fs=housingFamilies();if(!fs.some(f=>f.id===housingFamily))housingFamily=(fs[0]||{}).id||null;
+  document.querySelectorAll("[data-htab]").forEach(e=>e.classList.toggle("on",e.dataset.htab===housingTab));
+  const fr=document.getElementById("housingFamilies"),sr=document.getElementById("housingSkins");if(!fr||!sr)return;
+  fr.innerHTML=fs.map(f=>`<button class="housing-family ${f.id===housingFamily?"on":""}" data-hfam="${f.id}"><b>${f.ic}</b><span>${esc(f.nom)}</span></button>`).join("");
+  const f=fs.find(v=>v.id===housingFamily);sr.innerHTML=f?f.vars.map((v,i)=>{
+    const src=housingPreviewSrc(f.id,v),sel=housingListe(hubBiome()).find(o=>o.id===housingSelected);
+    const on=!!(sel&&sel.family===f.id&&(sel.skin||0)===i);
+    return `<button class="housing-skin ${on?"on":""}" data-hskin="${i}" title="${esc(v.nom)}">${src?`<img src="${src}" alt="">`:`<b>${f.ic}</b>`}<small>${i+1}</small></button>`;
+  }).join(""):"";
+  const sel=housingListe(hubBiome()).find(o=>o.id===housingSelected);
+  document.getElementById("housingActions").classList.toggle("on",!!sel);
+  document.getElementById("housingHelp").textContent=sel?"Glisse pour déplacer · choisis un modèle pour changer son skin":"Choisis une famille, puis un modèle à placer.";
+  fr.querySelectorAll("[data-hfam]").forEach(e=>e.onclick=()=>{housingFamily=e.dataset.hfam;housingRenderUI();});
+  sr.querySelectorAll("[data-hskin]").forEach(e=>e.onclick=()=>housingChoose(Number(e.dataset.hskin)));
+}
+function housingChoose(i){
+  const list=housingListe(hubBiome()),sel=list.find(o=>o.id===housingSelected);
+  if(sel&&sel.tab===housingTab&&sel.family===housingFamily){sel.skin=i;save();housingRenderUI();return;}
+  if(housingFamily==="panneau"){
+    const ancien=list.find(o=>o.family==="panneau");
+    if(ancien){housingSelected=ancien.id;ancien.skin=i;toast("Un seul panneau de quêtes par biome");save();housingRenderUI();return;}
+  }
+  if(list.length>=40){toast("Le refuge est plein pour le moment");return;}
+  const it={id:uid(),tab:housingTab,family:housingFamily,skin:i,x:.5,p:.67,flip:false};
+  list.push(it);housingSelected=it.id;save();housingRenderUI();
+}
+function openHousing(){
+  housingSnapshot=JSON.stringify(S.housing||housingDef());housingEdit=true;housingSelected=null;
+  housingTab="objets";housingFamily="tente";
+  document.getElementById("housingUi").classList.add("on");
+  document.getElementById("launch").classList.add("housing-mode");
+  setCampOuvert(true);housingRenderUI();
+}
+function closeHousing(garder){
+  if(!garder&&housingSnapshot)try{S.housing=JSON.parse(housingSnapshot)}catch(e){}
+  housingEdit=false;housingDrag=null;housingSelected=null;housingSnapshot=null;
+  document.getElementById("housingUi").classList.remove("on");
+  document.getElementById("launch").classList.remove("housing-mode");
+  save();setCampOuvert(false);
+}
+function housingInit(){
+  const cv=document.getElementById("camp");if(!cv||cv._housing)return;cv._housing=1;
+  document.querySelectorAll("[data-htab]").forEach(e=>e.onclick=()=>{housingTab=e.dataset.htab;housingFamily=housingTab==="objets"?"tente":"arbre";housingSelected=null;housingRenderUI();});
+  document.getElementById("housingDone").onclick=()=>closeHousing(true);
+  document.getElementById("housingCancel").onclick=()=>closeHousing(false);
+  document.getElementById("housingFlip").onclick=()=>{const o=housingListe(hubBiome()).find(v=>v.id===housingSelected);if(o){o.flip=!o.flip;save();}};
+  document.getElementById("housingDelete").onclick=()=>{const a=housingListe(hubBiome()),i=a.findIndex(v=>v.id===housingSelected);if(i>=0){a.splice(i,1);housingSelected=null;save();housingRenderUI();}};
+  cv.addEventListener("pointerdown",e=>{
+    if(!housingEdit)return;const q=cv.getBoundingClientRect(),mx=(e.clientX-q.left)*cv.width/q.width,my=(e.clientY-q.top)*cv.height/q.height;
+    const r=[...housingRects].reverse().find(v=>mx>=v.x0&&mx<=v.x1&&my>=v.y0&&my<=v.y1);
+    housingSelected=r?r.it.id:null;housingDrag=r?{id:r.it.id,pointer:e.pointerId}:null;
+    if(r)cv.setPointerCapture(e.pointerId);housingRenderUI();e.preventDefault();e.stopPropagation();
+  });
+  cv.addEventListener("pointermove",e=>{
+    if(!housingEdit||!housingDrag||housingDrag.pointer!==e.pointerId||!hubPos)return;
+    const q=cv.getBoundingClientRect(),mx=(e.clientX-q.left)*cv.width/q.width,my=(e.clientY-q.top)*cv.height/q.height,z=housingZone(hubPos);
+    const o=housingListe(hubBiome()).find(v=>v.id===housingDrag.id);if(!o)return;
+    o.x=Math.max(0,Math.min(1,mx/hubPos.W));o.p=Math.max(0,Math.min(1,(my-z.top)/Math.max(1,z.bottom-z.top)));e.preventDefault();
+  });
+  const fin=e=>{if(housingDrag){housingDrag=null;save();housingRenderUI();}};
+  cv.addEventListener("pointerup",fin);cv.addEventListener("pointercancel",fin);
+}
 function tentBox(tnB){
   /* dimensions du palier ÉQUIPÉ : la zone tactile et l'occlusion suivent l'habillage */
   const t=skinDe("tente"), imV=campSkinImg("tente",t,true);
@@ -8780,7 +9052,7 @@ function buildHub(W,H,day){
          de sembler s'enfoncer quand le terrain s'étire sous eux. Peints ICI, avec le
          décor, ils passent DERRIÈRE la tente et le reste du camp si le chemin se
          croise — leur taille, elle, ne bouge pas (voir hubDrawAvant). */
-      if(solRect&&BIO.avantEls){
+      if(!HOUSING_V1&&solRect&&BIO.avantEls){
         const kSol2=solRect.h/Math.max(1,natif);
         BIO.avantEls.forEach(e=>{
           if(!e.derriere)return;
@@ -8845,7 +9117,7 @@ function buildHub(W,H,day){
   const kSol = (H-HZ)/Math.max(1,H-Math.round(H*HUB_SKY1));
   const pdY  = gy(406)-Math.round(102*kSol);
   /* plage de sable en dégradé : sable humide au bord de l'eau → sable sec qui s'évanouit dans l'herbe */
-  if(BIO.etang!==false){
+  if(!HOUSING_V1&&BIO.etang!==false){
   const sOut=day?"#e4d4a6":"#4d4636";
   x.globalAlpha=.35;t.poly(puddlePath(pdX,pdY,pdRX+14*fPd,pdRY+9.5*fPd,7), sOut);x.globalAlpha=1;
   x.globalAlpha=.7; t.poly(puddlePath(pdX,pdY,pdRX+11*fPd,pdRY+7.5*fPd,7), sOut);x.globalAlpha=1;
@@ -8890,7 +9162,7 @@ function buildHub(W,H,day){
   pad(pdX-26*fPd,pdY+3*fPd,6*fPd,1);pad(pdX-5*fPd,pdY-3*fPd,5*fPd,0);pad(pdX+15*fPd,pdY+4*fPd,7*fPd,1);
   pad(pdX+31*fPd,pdY-2*fPd,4*fPd,0);pad(pdX-38*fPd,pdY-3*fPd,4*fPd,0);
   }                                    /* fin du bloc étang (BIO.etang) */
-  else if(BIO.alluaq){
+  else if(!HOUSING_V1&&BIO.alluaq){
     /* ---- ALLUAQ : le trou de pêche taillé dans la glace, à la manière inuite ----
        MÊME ANCRAGE que l'étang (pdX/pdY) : les postes de pêche (hubPeche) et la zone
        interdite aux promeneurs restent valables sans y toucher. */
@@ -8929,7 +9201,7 @@ function buildHub(W,H,day){
   }
   /* ---- arbre à l'horizon (base au niveau de la tente) ---- */
   const trBase=gy(343), trTop=trBase-46;
-  if(BIO.arbre!==false){
+  if(!HOUSING_V1&&BIO.arbre!==false){
   t.ell(283,trBase-1,26,6,"rgba(0,0,0,.3)");
   /* arbre : frame 0 de l'image de l'utilisateur, dessinée AVANT le tableau
      (profondeur : l'arbre passe derrière le panneau de quêtes). L'animation
@@ -8956,8 +9228,9 @@ function buildHub(W,H,day){
      et de terre battue, donc plus de hubDrawTentGround). Ancrée par le bas,
      centrée sur x=93 comme l'ancienne. ---- */
   const tnB=gy(406), tnA=tnB-84;
-  drawTentImg(x,day,tnB);
+  if(!HOUSING_V1)drawTentImg(x,day,tnB);
   /* ---- terre battue : centrée sur le feu, extrémités très diffuses ---- */
+  if(!HOUSING_V1){
   const fcx=165, fcy=gy(486)-2;
   x.globalAlpha=.28;t.ell(fcx,fcy,76,24.5,C.dirt1);x.globalAlpha=1;
   x.globalAlpha=.55;t.ell(fcx,fcy,68,21.5,C.dirt1);x.globalAlpha=1;
@@ -8974,6 +9247,7 @@ function buildHub(W,H,day){
     t.P(fcx+Math.cos(a2)*60*f, fcy+Math.sin(a2)*19*f, hubHash(i,156)>.5?C.dirt1:C.dirt2);}
   for(let i=0;i<110;i++){const a2=hubHash(i,157)*6.283, f=0.84+hubHash(i,158)*0.17;
     t.P(fcx+Math.cos(a2)*60*f, fcy+Math.sin(a2)*19*f, C.gr1);}
+  }
   /* (le sentier a été retiré : la prairie court jusqu'au bord de l'écran) */
   /* ---- feu de camp ---- */
   /* ---- foyer : terre brûlée, lit de cendres, bûches calcinées, anneau de pierres ---- */
@@ -8983,6 +9257,7 @@ function buildHub(W,H,day){
   /* (le rondin a été retiré ; logT sert encore de repère pour la créature) */
   const logT=fireY-22;
   /* ---- coffre à butin, à gauche de la tente (trois-quarts, côté fuyant à GAUCHE) ---- */
+  if(!HOUSING_V1){
   const ckX=8, ckY=tnB+12;
   /* ⚠️ LE COUVERCLE SUIT CE QUI EST PRENABLE, pas ce qui est stocké. Avant, il s'ouvrait
      dès que le coffre contenait quoi que ce soit : réserves pleines (20 poissons,
@@ -9038,15 +9313,16 @@ function buildHub(W,H,day){
   t.R(ckX+5,lY-4,26,6,nuitBois("#6e4a2c"));t.R(ckX+5,lY-4,26,1,nuitBois(ckFull?"#d8a83a":"#8a6444")); // couvercle
   t.R(ckX+8,lY-6,20,2,nuitBois("#5e3e24"));                                          // dos bombé
   t.R(ckX+16,lY-4,4,6,nuitBois(ferHi));t.R(ckX+17,lY+1,2,1,nuitBois("#5e4020"));     // ferrure couvercle
+  }
   /* ---- TABLEAU perché à droite (pieds sur la MÊME ligne de sol que la tente : gy(406)) ---- */
   const pbB=gy(406), bdT=pbB-96;
-  hubDrawBoard(x,bdT,pbB);
+  if(!HOUSING_V1)hubDrawBoard(x,bdT,pbB);
   /* ---- NID (→ boutique) : passé à droite ---- */
   const ndY=gy(530);
-  hubAt(x,HUB_SWAP,()=>hubDrawNest(x,ndY));
+  if(!HOUSING_V1)hubAt(x,HUB_SWAP,()=>hubDrawNest(x,ndY));
   /* ---- JOURNAL (pupitre + livre + chandelle) : passé à gauche ---- */
   const jnB=gy(519);
-  hubAt(x,-HUB_SWAP,()=>hubDrawJournal(x,jnB));
+  if(!HOUSING_V1)hubAt(x,-HUB_SWAP,()=>hubDrawJournal(x,jnB));
   /* ---- végétation premier plan ---- */
   if(BIO.vegetal!==false){
   for(let i=0;i<24;i++){const px=hubHash(i,50)*W, py=H-32+hubHash(i,51)*26;
@@ -9058,7 +9334,7 @@ function buildHub(W,H,day){
   }
   /* ---- occlusion ambiante : assombrissement de contact au pied de chaque structure,
      là où la lumière du ciel peine à se glisser — tout se pose mieux dans le sol ---- */
-  {
+  if(!HOUSING_V1){
     const aoC=day?"20,30,58":"3,5,18", aoK=day?1:1.25;
     const ao=(cx,cy,r,al)=>{x.save();x.translate(cx,cy);x.scale(1,.3);x.translate(-cx,-cy);
       t.glow(cx,cy,r,aoC,al*aoK);x.restore();};
@@ -9073,7 +9349,7 @@ function buildHub(W,H,day){
   }
   /* teinte chaude du feu (seulement s'il est allumé), atténuée quand la réserve de bois
      s'épuise : c'est le premier signe que le camp va s'arrêter */
-  if(S.camp.fire){
+  if(!HOUSING_V1&&S.camp.fire){
     const ffS=.35+.65*feuForce();
     const gW2=x.createRadialGradient(165,fireY-4,4,165,fireY-4,74*(.7+.3*ffS));
     gW2.addColorStop(0,`rgba(200,110,40,${(.22*C.glowK*2*ffS).toFixed(3)})`);gW2.addColorStop(1,"rgba(200,110,40,0)");
@@ -10232,7 +10508,7 @@ function drawHub(t){
      for(let k=0;k<gh;k++){const u=k/gh;T.P(gx+sw*u*u,base-k,k>gh*0.66?g2:g1);}
    }}
   /* ---- l'étang : eau vivante + roseaux qui ondulent ---- */
-  if(BIO.etang!==false)
+  if(!HOUSING_V1&&BIO.etang!==false)
   {x.save();
    /* ⚠️ tous les décalages en dur de l'étang sont multipliés par P.fPd (=1 au camp, donc
       expressions d'origine) : sinon vaguelettes, reflets et roseaux gardent leur taille
@@ -10267,7 +10543,7 @@ function drawHub(t){
      const tx=bx+sw, ty=by-h;
      T.R(tx-1,ty-6*P.fPd,2,Math.max(2,Math.round(7*P.fPd)),rt);T.P(tx-1,ty-7*P.fPd,rt);
    });}
-  else if(BIO.alluaq){
+  else if(!HOUSING_V1&&BIO.alluaq){
     /* ---- l'eau de l'alluaq respire : vaguelettes concentriques, éclats, et une buée
        de froid qui s'élève du trou (l'eau est plus chaude que l'air) ---- */
     const aRX=34*P.fPd, aRY=8.5*P.fPd;
@@ -10288,6 +10564,7 @@ function drawHub(t){
      T.glow(bx2,by2,10+u*8,day?"235,245,255":"180,200,235",.10*(1-u));
      x.restore();}
   }
+  if(!HOUSING_V1){
   drawTentGlow(x,P,t,day);
   /* Halos pulsés des zones cliquables. Ils sont peints APRÈS le décor statique : sans
      précaution ils déposent un voile doré SUR l'objet. On redessine donc le pupitre et
@@ -10380,6 +10657,7 @@ function drawHub(t){
   }
   if(t%56<28){T.P(46+HUB_SWAP,P.ndY-21,"#ffe07a");T.R(44+HUB_SWAP,P.ndY-19,5,1,"#ffe07a");T.R(46+HUB_SWAP,P.ndY-21,1,5,"#ffe07a");}
   else{T.P(64+HUB_SWAP,P.ndY-11,"#ffe07a");T.R(62+HUB_SWAP,P.ndY-9,5,1,"#ffe07a");T.R(64+HUB_SWAP,P.ndY-11,1,5,"#ffe07a");}
+  }
   if(BIO.braises){
     /* ======= PLUIE DE BRAISES (volcanyon), jour et nuit =======
        Des escarbilles portées par les courants chauds : chacune tombe à sa vitesse,
@@ -10436,7 +10714,7 @@ function drawHub(t){
   if(BIO.planSurCadre)hubDrawMare(x,P,W,t,day);
   /* la brume passe DERRIÈRE le premier plan : elle s'arrête au feuillage */
   if(BIO.brume)hubDrawBrume(x,P,W,H,day,t);
-  hubDrawAvant(x,P,BIO,day,t);
+  if(!HOUSING_V1)hubDrawAvant(x,P,BIO,day,t);
   /* ⚠️ SECONDE PASSE DES TÂCHES : les créatures EN TRAJET (départ vers le poste,
      montée des volantes, retour de butin) passent DEVANT le plan avant — demande
      utilisateur : le cadre d'arbres de la forêt noire cachait les départs en pêche
@@ -10454,7 +10732,7 @@ function drawHub(t){
      repeindre la tente seule EFFAÇAIT halo et cœur de lanterne (les « lampes
      éteintes » des trois retours). Le duo tente+lueur reste indissociable, comme
      dans la repeinte d'occlusion. */
-  if(BIO.planSurCadre){drawTentImg(x,day,P.tnB);drawTentGlow(x,P,t,day);}
+  if(!HOUSING_V1&&BIO.planSurCadre){drawTentImg(x,day,P.tnB);drawTentGlow(x,P,t,day);}
   /* ---- LUCARNE DANS LA VOÛTE (biomes SANS CIEL) ----
      Le jour et la nuit se basculent en touchant le soleil ou la lune. La forêt noire
      n'en montre aucun : sa trouée est entièrement remplie par le plan de fond
@@ -10476,20 +10754,22 @@ function drawHub(t){
      ENCHAÎNÉ continu entre frames voisines (courbe en S : la transition glisse,
      plus aucun saut sec). Tronc unifié : seules les feuilles bougent. Le
      TABLEAU est redessiné devant : l'arbre reste derrière le panneau. ---- */
-  if(BIO.arbre!==false)hubDrawArbre(x,P,t,day);
-  else if(hubPressed==="tableau"){
+  if(!HOUSING_V1&&BIO.arbre!==false)hubDrawArbre(x,P,t,day);
+  else if(!HOUSING_V1&&hubPressed==="tableau"){
     /* pas d'arbre dans ce biome : on reprend juste l'effet d'appui du panneau,
        que hubDrawArbre portait pour la prairie */
     const cx0=255, cy0=(P.bdT+P.pbB)/2;
     x.save();x.translate(cx0,cy0);x.scale(1.05,1.05);x.translate(-cx0,-cy0);
     hubDrawBoard(x,P.bdT,P.pbB);x.restore();
-  }else hubDrawBoard(x,P.bdT,P.pbB);
+  }else if(!HOUSING_V1)hubDrawBoard(x,P.bdT,P.pbB);
   /* ⚠️ LES YEUX ICI, ET PAS PLUS HAUT. Posés juste après la lanterne, ils étaient
      effacés sur le panneau : celui-ci est REPEINT quelques lignes plus haut pour rester
      devant l'arbre, et la repeinte passait par-dessus la lueur. Ici, tous les habillages
      ont fini d'être posés — et les créatures, dessinées après, passent bien DEVANT les
      gemmes au lieu d'être transpercées par elles. */
-  hubDrawYeux(x,P,t);
+  if(!HOUSING_V1)hubDrawYeux(x,P,t);
+  /* Les objets libres remplacent maintenant l'ancienne composition préfabriquée. */
+  if(HOUSING_V1)hubDrawHousing(x,P,t,day);
   /* ---- créatures déployées : jusqu'à 3 se baladent chacune de son côté. Seule la n°1
      porte l'aura, la zone tactile et les cœurs de célébration.
      Elles se promènent entre y=412 et y=467, donc TOUJOURS plus près que le pied du
@@ -10522,14 +10802,14 @@ function drawHub(t){
     actifs.forEach(o=>hubOmbrePromene(x,T,P,t,o.cid,o.rang));
     actifs.forEach(o=>hubCorpsPromene(x,T,P,t,day,o.cid,o.rang));
     const boites=actifs.map(o=>{
-      const ax=Math.round(o.wk.fx)-18, ay=Math.round(o.wk.fy)-34;
+      const g=hubGeoPromene(P,t,o.cid,o.rang), ax=g.ax, ay=g.ay, sw=18*g.scale, sh=17*g.scale;
       /* ⚠️ `fy` est la LIGNE DE SOL de la créature, celle qui décide de la profondeur :
          elle doit valoir ses pieds, donc `wk.fy` exactement (= ay+34). C'était ay+26,
          soit 8 px TROP HAUT — un biais systématique qui faisait passer les créatures
          pour plus lointaines qu'elles ne sont et laissait le décor les recouvrir à tort.
          Invisible en mode camp où les marges sont larges, décisif à l'accueil où la
          bande de promenade est comprimée à une cinquantaine de pixels. */
-      return {x0:ax+2,y0:ay-2,x1:ax+34,y1:ay+28,fy:ay+34};
+      return {x0:ax+Math.max(1,g.scale),y0:ay-2,x1:ax+sw-Math.max(1,g.scale),y1:ay+sh-3,fy:o.wk.fy};
     });
     /* ---- REMISE EN ORDRE GLOBALE ENTRE TOUTES LES CRÉATURES ----
        Les créatures EN POSTE (cuisine, pêche, exploration) sont peintes avant les
@@ -10564,7 +10844,7 @@ function drawHub(t){
        sienne ; celle d'une créature partie en mission (ou d'un emplacement vide) est
        repliée. La plus BASSE reçoit le plus grand z-index, pour que le clic aille à
        celle qu'on voit devant quand deux se superposent. */
-    if((t|0)%6===0){
+    if(!HOUSING_V1&&(t|0)%6===0){
       const rangs=[...actifs].sort((a,b)=>a.wk.fy-b.wk.fy);
       for(let r3=0;r3<MAX_DEPLOY;r3++){
         const eA=document.getElementById(r3?("hsAvatar"+(r3+1)):"hsAvatar");
@@ -10690,21 +10970,25 @@ function drawBoisVol(x,T,P){
    Le dessin est séparé pour pouvoir trier les créatures par calque avant de peindre.
    `rang` 0 = la n°1. Chaque créature a son état dans `hubWalks[id]`. */
 function hubMajPromene(P,t,cid,rang){
+  const zone=housingZone(P);
   if(!hubWalks[cid]){
     /* on les écarte au départ pour qu'elles ne se superposent pas d'entrée */
     const dep=[116,80,152][rang]||116;
-    hubWalks[cid]={fx:dep,fy:P.logT+4,tx:dep,ty:P.logT+4,state:"idle",wait:t+90+rang*70};
+    const depY=HOUSING_V1?zone.top+(zone.bottom-zone.top)*(.58+rang*.10):P.logT+4;
+    hubWalks[cid]={fx:dep,fy:depY,tx:dep,ty:depY,state:"idle",wait:t+90+rang*70};
   }
   const wk=hubWalks[cid];
   /* Anti-blocage : une créature est coincée si elle est SUR un obstacle OU HORS de la
      bande piétonne (ex. sous le panneau, au-dessus de la zone de marche) — là, presque
      aucune cible n'est atteignable et elle n'en sort plus. On la glisse alors tout droit
      vers le point dégagé le plus proche, quelle que soit la distance. */
-  const bandeHaut=gy2(P,438), bandeBas=hubBandeBas(P);
+  const bandeHaut=HOUSING_V1?zone.top:gy2(P,438), bandeBas=HOUSING_V1?zone.bottom:hubBandeBas(P);
   const enfermée=(f)=>!hubWalkFree(P,f.fx,f.fy)||f.fy<bandeHaut||f.fy>bandeBas;
   if(!reduce && enfermée(wk)){
-    if(!hubSafe||hubSafe.H!==P.H){                     // point de secours garanti (calculé une fois)
-      hubSafe={H:P.H,x:116,y:Math.round((bandeHaut+bandeBas)/2)};
+    if(!hubSafe||hubSafe.H!==P.H||hubSafe.haut!==bandeHaut||hubSafe.bas!==bandeBas){
+      /* Le haut de la zone varie pendant la transition même lorsque la hauteur du
+         canvas reste identique : le secours doit donc suivre toute la géométrie. */
+      hubSafe={H:P.H,haut:bandeHaut,bas:bandeBas,x:116,y:Math.round((bandeHaut+bandeBas)/2)};
       for(let d3=0;d3<120;d3+=6)for(const sx of [116,116-d3,116+d3])
         if(hubWalkFree(P,sx,hubSafe.y)){hubSafe.x=sx;d3=999;break;}
     }
@@ -10712,7 +10996,7 @@ function hubMajPromene(P,t,cid,rang){
     for(let a=0;a<24;a++){const ang=a/24*6.283;
       for(let d2=6;d2<=Math.max(P.H,320);d2+=6){
         const tx=wk.fx+Math.cos(ang)*d2, ty=wk.fy+Math.sin(ang)*d2*.5;
-        if(tx<44||tx>288||ty<bandeHaut||ty>bandeBas)continue;
+        if(tx<18||tx>P.W-18||ty<bandeHaut||ty>bandeBas)continue;
         if(hubWalkFree(P,tx,ty)){if(d2<best){best=d2;sortie=[tx,ty];}break;}}}
     const cible=sortie||[hubSafe.x,hubSafe.y];
     wk.tx=cible[0];wk.ty=cible[1];wk.state="walk";wk.dir=cible[0]>wk.fx?1:-1;wk.stuck=0;
@@ -10723,14 +11007,14 @@ function hubMajPromene(P,t,cid,rang){
         for(let k=0;k<14;k++){
           const ang=Math.random()*6.283, dist=40+Math.random()*110;
           const cx2=wk.fx+Math.cos(ang)*dist, cy2=wk.fy+Math.sin(ang)*dist*.5;
-          if(cx2<44||cx2>288)continue;
-          if(cy2<gy2(P,438)||cy2>hubBandeBas(P))continue;
+          if(cx2<18||cx2>P.W-18)continue;
+          if(cy2<bandeHaut||cy2>bandeBas)continue;
           if(hubWalkFree(P,cx2,cy2)&&hubPathClear(P,wk.fx,wk.fy,cx2,cy2)){
             wk.tx=cx2;wk.ty=cy2;wk.state="walk";wk.dir=cx2>wk.fx?1:-1;wk.stuck=0;break;}
         }
         if(wk.state!=="walk"){wk.wait=t+120;
           if((wk.stuck=(wk.stuck||0)+1)>10){                 // 10 échecs d'affilée → il est coincé
-            wk.fx=116;wk.fy=P.logT+4;wk.stuck=0;}}           // retour au centre dégagé
+            wk.fx=116;wk.fy=HOUSING_V1?(bandeHaut+bandeBas)/2:P.logT+4;wk.stuck=0;}} // retour au centre dégagé
       }
     }else{
       const dx=wk.tx-wk.fx, dy=wk.ty-wk.fy, d=Math.hypot(dx,dy);
@@ -10740,7 +11024,7 @@ function hubMajPromene(P,t,cid,rang){
   }
 }
 /* Géométrie commune à l'ombre et au corps — recalculée pour les deux passes de dessin. */
-function hubGeoPromene(t,cid,rang){
+function hubGeoPromene(P,t,cid,rang){
   const wk=hubWalks[cid];
   /* Sautillement de marche : utile aux créatures SANS cycle de marche dessiné, c'est
      lui qui donne le sentiment du déplacement. Mais celles qui ont un vrai cycle
@@ -10749,32 +11033,36 @@ function hubGeoPromene(t,cid,rang){
   const aCycleMarche=!!(CREATURES[cid]||{}).walkFrames;
   const step=(wk.state==="walk"&&!aCycleMarche)?Math.round(Math.abs(Math.sin(t/3.4))*2):0;
   /* coordonnées ENTIÈRES : aucun anti-aliasing, la créature reste nette en mouvement */
-  const ax=Math.round(wk.fx)-18, ay=Math.round(wk.fy)-34;
+  const zone=housingZone(P), p=Math.max(0,Math.min(1,(wk.fy-zone.top)/Math.max(1,zone.bottom-zone.top)));
+  /* Même perspective verticale que les objets : la taille historique (×2) est
+     conservée tout en bas et diminue progressivement en remontant vers l'horizon. */
+  const scale=HOUSING_V1?2*(HOUSING_MIN+(HOUSING_MAX-HOUSING_MIN)*p)/HOUSING_MAX:2;
+  const ax=Math.round(wk.fx-9*scale), ay=Math.round(wk.fy-17*scale);
   const celeb=(rang===0)&&Date.now()<hubCelebUntil;
   const jump=celeb?[0,-2,-3,-1,0,-2][Math.floor(t/7)%6]*2:0;
-  return {wk,step,ax,ay,celeb,jump};
+  return {wk,step,ax,ay,celeb,jump,scale,p};
 }
 /* PASSE 1 — les ombres au sol, toutes avant les corps : sinon l'ombre basse d'un
    volant viendrait s'imprimer sur le dos d'une créature terrestre située derrière. */
 function hubOmbrePromene(x,T,P,t,cid,rang){
-  const g=hubGeoPromene(t,cid,rang);
+  const g=hubGeoPromene(P,t,cid,rang);
   const cr=CREATURES[cid]||{}, vol=cr.fly||0;
-  const sx0=g.ax+18, sy0=g.ay+26+vol;              // 26 = 18*GIF_BASE*2, la ligne de sol
+  const sx0=g.wk.fx, sy0=g.wk.fy-4*g.scale+vol;
   const ecart=Math.min(1,(vol-g.jump)/14);         // s'éloigne du sol → ombre plus discrète
-  const rx=(vol?9.5:11.5)*(1-ecart*.22);
+  const rx=(vol?9.5:11.5)*(g.scale/2)*(1-ecart*.22);
   x.save();x.translate(sx0,sy0);x.scale(1,.32);x.translate(-sx0,-sy0);
   T.glow(sx0,sy0,rx,"0,0,0",(vol?.20:.28)*(1-ecart*.35));
   x.restore();
 }
 /* PASSE 2 — l'aura, la créature et ses cœurs de célébration. */
 function hubCorpsPromene(x,T,P,t,day,cid,rang){
-  const {wk,step,ax,ay,celeb,jump}=hubGeoPromene(t,cid,rang);
+  const {wk,step,ax,ay,celeb,jump,scale}=hubGeoPromene(P,t,cid,rang);
   /* l'aura n'entoure QUE la n°1 */
   if(rang===0&&S.streak>0){
     const au=AURAS[S.cosmetics.aura]||AURAS.braise, sA=Math.min(S.streak/8,1);
-    T.glow(ax+18,ay+18,22+sA*10,au.rgb,(0.42+0.30*sA)*(0.88+0.12*Math.sin(t/9)));
+    T.glow(wk.fx,ay+9*scale,(11+sA*5)*scale,au.rgb,(0.42+0.30*sA)*(0.88+0.12*Math.sin(t/9)));
   }
-  drawAvatarOnCamp(x,ax,ay-step+jump,2,t,wk.state==="walk"||celeb,(wk.dir||-1)>0,cid);
+  drawAvatarOnCamp(x,ax,ay-step+jump,scale,t,wk.state==="walk"||celeb,(wk.dir||-1)>0,cid);
   if(celeb){
     for(let i=0;i<5;i++){const a=t/3+i*1.256;
       T.P2(wk.fx+Math.cos(a)*17,wk.fy-18+Math.sin(a)*11,i%2?"#ffe07a":"#fff2b0");}
@@ -10788,6 +11076,26 @@ function hubCorpsPromene(x,T,P,t,day,cid,rang){
       x.globalAlpha=1;
     }
   }
+}
+/* ⚠️ LA DURÉE DE MONTÉE D'UNE VOLANTE EST FIGÉE POUR TOUTE SA MISSION.
+   Elle se déduit de la géométrie (hauteur de croisière, rivage, position du nid) — or
+   cette géométrie CHANGE en continu pendant la transition accueil↔camp. Comme le temps
+   de patrouille vaut `el - 12 - MONTEE` et que la patrouille avance à 14 px/s, toute
+   variation de MONTEE se traduit directement en saut HORIZONTAL : mesuré 3,73 s au camp
+   contre 5,57 s à l'accueil, soit 25,8 px d'un coup sur une scène large de 330. Les
+   créatures terrestres ont MONTEE=0 et ne bougeaient pas — d'où l'impression que seules
+   les volantes changeaient de place. On calcule donc la valeur UNE fois par mission.
+   La clé porte `start` : une nouvelle mission repart d'un calcul neuf, sans péremption. */
+let hubMontee={};
+function hubMonteeFigee(id,tk,hy,hCroisiere,nestY){
+  const cle=id+"|"+(tk.biome||"prairie")+"|"+tk.start;
+  let v=hubMontee[cle];
+  if(v===undefined){
+    v=hubMontee[cle]=12*(hy-hCroisiere)/Math.max(1,nestY-hy);
+    const cles=Object.keys(hubMontee);       // une entrée par mission : le cache reste minuscule
+    if(cles.length>32)delete hubMontee[cles[0]];
+  }
+  return v;
 }
 /* ---- créatures en tâche : trajet depuis le nid, puis pêche à l'étang, cuisine au feu,
    ou patrouille d'exploration le long de l'horizon. Plus elles s'éloignent dans la
@@ -10925,8 +11233,13 @@ function drawHubTasks(x,T,P,t,C,day,devant){
       const px=nestX+(gx-nestX)*ease(k), py=nestY+(gy0-nestY)*ease(k);
       const sc=2+(1.8-2)*ease(k);
       const fache=k>=1&&!S.camp.fire;   // fâché tant que le feu est éteint, calmé dès la reprise
-      draw(px,py,sc,k<1?0
-        :fache?Math.round(Math.abs(Math.sin(t/2.2))*2):Math.round(Math.abs(Math.sin(t/10))),k<1||fache,k<1?gx>nestX:slot!==1);   // au gril : face à la marmite
+      /* ⚠️ AU GRIL, IL EST IMMOBILE — comme le pêcheur installé, qui a toujours été
+         peint `draw(...,0,false,...)`. Le cuisinier était le seul poste à faire
+         autrement : un sautillement d'un pixel (`Math.round(Math.abs(Math.sin(t/10)))`)
+         qui bascule sèchement entre 0 et 1 sans transition, et — quand le feu était
+         éteint — le cycle de MARCHE joué sur place. Les deux se lisaient comme un
+         tremblement. Le feu éteint garde son signal : le 💢 au-dessus de la tête. */
+      draw(px,py,sc,0,k<1,k<1?gx>nestX:slot!==1);   // au gril : face à la marmite
       if(fache){ /* 💢 : le cuisinier tape du pied, symbole rouge au-dessus de la tête */
         const ax2=px+8,ay2=py-34+Math.round(Math.sin(t/3)*1);
         x.fillStyle="#e33b2c";
@@ -10976,7 +11289,7 @@ function drawHubTasks(x,T,P,t,C,day,devant){
       /* durée de la montée supplémentaire = la distance restante parcourue à la même
          vitesse verticale MOYENNE que la montée depuis le nid (12 s) : la créature ne
          marque aucun temps d'arrêt en franchissant l'horizon. */
-      const MONTEE=vol?12*(hy-hCroisiere)/Math.max(1,nestY-hy):0;
+      const MONTEE=vol?hubMonteeFigee(id,tk,hy,hCroisiere,nestY):0;
       const k=Math.min(1,el/12);
       /* la montée des volantes fait encore partie du TRAJET : passe avant aussi */
       if(!!devant!==(k<1||(vol&&el<12+MONTEE)))return;
@@ -11304,6 +11617,7 @@ function objBox(P,obj){
   return [26+HUB_SWAP,P.ndY-30,86+HUB_SWAP,P.ndY+14];
 }
 function hubOcclusion(x,P,day,boites,t,devant){
+  if(HOUSING_V1)return; /* les anciens obstacles préfabriqués n'existent plus */
   if(!boites||!boites.length)return;
   const chevauche=(a,r)=>a.x1>r[0]&&a.x0<r[2]&&a.y1>r[1]&&a.y0<r[3];
   const ab=hubArbreBoite(P);
@@ -11501,6 +11815,10 @@ let hubWalks={}, hubSafe=null;   // un état de balade par créature déployée 
    sert à les faire repasser devant les promeneurs qui leur passent derrière. */
 let HUB_ACTS=[];
 function hubWalkFree(P,cx,cy){
+  if(HOUSING_V1){
+    const z=housingZone(P);
+    return cx>=18&&cx<=P.W-18&&cy>=z.top&&cy<=z.bottom;
+  }
   if(cx<40||cx>292)return false;
   const boxes=[
     [125,P.fireY-50,205,P.fireY+14],   // feu (emprise du nouveau foyer, plus large)
@@ -11587,11 +11905,20 @@ function placeHubSpots(){
   const P=hubPos, px=v=>v/P.W*100+"%", py=v=>v/P.H*100+"%";
   const set=(id,l,tp,w,h)=>{const e=document.getElementById(id);if(!e)return;
     e.style.left=px(l);e.style.top=py(tp);e.style.width=px(w);e.style.height=py(h);};
-  set("hsTableau",200,P.bdT+6,124,(P.pbB+10)-(P.bdT+6));
-  set("hsJournal",236-HUB_SWAP,P.jnB-58,90,72);
-  set("hsNid",16+HUB_SWAP,P.ndY-40,84,64);
-  {const b=tentBox(P.tnB); set("hsTente",b.x,b.y,b.w,b.h);}
-  set("hsCoffre",0,P.tnB-28,44,50);
+  /* Refuges libres : seul le panneau de quêtes garde une action dans le décor.
+     Sa cible suit son placement réel et disparaît s'il est rangé. */
+  if(HOUSING_V1&&housingPanelRect){const r=housingPanelRect;
+    set("hsTableau",r.x0-6,r.y0-6,(r.x1-r.x0)+12,(r.y1-r.y0)+12);
+  }else if(!HOUSING_V1)set("hsTableau",200,P.bdT+6,124,(P.pbB+10)-(P.bdT+6));
+  else set("hsTableau",0,0,0,0);
+  if(HOUSING_V1){
+    ["hsJournal","hsNid","hsTente","hsCoffre","hsAvatar","hsAvatar2","hsAvatar3","hsFeu"].forEach(id=>set(id,0,0,0,0));
+  }else{
+    set("hsJournal",236-HUB_SWAP,P.jnB-58,90,72);
+    set("hsNid",16+HUB_SWAP,P.ndY-40,84,64);
+    {const b=tentBox(P.tnB); set("hsTente",b.x,b.y,b.w,b.h);}
+    set("hsCoffre",0,P.tnB-28,44,50);
+  }
   /* le soleil / la lune (294, sy2(46), rayon ~11) : zone généreuse de 36×36 */
   set("hsAstre",294-18,sy2(P,46)-18,36,36);
   /* ⚠️ la n°1 n'existe QUE si le biome courant a quelqu'un en balade : depuis le
@@ -11599,18 +11926,19 @@ function placeHubSpots(){
      monde en mission). Sans ce test, une zone tactile morte de 56×66 recouvrait la
      tente et le coffre — et en mode « animations réduites » elle n'était jamais
      repliée par la boucle de rendu, donc elle bloquait les clics pour de bon. */
-  if(deployList().length)set("hsAvatar",88,P.logT-48,56,66);
+  if(!HOUSING_V1&&deployList().length)set("hsAvatar",88,P.logT-48,56,66);
   else{const e=document.getElementById("hsAvatar");if(e){e.style.width="0";e.style.height="0";}}
   /* les zones des créatures 2 et 3 sont posées par drawHub, qui les fait suivre leur
      créature ; repliées ici en attendant la première image */
   ["hsAvatar2","hsAvatar3"].forEach(id=>{const e=document.getElementById(id);
     if(e){e.style.width="0";e.style.height="0";}});
-  set("hsFeu",128,P.fireY-52,74,66);
+  if(!HOUSING_V1)set("hsFeu",128,P.fireY-52,74,66);
   const lab=(id,cx,cy)=>{const e=document.getElementById(id);if(!e)return;
     e.style.left=px(cx);e.style.top=py(cy);};
-  lab("hubPip",294,P.bdT+14);
+  if(HOUSING_V1&&housingPanelRect)lab("hubPip",housingPanelRect.x1-4,housingPanelRect.y0+4);
+  else lab("hubPip",294,P.bdT+14);
   /* effet d'appui : l'objet grossit tant que le doigt est posé */
-  [["hsTableau","tableau"],["hsJournal","journal"],["hsNid","nid"],["hsTente","tente"]].forEach(([id,k])=>{
+  (HOUSING_V1?[["hsTableau","tableau"]]:[["hsTableau","tableau"],["hsJournal","journal"],["hsNid","nid"],["hsTente","tente"]]).forEach(([id,k])=>{
     const e=document.getElementById(id);if(!e||e._press)return;e._press=1;
     e.addEventListener("pointerdown",()=>{hubPressed=k;if(reduce)drawHub(0);});
     ["pointerup","pointerleave","pointercancel"].forEach(ev=>
@@ -11620,6 +11948,7 @@ function placeHubSpots(){
 function updateHubPip(){
   const n=S.quests.filter(q=>q.type==="principale"&&isActiveToday(q)&&!q.doneToday&&!q.abandonedToday).length;
   const e=document.getElementById("hubPip");if(!e)return;
+  if(HOUSING_V1&&!housingPanelRect){e.style.display="none";return;}
   e.textContent=n;e.style.display=n>0?"grid":"none";
 }
 /* ---- navigation depuis le camp ---- */
@@ -11999,9 +12328,11 @@ function openNest(){
   const enTravail=Object.keys(S.tasks||{}).length;
   const entete=`
     <div class="ns-bar">
-      <div class="ns-ttl">LE NID<span>${got}/${total} · ${enTravail} au travail</span></div>
+      <div class="ns-ttl">LE NID<span>${enTravail} au travail</span></div>
       <div class="ns-or">🪙 ${S.coins}</div>
-      <button class="ns-egg2" id="nsBuy" ${canBuy?"":"disabled"}>🥚 ${EGG_COST}</button>
+      <button class="ns-egg2" id="nsBuy" ${canBuy?"":"disabled"}
+        title="${canBuy?`Ouvrir un œuf pour ${EGG_COST} pièces`:`Il te manque ${EGG_COST-S.coins} pièces`}">
+        <b><span class="eg">🥚</span> OUVRIR</b><i>🪙 ${EGG_COST}</i></button>
     </div>`;
   /* ---------- onglets ---------- */
   const onglets=BIOME_ORDRE.map(b=>{
@@ -12646,7 +12977,7 @@ function hubAvance(){
 let hubBandeRef=null;
 function hubSuitLeSol(){
   const P=hubPos; if(!P)return;
-  const haut=gy2(P,438), bas=hubBandeBas(P);
+  const z=housingZone(P), haut=HOUSING_V1?z.top:gy2(P,438), bas=HOUSING_V1?z.bottom:hubBandeBas(P);
   if(hubBandeRef&&(hubBandeRef[0]!==haut||hubBandeRef[1]!==bas)){
     const h0=hubBandeRef[0], k=(bas-haut)/Math.max(1,hubBandeRef[1]-h0);
     Object.keys(hubWalks).forEach(cid=>{
@@ -12797,7 +13128,7 @@ function showLaunch(){
     const e=document.getElementById(id); if(e){e.style.opacity="";e.style.transform="";}
   });
   majCielAccueil();
-  hubWalks={};
+  hubWalks={}; hubMontee={};   // les balades ET les montées figées repartent de zéro
   sizeCamp();
   renderAccueil();
   try{updateAmbience();}catch(e){}
@@ -13070,6 +13401,7 @@ try{manxTick();}catch(e){}
 /* La table de mixage se construit au premier son joué ; si le contexte audio existe déjà
    (une page rechargée le réutilise), on lui recopie tout de suite les réglages sauvegardés. */
 try{mixApplique();}catch(e){}
+housingInit();
 if(S.settings.splash)showLaunch();
 /* Filet de sécurité : sauvegarde forcée quand l'app passe en arrière-plan ou se ferme
    (sur iOS, "pagehide"/"visibilitychange" sont les seuls signaux fiables avant fermeture) */
