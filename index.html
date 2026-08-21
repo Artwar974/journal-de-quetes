@@ -10948,14 +10948,14 @@ function drawHub(t){
     actifs.forEach(o=>hubOmbrePromene(x,T,P,t,o.cid,o.rang));
     actifs.forEach(o=>hubCorpsPromene(x,T,P,t,day,o.cid,o.rang));
     const boites=actifs.map(o=>{
-      const g=hubGeoPromene(P,t,o.cid,o.rang), ax=g.ax, ay=g.ay, sw=18*g.scale, sh=17*g.scale;
+      const g=hubGeoPromene(P,t,o.cid,o.rang);
       /* ⚠️ `fy` est la LIGNE DE SOL de la créature, celle qui décide de la profondeur :
          elle doit valoir ses pieds, donc `wk.fy` exactement (= ay+34). C'était ay+26,
          soit 8 px TROP HAUT — un biais systématique qui faisait passer les créatures
          pour plus lointaines qu'elles ne sont et laissait le décor les recouvrir à tort.
          Invisible en mode camp où les marges sont larges, décisif à l'accueil où la
          bande de promenade est comprimée à une cinquantaine de pixels. */
-      return {x0:ax+Math.max(1,g.scale),y0:ay-2,x1:ax+sw-Math.max(1,g.scale),y1:ay+sh-3,fy:o.wk.fy};
+      return creatureSceneBox(o.cid,o.wk.fx,o.wk.fy,g.scale);
     });
     /* ---- REMISE EN ORDRE GLOBALE ENTRE TOUTES LES CRÉATURES ----
        Les créatures EN POSTE (cuisine, pêche, exploration) sont peintes avant les
@@ -11177,10 +11177,31 @@ function hubGeoPromene(P,t,cid,rang){
   /* Même perspective verticale que les objets. La taille maximale est désormais
      60 % supérieure, et le rapport mini/maxi reste exactement celui des objets. */
   const scale=HOUSING_V1?creatureHousingScale(P,wk.fy):2;
-  const ax=Math.round(wk.fx-9*scale), ay=Math.round(wk.fy-17*scale);
+  /* La base visible du modèle tombe exactement sur wk.fy. Les GIF utilisent leur
+     ligne interne 13/18 ; les modèles dessinés leur ligne de pieds à ~15/18. */
+  const yOff=(CREATURES[cid]||{}).gif?13:15;
+  const ax=Math.round(wk.fx-9*scale), ay=Math.round(wk.fy-yOff*scale);
   const celeb=(rang===0)&&Date.now()<hubCelebUntil;
   const jump=celeb?[0,-2,-3,-1,0,-2][Math.floor(t/7)%6]*2:0;
   return {wk,step,ax,ay,celeb,jump,scale,p};
+}
+/* Emprise VISUELLE réelle d'une créature dans la scène. La boîte générique de 18×17
+   était trop courte pour l'Orc et les GIF hauts : leur tête pouvait échapper au test
+   d'occlusion et sembler traverser un objet pourtant placé devant. */
+function creatureSceneBox(id,px,py,sc){
+  const cr=CREATURES[id]||{},marge=Math.max(1,sc*.5);
+  if(cr.gif){
+    const g=gifData(id),bb=gifBBox(id);
+    if(g&&bb){
+      const box=18*sc,cible=box*(cr.gscale||GIF_FILL),kRaw=cible/bb.h;
+      const k=cr.gk||Math.max(1,Math.round(kRaw));
+      const z=(kRaw<.85?kRaw:k)*(cr.gzoom||1),w=bb.w*z,h=bb.h*z;
+      return {x0:px-w/2-marge,y0:py-h-marge,x1:px+w/2+marge,y1:py+marge,fy:py};
+    }
+    /* Chargement pas encore terminé : boîte volontairement prudente. */
+    return {x0:px-12*sc,y0:py-24*sc,x1:px+12*sc,y1:py+sc,fy:py};
+  }
+  return {x0:px-10*sc-marge,y0:py-18*sc-marge,x1:px+10*sc+marge,y1:py+marge,fy:py};
 }
 /* PASSE 1 — les ombres au sol, toutes avant les corps : sinon l'ombre basse d'un
    volant viendrait s'imprimer sur le dos d'une créature terrestre située derrière. */
@@ -11288,7 +11309,8 @@ function drawHubTasks(x,T,P,t,C,day,devant){
       paintCreature(x,id,Math.round(px-9*sc),Math.round(py-yOff*sc-(bob||0)),sc,null,null,false,mov,face);
     };
     peindre();
-    acts.push({x0:px-10*sc,y0:py-17*sc,x1:px+10*sc,y1:py+4*sc,fy:py,
+    const b=creatureSceneBox(id,px,py,sc);
+    acts.push({x0:b.x0,y0:b.y0,x1:b.x1,y1:b.y1,fy:py,
                vol:!!(CREATURES[id]||{}).fly,peindre});
   };
   /* ---- retours : la créature rapporte son butin de son poste jusqu'au coffre.
