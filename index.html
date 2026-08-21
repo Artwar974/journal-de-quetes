@@ -1369,7 +1369,9 @@
 .housing-family,.housing-skin{flex:0 0 62px;height:52px;border:1px solid #9c743b;border-radius:9px;background:linear-gradient(#594026,#342216);color:#f9e7bb;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;position:relative}
 .housing-family.on,.housing-skin.on{border:2px solid #ffe08a;background:linear-gradient(#76552d,#442b17)}
+.housing-skin.empty{opacity:.42;filter:grayscale(.65)}
 .housing-family b{font-size:21px;line-height:22px}.housing-skin img{width:36px;height:36px;object-fit:contain;image-rendering:pixelated}
+.housing-family>small{font-size:7px;color:#d7bf8d;line-height:8px}
 .housing-skin small{position:absolute;right:3px;top:2px;width:16px;height:16px;border-radius:8px;background:#24170dd9;display:grid;place-items:center;font-size:8px}
 .housing-help{height:16px;line-height:16px;margin-top:0;color:#e4d2a7;text-align:center;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .housing-actions{position:absolute;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
@@ -1525,7 +1527,7 @@
   <div class="housing-top">
     <button id="housingCancel" aria-label="Retour">‹</button>
     <strong>AMÉNAGER LE REFUGE</strong>
-    <span aria-hidden="true"></span>
+    <button id="housingShop" aria-label="Ouvrir la boutique Housing">🛍️</button>
   </div>
   <div class="housing-actions" id="housingActions">
     <button class="housing-action object-only" id="housingDelete" aria-label="Ranger l'objet">🗑<small>Ranger</small></button>
@@ -1657,6 +1659,9 @@ const CAMPOBJ={
   /* la planche des œufs n'a pas de rangée prairie : la rangée JUNGLE (herbe et fleurs)
      en tient lieu — interchangeable en relançant campskins-injecte.ps1 */
   oeuf:   {nom:"Œuf du nid",         ic:"🥚"},
+  feu:    {nom:"Feu de camp",        ic:"🔥",special:true,prix:180},
+  coffre: {nom:"Coffre",             ic:"🧰",special:true,prix:220},
+  drapeau:{nom:"Drapeau",            ic:"🚩",special:true,prix:120},
 };
 /* La refonte Housing remplace le camp préfabriqué. Les calques de terrain restent,
    mais chaque structure devient un objet libre. Les anciennes garde-robes servent
@@ -1664,8 +1669,18 @@ const CAMPOBJ={
 const HOUSING_V1=true;
 function housingDef(){
   const byBiome={}; BIOME_ORDRE.forEach(b=>byBiome[b]=[]);
-  return {v:1,byBiome};
+  const stock={};BIOME_ORDRE.forEach(b=>["tente","panneau","journal","oeuf"].forEach(f=>stock[b+"|objets|"+f+"|0"]=1));
+  return {v:2,byBiome,stock};
 }
+function housingCle(b,tab,fam,skin){return b+"|"+tab+"|"+fam+"|"+(skin||0);}
+function housingStock(b,tab,fam,skin){
+  const h=S.housing||(S.housing=housingDef());h.stock=h.stock||{};
+  return h.stock[housingCle(b,tab,fam,skin)]||0;
+}
+function housingPlaces(b,tab,fam,skin){
+  return housingListe(b).filter(o=>o.tab===tab&&o.family===fam&&(o.skin||0)===(skin||0)).length;
+}
+function housingDispo(b,tab,fam,skin){return Math.max(0,housingStock(b,tab,fam,skin)-housingPlaces(b,tab,fam,skin));}
 function campSkinsDef(){
   const un=()=>({owned:{tente:[0],panneau:[0],journal:[0],oeuf:[0]},
                  equip:{tente:0,panneau:0,journal:0,oeuf:0}});
@@ -1872,10 +1887,27 @@ function load(){
        reste dans la sauvegarde historique, mais n'est pas recréée automatiquement. */
     if(!s.housing||!s.housing.byBiome)s.housing=housingDef();
     BIOME_ORDRE.forEach(b=>{if(!Array.isArray(s.housing.byBiome[b]))s.housing.byBiome[b]=[];});
+    /* Housing V2 : chaque exemplaire est désormais un vrai objet possédé. Les skins
+       achetés dans l'ancienne boutique donnent chacun un exemplaire ; une décoration
+       déjà posée est toujours couverte, afin qu'une migration ne la confisque jamais. */
+    if(!s.housing.stock)s.housing.stock={};
+    BIOME_ORDRE.forEach(b=>{
+      const cs=s.campSkins[b];
+      if(cs&&cs.owned)Object.keys(cs.owned).forEach(f=>(cs.owned[f]||[]).forEach(i=>{
+        const k=b+"|objets|"+f+"|"+i;if(!s.housing.stock[k])s.housing.stock[k]=1;}));
+      (s.housing.byBiome[b]||[]).forEach(o=>{
+        const k=b+"|"+(o.tab||"objets")+"|"+o.family+"|"+(o.skin||0);
+        const poses=(s.housing.byBiome[b]||[]).filter(q=>(q.tab||"objets")===(o.tab||"objets")&&q.family===o.family&&(q.skin||0)===(o.skin||0)).length;
+        if((s.housing.stock[k]||0)<poses)s.housing.stock[k]=poses;
+      });
+    });
+    s.housing.v=2;
     if(!s.settings.theme)s.settings.theme="light";
     if(!s.history)s.history={};
     if(!s.diary)s.diary={days:{}};
-    if(!s.manx)s.manx={last:Date.now(),refus:0};
+    /* Le Manxiety a été retiré : on purge aussi son ancien état afin qu'aucune
+       menace ni perte différée ne puisse survivre dans une sauvegarde existante. */
+    if(s.manx)delete s.manx;
     if(s.jetons==null)s.jetons=0;
     if(!s.serie)s.serie={pardon:1,semaine:null,veille:0,avis:null};
     /* Migration de la série : l'ancienne comptait des QUÊTES (+1 par validation, remise
@@ -3941,12 +3973,8 @@ function persist(){save();renderHUD();renderTabs();renderList();}
 function abandon(it){
   const o=S.quests.find(x=>x.id===it.id);
   if(o){o.abandonedToday=true;} else {it.abandonedToday=true;S.quests.push(it);}
-  /* La série ne saute PLUS au refus. L'ancienne règle punissait le seul geste honnête —
-     dire « pas aujourd'hui » — et laissait l'évitement silencieux intact : on apprenait
-     donc à ignorer la quête plutôt qu'à la refuser. Le refus nourrit maintenant le
-     Manxiety, ce qui coûte quelque chose sans détruire des semaines de série. */
+  /* Abandonner honnêtement une quête ne déclenche aucune punition cachée. */
   toast("Quête abandonnée 💤");
-  manxRefus();                    // le Manxiety se nourrit des quêtes repoussées
   persist();
 }
 function relance(it){
@@ -4025,7 +4053,7 @@ function expireQuetes(){
   if(!expireActif())return;
   const perdues=S.quests.filter(x=>(x.type==="principale"||x.type==="secondaire")&&questeExpiree(x));
   if(!perdues.length)return;
-  perdues.forEach(x=>{ x.abandonedToday=true; manxRefus(); });
+  perdues.forEach(x=>{ x.abandonedToday=true; });
   save();
   const n=perdues.length;
   toast(n===1 ? `⌛ « ${perdues[0].title} » a expiré — passée en abandon`
@@ -4158,7 +4186,6 @@ function award(it,rating,base){
     toast(`+${gain} XP · +${pieces} 🪙 · +${jet} 🎟️ · 🪵 +1`
       +(b.rallume?" — le feu repart !":b.enReserve?" en réserve":""));
   }
-  manxChasse();                   // une quête accomplie chasse le Manxiety
   persist();
   /* après persist() : la barre d'objectif vient d'être redessinée, donc le trophée vole
      vers la bonne position et le compteur qu'il éclaire est déjà à jour */
@@ -4757,12 +4784,8 @@ function shopRecompHTML(){
 let shopBioOuverts=null;   /* onglets biome dépliés, conservés entre deux re-rendus */
 function shopCampHTML(){
   const lvl=levelInfo(S.xpTotal).level;
-  /* Un ONGLET DÉROULANT (<details>) par biome, dans l'ordre de la carte — demande
-     utilisateur. Un biome verrouillé est un bandeau 🔒 NON dépliable : aucun spoiler
-     de ses paliers, juste la condition pour l'ouvrir. Le biome COURANT s'ouvre par
-     défaut. La boutique suit la progression RÉELLE (jamais le mode aperçu). */
-  const entete=`<div class="shop-cat" style="margin-top:14px">🏕️ Habillages du camp</div>
-    <div class="list-sub" style="margin:-4px 2px 4px">Chaque palier se débloque au niveau, puis s'achète en pièces. L'équiper change l'objet dans le camp.</div>`;
+  const entete=`<div class="shop-cat" style="margin-top:14px">🏡 Boutique Housing</div>
+    <div class="list-sub" style="margin:-4px 2px 4px">Chaque achat ajoute un exemplaire à ton inventaire. Tu peux acheter plusieurs fois le même objet.</div>`;
   return entete+BIOME_ORDRE.map(b=>{
     const nom=bioIc(b)+" "+bioNom(b);
     if(!biomeDebloqueReel(b)){
@@ -4770,32 +4793,33 @@ function shopCampHTML(){
       return `<div class="shop-bio lock"><div class="tete">🔒 ${nom}
         <span class="note">Possède tous les habillages ${prec.nom}</span></div></div>`;
     }
-    const cs=(S.campSkins&&S.campSkins[b])||campSkinsDef()[b];
-    const tiers=campTiers(b);
-    const blocs=Object.keys(CAMPOBJ).map(obj=>{
-      const items=tiers.map((t,i)=>{
-        const possede=(cs.owned[obj]||[]).includes(i);
-        const equipe=(cs.equip[obj]||0)===i;
-        const niveauOK=lvl>=t.niv;
-        const img=(typeof CAMPSKINS!=="undefined"&&CAMPSKINS[b]&&CAMPSKINS[b][obj]&&CAMPSKINS[b][obj][i])
-          ?`<img src="${CAMPSKINS[b][obj][i]}" alt="" style="height:46px;max-width:74px;object-fit:contain">`
-          :`<span style="font-size:26px">${CAMPOBJ[obj].ic}</span>`;
-        let btn;
-        if(equipe)        btn=`<button class="btn go pix" disabled>✓ Équipé</button>`;
-        else if(possede)  btn=`<button class="btn pix" data-cequip="${b}:${obj}:${i}">Équiper</button>`;
-        else if(niveauOK) btn=`<button class="btn gold pix" data-cbuy="${b}:${obj}:${i}" ${S.coins>=t.prix?"":"disabled"}>🪙 ${t.prix}</button>`;
-        else              btn=`<button class="btn pix" disabled>🔒 Niv. ${t.niv}</button>`;
-        return `<div class="shop-item ${equipe?"on":""}">
-          <div class="shop-ic" style="height:52px;display:grid;place-items:center">${img}</div>
-          <div class="shop-name">${t.nom}</div>${btn}</div>`;
-      }).join("");
-      return `<div class="shop-cat">${CAMPOBJ[obj].ic} ${CAMPOBJ[obj].nom}</div><div class="shop-grid">${items}</div>`;
-    }).join("");
+    const section=(tab,titre)=>{
+      const familles=housingFamilies(tab,b);
+      const groupes=familles.map(f=>{const items=f.vars.map((v,i)=>{
+        const n=(S.housing.stock||{})[housingCle(b,tab,f.id,i)]||0, prix=v.prix||100, niveauOK=lvl>=(v.niv||1);
+        const src=v.kind==="skin"&&typeof CAMPSKINS!=="undefined"&&CAMPSKINS[b]&&CAMPSKINS[b][f.id]&&CAMPSKINS[b][f.id][i];
+        const vis=src?`<img src="${src}" alt="" style="height:46px;max-width:74px;object-fit:contain;image-rendering:pixelated">`:`<span style="font-size:28px">${f.ic}</span>`;
+        const btn=niveauOK?`<button class="btn gold pix" data-hbuy="${b}:${tab}:${f.id}:${i}" ${S.coins>=prix?"":"disabled"}>＋ 🪙 ${prix}</button>`
+          :`<button class="btn pix" disabled>🔒 Niv. ${v.niv}</button>`;
+        return `<div class="shop-item"><div class="shop-ic" style="height:52px;display:grid;place-items:center">${vis}</div>
+          <div class="shop-name">${esc(v.nom)} <b style="margin-left:auto;color:var(--gold)">×${n}</b></div>${btn}</div>`;}).join("");
+        return `<div class="shop-cat">${f.ic} ${esc(f.nom)}</div><div class="shop-grid">${items}</div>`;}).join("");
+      return `<div class="shop-cat" style="margin-top:11px">${titre}</div>${groupes}`;};
+    const blocs=section("objets","🏕️ Objets")+section("nature","🌳 Nature");
     const ouvert=shopBioOuverts?shopBioOuverts.has(b):(b===hubBiome());
     return `<details class="shop-bio" data-bio="${b}"${ouvert?" open":""}>
       <summary>${nom}<span class="chev">▾</span></summary>
       <div class="shop-bio-corps">${blocs}</div></details>`;
   }).join("");
+}
+function buyHousingObject(b,tab,fam,i){
+  const f=housingFamilies(tab,b).find(x=>x.id===fam),v=f&&f.vars[i];if(!v)return false;
+  if(!biomeDebloqueReel(b)){toast("Biome verrouillé 🔒");return false;}
+  if(levelInfo(S.xpTotal).level<(v.niv||1)){toast("Niveau "+v.niv+" requis 🔒");return false;}
+  const prix=v.prix||100;if(S.coins<prix){toast("Pas assez de pièces 🪙");return false;}
+  S.coins-=prix;S.housing.stock=S.housing.stock||{};const k=housingCle(b,tab,fam,i);S.housing.stock[k]=(S.housing.stock[k]||0)+1;
+  if(tab==="objets"&&!CAMPOBJ[fam].special){const cs=S.campSkins[b],a=cs.owned[fam]||(cs.owned[fam]=[]);if(!a.includes(i))a.push(i);}
+  save();renderHUD();playSound("piece");toast(f.nom+" ajouté à l'inventaire ×"+S.housing.stock[k]);return true;
 }
 function shopHTML(){
   return shopRecompHTML()+shopCampHTML()+CATS.map(c=>{
@@ -4824,6 +4848,8 @@ function mountShop(root,rerender){
     const p=b.dataset.cbuy.split(":");if(buyCampSkin(p[0],p[1],+p[2]))rerender();});
   root.querySelectorAll("[data-cequip]").forEach(b=>b.onclick=()=>{
     const p=b.dataset.cequip.split(":");equipCampSkin(p[0],p[1],+p[2]);rerender();});
+  root.querySelectorAll("[data-hbuy]").forEach(el=>el.onclick=()=>{
+    const p=el.dataset.hbuy.split(":");if(buyHousingObject(p[0],p[1],p[2],+p[3]))rerender();});
   /* mémorise les onglets biome dépliés pour les re-rendus (achat, équipement) */
   root.querySelectorAll("details.shop-bio").forEach(d=>d.addEventListener("toggle",()=>{
     shopBioOuverts=new Set([...root.querySelectorAll("details.shop-bio[open]")].map(x=>x.dataset.bio));
@@ -7053,7 +7079,7 @@ function bioCacheVide(){_bcCache=null;}
 function biomeComplet(b){
   if(_bcCache&&b in _bcCache)return _bcCache[b];
   const cs=S&&S.campSkins&&S.campSkins[b];
-  const r=!!cs&&Object.keys(CAMPOBJ).every(o=>[1,2,3,4].every(t=>(cs.owned[o]||[]).includes(t)));
+  const r=!!cs&&Object.keys(CAMPOBJ).filter(o=>!CAMPOBJ[o].special).every(o=>[1,2,3,4].every(t=>(cs.owned[o]||[]).includes(t)));
   (_bcCache||(_bcCache={}))[b]=r;
   return r;
 }
@@ -8279,19 +8305,36 @@ function campSkinImg(obj,t,day){
    constructible. La taille est calculée dans le canvas LOGIQUE de 330 px : elle ne
    dépend jamais de la largeur du navigateur. */
 const HOUSING_MIN=.14, HOUSING_MAX=.45, HOUSING_MULT=4, HOUSING_LIMIT_DY=10;
+const CREATURE_HOUSING_MAX=3.2; /* ancienne taille max 2, augmentée de 60 % */
 let housingEdit=false,housingTab="objets",housingFamily="tente",housingSelected=null;
-let housingDrag=null,housingSnapshot=null,housingRects=[],housingPanelRect=null;
+let housingDrag=null,housingSnapshot=null,housingRects=[],housingPanelRect=null,housingPuffs=[];
 const housingAlphaCache=new WeakMap();
 function housingListe(b){
   S.housing=S.housing||housingDef();S.housing.byBiome=S.housing.byBiome||{};
   return S.housing.byBiome[b]||(S.housing.byBiome[b]=[]);
 }
 function housingZone(P){return {top:P.HZ+HOUSING_LIMIT_DY,bottom:P.H-4};}
-function housingScale(p){return HOUSING_MULT*(HOUSING_MIN+(HOUSING_MAX-HOUSING_MIN)*Math.max(0,Math.min(1,p)));}
+/* RÈGLE D'OR DE PERSPECTIVE — source unique pour absolument tout ce qui est posé
+   sur le terrain. En haut : 14/45 de la taille du bas. Entre les deux : variation
+   continue selon la ligne de contact au sol (les pieds, jamais le centre de l'image). */
+function housingPerspective(p){
+  p=Math.max(0,Math.min(1,Number(p)||0));
+  return (HOUSING_MIN+(HOUSING_MAX-HOUSING_MIN)*p)/HOUSING_MAX;
+}
+function housingDepth(P,y){
+  const z=housingZone(P);return Math.max(0,Math.min(1,(y-z.top)/Math.max(1,z.bottom-z.top)));
+}
+function housingLayer(P,y){
+  const z=housingZone(P);return Math.max(0,Math.floor((Math.max(z.top,Math.min(z.bottom,y))-z.top)/5));
+}
+function housingScale(p){return HOUSING_MULT*HOUSING_MAX*housingPerspective(p);}
+function creatureHousingScale(P,y){
+  return CREATURE_HOUSING_MAX*housingPerspective(housingDepth(P,y));
+}
 function housingBBox(im){
-  if(!im)return {l:0,t:0,r:1,b:1,cx:.5};
+  if(!im)return {l:0,t:0,r:1,b:1,cx:.5,bl:0,br:1};
   const deja=housingAlphaCache.get(im);if(deja)return deja;
-  let box={l:0,t:0,r:1,b:1,cx:.5};
+  let box={l:0,t:0,r:1,b:1,cx:.5,bl:0,br:1};
   try{
     const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;
     if(!w||!h)return box;
@@ -8300,30 +8343,46 @@ function housingBBox(im){
     const d=g.getImageData(0,0,w,h).data;let x0=w,y0=h,x1=-1,y1=-1;
     for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>10){
       if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
-    if(x1>=0)box={l:x0/w,t:y0/h,r:(x1+1)/w,b:(y1+1)/h,cx:(x0+x1+1)/(2*w)};
+    if(x1>=0){
+      let bx0=w,bx1=-1;const by0=Math.max(y0,y1-2);
+      for(let yy=by0;yy<=y1;yy++)for(let xx=0;xx<w;xx++)if(d[(yy*w+xx)*4+3]>10){if(xx<bx0)bx0=xx;if(xx>bx1)bx1=xx;}
+      if(bx1<0){bx0=x0;bx1=x1;}
+      box={l:x0/w,t:y0/h,r:(x1+1)/w,b:(y1+1)/h,cx:(x0+x1+1)/(2*w),bl:bx0/w,br:(bx1+1)/w};
+    }
   }catch(e){}
   housingAlphaCache.set(im,box);return box;
 }
-function housingNatureFamilies(){
-  const b=hubBiome(),B=BIOMES[b]||{}, out=[{id:"arbre",nom:"Arbres",ic:"🌳",vars:[{nom:"Arbre animé",kind:"tree",factor:1}]}];
+function housingNatureFamilies(bio){
+  const b=bio||hubBiome(),B=BIOMES[b]||{}, out=[
+    {id:"arbre",nom:"Arbres",ic:"🌳",vars:[{nom:"Arbre animé",kind:"tree",factor:1,prix:90}]},
+    {id:"etang",nom:"Petits étangs",ic:"💧",vars:[{nom:"Petit étang",kind:"special",special:"etang",factor:1,prix:160}]}
+  ];
   if(B.avantEls&&B.avantEls.length)out.push({id:"rochers",nom:"Rochers",ic:"🪨",
-    vars:B.avantEls.map((e,i)=>({nom:"Rocher "+(i+1),kind:"plan",plan:e.n,factor:Math.max(.35,Math.min(1,e.k||.7))}))});
+    vars:B.avantEls.map((e,i)=>({nom:"Rocher "+(i+1),kind:"plan",plan:e.n,factor:Math.max(.35,Math.min(1,e.k||.7)),prix:70+i*15}))});
   if(typeof BIOMEIMG!=="undefined"&&BIOMEIMG[b]&&BIOMEIMG[b].avant)
-    out.push({id:"vegetation",nom:"Végétation",ic:"🌿",vars:[{nom:"Végétation",kind:"plan",plan:"avant",factor:.5}]});
+    out.push({id:"vegetation",nom:"Végétation",ic:"🌿",vars:[{nom:"Végétation",kind:"plan",plan:"avant",factor:.5,prix:110}]});
   return out;
 }
-function housingFamilies(){
-  if(housingTab==="nature")return housingNatureFamilies();
-  return Object.keys(CAMPOBJ).map(id=>({id,nom:CAMPOBJ[id].nom,ic:CAMPOBJ[id].ic,
-    vars:[0,1,2,3,4].map((skin,i)=>({nom:(campTiers(hubBiome())[i]||{}).nom||("Modèle "+(i+1)),kind:"skin",skin,factor:1}))}));
+function housingFamilies(tab,bio){
+  const ong=tab||housingTab,b=bio||hubBiome();
+  if(ong==="nature")return housingNatureFamilies(b);
+  return Object.keys(CAMPOBJ).map(id=>{
+    const d=CAMPOBJ[id];return {id,nom:d.nom,ic:d.ic,vars:d.special
+      ?[{nom:d.nom,kind:"special",special:id,factor:1,prix:d.prix}]
+      :[0,1,2,3,4].map((skin,i)=>({nom:(campTiers(b)[i]||{}).nom||("Modèle "+(i+1)),kind:"skin",skin,factor:1,prix:(campTiers(b)[i]||{}).prix||100,niv:(campTiers(b)[i]||{}).niv||1}))};
+  });
 }
 function housingVar(it){
-  const f=housingFamilies().find(v=>v.id===it.family);
+  /* IMPORTANT : un objet garde sa propre famille d'onglet. Le rendu ne doit jamais
+     dépendre de l'onglet actuellement ouvert dans le menu, sinon Nature et Objets
+     semblent vivre dans deux dimensions et disparaissent alternativement. */
+  const f=housingFamilies(it.tab||"objets",it.stockBio||hubBiome()).find(v=>v.id===it.family);
   return f&&f.vars[Math.max(0,Math.min(f.vars.length-1,it.skin||0))];
 }
 function housingImg(it,day,t){
   const v=housingVar(it);if(!v)return null;
   if(v.kind==="skin")return campSkinImg(it.family,v.skin,day);
+  if(v.kind==="special")return v.special==="feu"?housingFireImg(day):housingSpecialImg(v.special,day,t);
   if(v.kind==="tree"){
     if(typeof TREE_FR==="undefined"||!TREE_FR.length)return null;
     const n=TREE_FR.length,phase=Math.floor((t||0)/10)%(n*2-2),i=phase<n?phase:n*2-2-phase;
@@ -8331,6 +8390,42 @@ function housingImg(it,day,t){
   }
   if(v.kind==="plan")return biomePlanImg(v.plan,day);
   return null;
+}
+const housingSpecialCache={};
+function housingSpecialImg(kind,day,t){
+  const key=kind+"|"+(day?1:0),c=housingSpecialCache[key]||(housingSpecialCache[key]=document.createElement("canvas"));
+  const g=c.getContext("2d");c.width=kind==="etang"?72:kind==="drapeau"?34:kind==="feu"?38:42;c.height=kind==="etang"?34:kind==="drapeau"?58:38;g.clearRect(0,0,c.width,c.height);
+  const R=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
+  const dark=day?1:.55, col=h=>{const n=parseInt(h.slice(1),16),q=i=>Math.round((n>>i&255)*dark).toString(16).padStart(2,"0");return "#"+q(16)+q(8)+q(0);};
+  if(kind==="etang"){
+    const ph=(Math.sin((t||0)/11)+1)/2;
+    g.fillStyle=day?"rgba(38,105,139,.68)":"rgba(24,56,91,.72)";g.beginPath();g.ellipse(36,20,34,12,0,0,7);g.fill();
+    g.strokeStyle=day?"#8bc9d1":"#557c9f";g.lineWidth=2;g.beginPath();g.ellipse(36,19,29,8,0,0,7);g.stroke();
+    g.strokeStyle=day?`rgba(210,245,238,${(.35+.3*ph).toFixed(2)})`:`rgba(151,193,216,${(.25+.25*ph).toFixed(2)})`;
+    g.lineWidth=1;g.beginPath();g.ellipse(30+ph*10,18,8+ph*4,2.5,0,0,7);g.stroke();
+    R(4,24,8,3,col("#526f43"));R(58,23,10,3,col("#526f43"));
+  }else if(kind==="feu"){
+    [[5,32,7,4],[14,30,8,5],[24,32,7,4]].forEach(a=>R(a[0],a[1],a[2],a[3],col("#75614c")));
+    R(8,29,23,4,col("#4a2d18"));const ph=Math.sin((t||0)/4);
+    R(13,17+(ph>0?1:0),12,14,"#d84b20");R(16,11+(ph<0?1:0),7,18,"#ff9a28");R(18,7+(ph>0?1:0),4,17,"#ffe06a");
+  }else if(kind==="coffre"){
+    R(5,18,32,16,col("#5a3820"));R(5,18,32,3,col("#8b6034"));R(7,12,28,8,col("#6e492a"));
+    R(19,12,4,22,col("#c39348"));R(20,23,2,5,col("#493018"));R(6,30,30,3,col("#3e2717"));
+  }else{
+    R(5,3,3,53,col("#4a321e"));R(6,2,1,53,col("#8a6535"));
+    const wave=Math.round(Math.sin((t||0)/7)*2);g.fillStyle=day?"#c44732":"#75291f";
+    g.beginPath();g.moveTo(8,7);g.lineTo(31,11+wave);g.lineTo(8,26);g.closePath();g.fill();R(15,12,3,8,"#ffd24d");R(15,22,3,3,"#ffd24d");
+  }
+  return c;
+}
+function housingFireIndex(){
+  const ff=.35+.65*feuForce();
+  return Math.floor(performance.now()/(FEU_SPR.delay*(1.8-.8*ff)))%FEU_SPR.frames.length;
+}
+function housingFireImg(day){
+  const r=feuInit();
+  if(S.camp.fire){const im=r.imgs[housingFireIndex()];return feuPret(im)?im:null;}
+  return day?r.off:(feuOffNight()||r.off);
 }
 function housingItemRect(it,P,day,t){
   const im=housingImg(it,day,t);if(!im||!(im.naturalWidth||im.width))return null;
@@ -8340,14 +8435,27 @@ function housingItemRect(it,P,day,t){
   const footY=z.top+p*Math.max(1,z.bottom-z.top),center=it.flip?(1-box.cx):box.cx;
   const footX=Math.max(0,Math.min(1,Number(it.x)||.5))*P.W;
   const dx=footX-center*dw,dy=footY-box.b*dh;
-  return {it,im,box,dx,dy,dw,dh,footX,footY,
+  return {it,im,box,dx,dy,dw,dh,footX,footY,layer:housingLayer(P,footY),
+    baseX0:it.flip?footX*2-(dx+box.br*dw):dx+box.bl*dw,
+    baseX1:it.flip?footX*2-(dx+box.bl*dw):dx+box.br*dw,
     x0:dx+box.l*dw,y0:dy+box.t*dh,x1:dx+box.r*dw,y1:dy+box.b*dh};
+}
+function housingPoste(family,P,day,t,tab){
+  const it=housingListe(hubBiome()).find(o=>(o.tab||"objets")===(tab||"objets")&&o.family===family);
+  if(!it)return null;const r=housingItemRect(it,P,day,t);return r?{it,r,x:r.footX,y:r.footY,scale:housingScale(it.p||0)}:null;
 }
 function hubDrawHousing(x,P,t,day){
   housingRects=[];housingPanelRect=null;
-  const list=housingListe(hubBiome()).slice().sort((a,b)=>(a.p||0)-(b.p||0));
+  const list=housingListe(hubBiome()).map((it,i)=>({it,i,r:housingItemRect(it,P,day,t)}))
+    .filter(o=>o.r).sort((a,b)=>a.r.layer-b.r.layer||a.i-b.i).map(o=>o.it);
   list.forEach(it=>{
     const r=housingItemRect(it,P,day,t);if(!r)return;
+    if(it.family==="feu"&&S.camp.fire){
+      const h=feuHalo(housingFireIndex());
+      if(h){const sc=r.dw/(r.im.naturalWidth||r.im.width),ff=.35+.65*feuForce();x.save();
+        x.globalCompositeOperation="lighter";x.globalAlpha=(day?.40:.54)*ff;x.imageSmoothingEnabled=true;
+        x.drawImage(h,r.dx-FEU_MARGE*sc,r.dy-FEU_MARGE*sc,r.dw+FEU_MARGE*2*sc,r.dh+FEU_MARGE*2*sc);x.restore();}
+    }
     x.save();
     if(it.flip){x.translate(r.footX*2,0);x.scale(-1,1);}
     x.imageSmoothingEnabled=false;x.drawImage(r.im,r.dx,r.dy,r.dw,r.dh);x.restore();
@@ -8358,21 +8466,49 @@ function hubDrawHousing(x,P,t,day){
       x.strokeRect(Math.round(r.x0)-3,Math.round(r.y0)-3,Math.round(r.x1-r.x0)+6,Math.round(r.y1-r.y0)+6);x.restore();
     }
   });
+  const now=performance.now();housingPuffs=housingPuffs.filter(p=>now-p.t0<520);
+  housingPuffs.forEach(p=>{const q=(now-p.t0)/520,e=1-Math.pow(1-q,3);x.save();x.globalAlpha=1-q;
+    for(let i=0;i<9;i++){const a=i/9*Math.PI*2+(i%2)*.25,r=3+e*(12+(i%3)*3),sz=Math.max(1,4-q*3);
+      x.fillStyle=i%3===0?"#fff4cf":i%3===1?"#d9c7a1":"#a99373";x.beginPath();x.arc(p.x+Math.cos(a)*r,p.y-8+Math.sin(a)*r*.65,sz,0,Math.PI*2);x.fill();}
+    x.restore();});
+}
+function housingPeindreRect(x,r){
+  if(!r||!r.im)return;x.save();
+  if(r.it.flip){x.translate(r.footX*2,0);x.scale(-1,1);}
+  x.imageSmoothingEnabled=false;x.drawImage(r.im,r.dx,r.dy,r.dw,r.dh);x.restore();
+}
+/* Recomposition finale de la scène sur les rangées invisibles de 5 px. Objets,
+   nature et créatures entrent dans LA MÊME pile ; aucune catégorie n'est privilégiée. */
+function hubHousingDepthPass(x,P,mobiles){
+  let ordre=0;const objets=housingRects.map(r=>({type:"objet",layer:r.layer,ordre:ordre++,x0:r.x0,y0:r.y0,x1:r.x1,y1:r.y1,peindre:()=>housingPeindreRect(x,r)}));
+  const creatures=(mobiles||[]).filter(m=>typeof m.peindre==="function").map(m=>({type:"creature",layer:housingLayer(P,m.fy),ordre:ordre++,x0:m.x0,y0:m.y0,x1:m.x1,y1:m.y1,peindre:m.peindre}));
+  const touche=(a,b)=>a.x1>b.x0&&a.x0<b.x1&&a.y1>b.y0&&a.y0<b.y1;
+  /* On ne recompose que les groupes qui se recouvrent : pas de double passage inutile
+     sur les pixels translucides des éléments isolés. */
+  const pile=[...objets.filter(o=>creatures.some(c=>touche(o,c))),...creatures.filter(c=>objets.some(o=>touche(o,c)))];
+  pile.sort((a,b)=>a.layer-b.layer||a.ordre-b.ordre).forEach(o=>o.peindre());
+}
+function housingSfxPouf(){
+  if(typeof sfxOn==="function"&&!sfxOn())return;try{const ac=audioCtx(),g=ac.createGain(),o=ac.createOscillator(),n=ac.createBufferSource();
+    const b=ac.createBuffer(1,Math.round(ac.sampleRate*.13),ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+    n.buffer=b;n.connect(g);o.type="sine";o.frequency.setValueAtTime(170,ac.currentTime);o.frequency.exponentialRampToValueAtTime(70,ac.currentTime+.14);o.connect(g);g.connect(mixVoie("interface"));
+    g.gain.setValueAtTime(.13,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.16);n.start();o.start();n.stop(ac.currentTime+.14);o.stop(ac.currentTime+.17);}catch(e){}
 }
 function housingPreviewSrc(fam,v){
   if(v.kind==="skin")return (((CAMPSKINS[hubBiome()]||{})[fam]||{})[v.skin])||"";
-  const fake={family:fam,skin:Math.max(0,(housingFamilies().find(f=>f.id===fam)||{vars:[]}).vars.indexOf(v)),tab:"nature"};
+  const fake={family:fam,skin:Math.max(0,(housingFamilies(housingTab).find(f=>f.id===fam)||{vars:[]}).vars.indexOf(v)),tab:housingTab,stockBio:hubBiome()};
   const im=housingImg(fake,true,0);return im&&im.src||"";
 }
 function housingRenderUI(){
   const fs=housingFamilies();if(!fs.some(f=>f.id===housingFamily))housingFamily=(fs[0]||{}).id||null;
   document.querySelectorAll("[data-htab]").forEach(e=>e.classList.toggle("on",e.dataset.htab===housingTab));
   const fr=document.getElementById("housingFamilies"),sr=document.getElementById("housingSkins");if(!fr||!sr)return;
-  fr.innerHTML=fs.map(f=>`<button class="housing-family ${f.id===housingFamily?"on":""}" data-hfam="${f.id}"><b>${f.ic}</b><span>${esc(f.nom)}</span></button>`).join("");
+  fr.innerHTML=fs.map(f=>{const n=f.vars.reduce((a,v,i)=>a+housingDispo(hubBiome(),housingTab,f.id,i),0);
+    return `<button class="housing-family ${f.id===housingFamily?"on":""}" data-hfam="${f.id}"><b>${f.ic}</b><span>${esc(f.nom)}</span><small>${n} libre${n>1?"s":""}</small></button>`;}).join("");
   const f=fs.find(v=>v.id===housingFamily);sr.innerHTML=f?f.vars.map((v,i)=>{
     const src=housingPreviewSrc(f.id,v),sel=housingListe(hubBiome()).find(o=>o.id===housingSelected);
-    const on=!!(sel&&sel.family===f.id&&(sel.skin||0)===i);
-    return `<button class="housing-skin ${on?"on":""}" data-hskin="${i}" title="${esc(v.nom)}">${src?`<img src="${src}" alt="">`:`<b>${f.ic}</b>`}<small>${i+1}</small></button>`;
+    const on=!!(sel&&sel.family===f.id&&(sel.skin||0)===i),libre=housingDispo(hubBiome(),housingTab,f.id,i)+(on?1:0);
+    return `<button class="housing-skin ${on?"on":""} ${libre?"":"empty"}" data-hskin="${i}" title="${esc(v.nom)}">${src?`<img src="${src}" alt="">`:`<b>${f.ic}</b>`}<small>×${libre}</small></button>`;
   }).join(""):"";
   const sel=housingListe(hubBiome()).find(o=>o.id===housingSelected);
   document.getElementById("housingActions").classList.toggle("on",!!sel);
@@ -8382,7 +8518,12 @@ function housingRenderUI(){
 }
 function housingChoose(i){
   const list=housingListe(hubBiome()),sel=list.find(o=>o.id===housingSelected);
-  if(sel&&sel.tab===housingTab&&sel.family===housingFamily){sel.skin=i;save();housingRenderUI();return;}
+  if(sel&&sel.tab===housingTab&&sel.family===housingFamily){
+    if((sel.skin||0)===i)return;
+    if(housingDispo(hubBiome(),housingTab,housingFamily,i)<1){toast("Aucun exemplaire libre — disponible dans la Boutique");return;}
+    sel.skin=i;save();housingRenderUI();return;
+  }
+  if(housingDispo(hubBiome(),housingTab,housingFamily,i)<1){toast("Achète d'abord cet objet dans la Boutique 🛍️");return;}
   if(housingFamily==="panneau"){
     const ancien=list.find(o=>o.family==="panneau");
     if(ancien){housingSelected=ancien.id;ancien.skin=i;toast("Un seul panneau de quêtes par biome");save();housingRenderUI();return;}
@@ -8410,8 +8551,11 @@ function housingInit(){
   document.querySelectorAll("[data-htab]").forEach(e=>e.onclick=()=>{housingTab=e.dataset.htab;housingFamily=housingTab==="objets"?"tente":"arbre";housingSelected=null;housingRenderUI();});
   document.getElementById("housingDone").onclick=()=>closeHousing(true);
   document.getElementById("housingCancel").onclick=()=>closeHousing(false);
+  document.getElementById("housingShop").onclick=()=>{closeHousing(true);hideLaunch();cur="boutique";renderTabs();renderList();animTab();};
   document.getElementById("housingFlip").onclick=()=>{const o=housingListe(hubBiome()).find(v=>v.id===housingSelected);if(o){o.flip=!o.flip;save();}};
-  document.getElementById("housingDelete").onclick=()=>{const a=housingListe(hubBiome()),i=a.findIndex(v=>v.id===housingSelected);if(i>=0){a.splice(i,1);housingSelected=null;save();housingRenderUI();}};
+  document.getElementById("housingDelete").onclick=()=>{const a=housingListe(hubBiome()),i=a.findIndex(v=>v.id===housingSelected);if(i>=0){
+    const r=housingRects.find(q=>q.it.id===housingSelected);if(r)housingPuffs.push({x:r.footX,y:r.footY,t0:performance.now()});
+    a.splice(i,1);housingSelected=null;housingSfxPouf();save();housingRenderUI();}};
   cv.addEventListener("pointerdown",e=>{
     if(!housingEdit)return;const q=cv.getBoundingClientRect(),mx=(e.clientX-q.left)*cv.width/q.width,my=(e.clientY-q.top)*cv.height/q.height;
     const r=[...housingRects].reverse().find(v=>mx>=v.x0&&mx<=v.x1&&my>=v.y0&&my<=v.y1);
@@ -10588,7 +10732,7 @@ function drawHub(t){
   }
   const flick=1+.09*Math.sin(t/5)+.05*Math.sin(t/2.3);
   const fy=P.fireY-2;
-  if(S.camp.fire){
+  if(!HOUSING_V1&&S.camp.fire){
     /* `ff` : 1 tant qu'il reste plus de 6 h de bois, puis décroissant jusqu'à 0,35 juste
        avant l'extinction. Le rayonnement se resserre et pâlit — on VOIT la réserve
        baisser sans avoir à ouvrir la moindre jauge. */
@@ -10605,7 +10749,7 @@ function drawHub(t){
       const sx=163+Math.sin(pr*4+i*1.7)*5+pr*14, syy=fy-30-pr*66;
       const al=(day?.10:.16)*(1-pr)*(1.6-.6*ff), r=2+pr*6;
       T.R(sx-r/2,syy,r,r,`rgba(190,186,180,${al.toFixed(2)})`);}
-  }else{
+  }else if(!HOUSING_V1){
     /* feu éteint : le foyer seul, puis braises rougeoyantes + filet de fumée froide */
     drawFeuSprite(x,P,day);
     /* les 4 pixels de braise dessinés en code ont été RETIRÉS : le foyer de l'utilisateur
@@ -10714,7 +10858,9 @@ function drawHub(t){
   if(BIO.planSurCadre)hubDrawMare(x,P,W,t,day);
   /* la brume passe DERRIÈRE le premier plan : elle s'arrête au feuillage */
   if(BIO.brume)hubDrawBrume(x,P,W,H,day,t);
-  if(!HOUSING_V1)hubDrawAvant(x,P,BIO,day,t);
+  /* Le cadre de la Forêt Noire (les deux grands arbres latéraux) appartient à la MAP,
+     pas à l'inventaire : il reste gravé dans le biome même en mode Housing. */
+  if(!HOUSING_V1||BIO.avantPleinCadre)hubDrawAvant(x,P,BIO,day,t);
   /* ⚠️ SECONDE PASSE DES TÂCHES : les créatures EN TRAJET (départ vers le poste,
      montée des volantes, retour de butin) passent DEVANT le plan avant — demande
      utilisateur : le cadre d'arbres de la forêt noire cachait les départs en pêche
@@ -10794,9 +10940,9 @@ function drawHub(t){
           nous : elle passe devant. Le tri de JS étant stable, deux créatures à la même
           hauteur gardent leur ordre de sélection. */
     actifs.sort((a,b)=>{
+      if(HOUSING_V1)return housingLayer(P,a.wk.fy)-housingLayer(P,b.wk.fy);
       const va=(CREATURES[a.cid]||{}).fly?1:0, vb=(CREATURES[b.cid]||{}).fly?1:0;
-      if(va!==vb)return va-vb;
-      return a.wk.fy-b.wk.fy;
+      return va!==vb?va-vb:a.wk.fy-b.wk.fy;
     });
     /* deux passes : toutes les ombres, puis tous les corps */
     actifs.forEach(o=>hubOmbrePromene(x,T,P,t,o.cid,o.rang));
@@ -10832,14 +10978,16 @@ function drawHub(t){
       const chevauche=(a,b)=>a!==b&&a.x1>b.x0&&a.x0<b.x1&&a.y1>b.y0&&a.y0<b.y1;
       const enConflit=hubMobiles.filter(a=>hubMobiles.some(b=>chevauche(a,b)));
       if(enConflit.length>1){
-        enConflit.sort((a,b)=>(a.vol!==b.vol)?a.vol-b.vol:a.fy-b.fy);
+        enConflit.sort((a,b)=>HOUSING_V1?(housingLayer(P,a.fy)-housingLayer(P,b.fy)):
+          ((a.vol!==b.vol)?a.vol-b.vol:a.fy-b.fy));
         enConflit.forEach(o=>o.peindre());
       }
     }
     /* 2. les objets du décor : une créature qui passe derrière la tente, le tableau,
        le pupitre ou le nid doit en être masquée — et toute créature DEVANT cet objet
        repasse aussitôt au-dessus (sandwich). */
-    hubOcclusion(x,P,day,boites,t,hubMobiles);
+    if(HOUSING_V1)hubHousingDepthPass(x,P,hubMobiles);
+    else hubOcclusion(x,P,day,boites,t,hubMobiles);
     /* Une zone tactile PAR créature déployée : les trois se caressent. Chacune suit la
        sienne ; celle d'une créature partie en mission (ou d'un emplacement vide) est
        repliée. La plus BASSE reçoit le plus grand z-index, pour que le clic aille à
@@ -10856,29 +11004,6 @@ function drawHub(t){
           eA.style.zIndex=String(1+rangs.indexOf(o));
         }else{ eA.style.width="0";eA.style.height="0"; }
       }
-    }
-  }
-  /* ---- le Manxiety : l'anxiété de la tâche repoussée, tapie près de l'arbre ----
-     Il obéit à la même règle de profondeur que les créatures : tout objet dont le pied
-     est PLUS BAS que le sien le masque. On repeint donc par-dessus lui les objets du
-     camp qu'il traverse, puis l'arbre, qui n'était pas couvert par hubOcclusion. */
-  {
-    const mb=drawManxiety(x,T,P,t,day);
-    if(mb){
-      /* ⚠️ Le Manxiety n'est PAS remis dans la liste des repeignables : `drawManxiety` a
-         des effets de bord (il fait avancer son fondu et peut déclencher un larcin en
-         attente), le rappeler les jouerait deux fois par image. C'est inutile de toute
-         façon : il est dessiné en DERNIER, donc rien ne l'a encore recouvert. Et les
-         créatures que `hubRemetDevant` va remettre au-dessus d'un objet sont, par
-         construction, plus basses que la ligne de sol de cet objet, elle-même plus basse
-         que la sienne — elles doivent donc bien lui passer devant. */
-      /* L'arbre fait désormais partie des zones de `hubOcclusion` : plus besoin de le
-         traiter à part ici. */
-      hubOcclusion(x,P,day,[mb],t,hubMobiles);
-      /* Le Manxiety est peint APRÈS tout le monde : sans ceci il passerait devant même
-         les créatures plus BASSES que lui, alors que la règle les met devant. On remet
-         donc au-dessus de lui celles qu'il chevauche et qui sont plus proches. */
-      hubRemetDevant([mb.x0,mb.y0,mb.x1,mb.y1],mb.fy,hubMobiles);
     }
   }
   /* ---- les bûches gagnées tombent dans le feu, par-dessus tout le reste ---- */
@@ -11019,7 +11144,22 @@ function hubMajPromene(P,t,cid,rang){
     }else{
       const dx=wk.tx-wk.fx, dy=wk.ty-wk.fy, d=Math.hypot(dx,dy);
       if(d<1.2){wk.state="idle";wk.wait=t+140+Math.random()*340;}
-      else{const v=.5;wk.fx+=dx/d*v;wk.fy+=dy/d*v;}
+      else{
+        const v=.5,nx=wk.fx+dx/d*v,ny=wk.fy+dy/d*v;
+        const proche=Object.keys(hubWalks).some(autre=>{if(autre===cid)return false;const q=hubWalks[autre];
+          if(!q)return false;const largeur=7*(creatureHousingScale(P,ny)+creatureHousingScale(P,q.fy));
+          return Math.abs(nx-q.fx)<largeur&&Math.abs(ny-q.fy)<5;});
+        if(hubWalkFree(P,nx,ny)&&!proche){wk.fx=nx;wk.fy=ny;}
+        else{
+          /* Évitement doux avant le contact : essai des deux directions le long de
+             la barrière, afin de contourner sa base plutôt que de la traverser. */
+          const sens=Math.random()<.5?-1:1,candidats=[sens,-sens];let devie=false;
+          for(const s of candidats){const tx=wk.fx+s*18,ty=wk.fy+(dy>=0?-4:4);
+            if(hubWalkFree(P,tx,ty)&&hubPathClear(P,wk.fx,wk.fy,tx,ty)){
+              wk.tx=tx;wk.ty=ty;wk.dir=s>0?1:-1;devie=true;break;}}
+          if(!devie){wk.state="idle";wk.wait=t+25;wk.stuck=(wk.stuck||0)+1;}
+        }
+      }
     }
   }
 }
@@ -11034,9 +11174,9 @@ function hubGeoPromene(P,t,cid,rang){
   const step=(wk.state==="walk"&&!aCycleMarche)?Math.round(Math.abs(Math.sin(t/3.4))*2):0;
   /* coordonnées ENTIÈRES : aucun anti-aliasing, la créature reste nette en mouvement */
   const zone=housingZone(P), p=Math.max(0,Math.min(1,(wk.fy-zone.top)/Math.max(1,zone.bottom-zone.top)));
-  /* Même perspective verticale que les objets : la taille historique (×2) est
-     conservée tout en bas et diminue progressivement en remontant vers l'horizon. */
-  const scale=HOUSING_V1?2*(HOUSING_MIN+(HOUSING_MAX-HOUSING_MIN)*p)/HOUSING_MAX:2;
+  /* Même perspective verticale que les objets. La taille maximale est désormais
+     60 % supérieure, et le rapport mini/maxi reste exactement celui des objets. */
+  const scale=HOUSING_V1?creatureHousingScale(P,wk.fy):2;
   const ax=Math.round(wk.fx-9*scale), ay=Math.round(wk.fy-17*scale);
   const celeb=(rang===0)&&Date.now()<hubCelebUntil;
   const jump=celeb?[0,-2,-3,-1,0,-2][Math.floor(t/7)%6]*2:0;
@@ -11116,10 +11256,19 @@ function drawHubTasks(x,T,P,t,C,day,devant){
   if(!ids.length&&!HUB_DROPS.length)return;
   if(!devant&&(t|0)%30===0)checkTasks();
   const nestX=272, nestY=P.ndY-4;
+  /* Les postes appartiennent maintenant au décor libre : leur géométrie est lue
+     directement sur les objets placés, quel que soit l'onglet actuellement ouvert. */
+  const feuPost=HOUSING_V1?housingPoste("feu",P,day,t,"objets"):null;
+  const etangPost=HOUSING_V1?housingPoste("etang",P,day,t,"nature"):null;
+  const feuX=feuPost?feuPost.x:165, feuY=feuPost?feuPost.y:P.fireY+12;
+  const tailleDepart=HOUSING_V1?creatureHousingScale(P,nestY):2;
   const ease=k=>1-(1-k)*(1-k);
   const acts=[];                                 // emprises des acteurs, pour l'occlusion
   if(!devant)HUB_ACTS=acts;
   const drawAs=(id,px,py,sc,bob,mov,face)=>{
+    /* Aucune mission n'a le droit d'imposer sa propre taille. Pêche, cuisine,
+       exploration, trajet et retour passent tous par la même règle que le Housing. */
+    if(HOUSING_V1)sc=creatureHousingScale(P,py);
     sc=Math.round(sc*10)/10;             // paliers de 0,1 : borne le cache d'échelles des GIF
     /* `peindre` est conservé dans `acts` : il permet de REDESSINER cette créature après
        les promeneurs, quand l'un d'eux lui passe derrière (règle du plus bas devant). */
@@ -11149,8 +11298,12 @@ function drawHubTasks(x,T,P,t,C,day,devant){
     const e2=(Date.now()-d.t0)/1000, D=5.5;
     if(e2>=D+0.9)return false;
     if((d.biome||"prairie")!==hubBiome())return true;   // autre biome : gardé, pas dessiné ici
-    const st=d.tal==="peche"?[hubPeche(P,d.slot===1),hubPecheY(P,hubPeche(P,d.slot===1)),1.15]
-            :d.tal==="cuisine"?[d.slot===1?196:134,P.fireY+13,1.8]
+    const st=d.tal==="peche"?(etangPost
+              ?[etangPost.x+(d.slot===1?1:-1)*(etangPost.r.dw*.58),etangPost.y,creatureHousingScale(P,etangPost.y)]
+              :[hubPeche(P,d.slot===1),hubPecheY(P,hubPeche(P,d.slot===1)),1.15])
+            :d.tal==="cuisine"?(feuPost
+              ?[feuX+(d.slot===1?1:-1)*Math.max(24,18*feuPost.scale),feuY,creatureHousingScale(P,feuY)]
+              :[d.slot===1?196:134,P.fireY+13,1.8])
             :(function(){const aX=(hubPecheEnMer()||hubPecheMare())?Math.round((P.W||330)/2)
                 :Math.round((P.pdX||167)+(P.pdRX||44)+5);
               return [aX,hubExploY(P,aX),hubExploSc()];})();   /* départ du retour : l'ancrage de la patrouille */
@@ -11179,7 +11332,8 @@ function drawHubTasks(x,T,P,t,C,day,devant){
       const im=cuisineSprite();
       if(im){
         x.imageSmoothingEnabled=false;
-        x.drawImage(im, 165-Math.round(CUISINE_SPR.w/2), P.fireY-5-CUISINE_PIEDS);
+        const sf=feuPost?Math.max(.55,feuPost.scale):1;
+        x.drawImage(im,feuX-CUISINE_SPR.w*sf/2,feuY-(17+CUISINE_PIEDS)*sf,CUISINE_SPR.w*sf,CUISINE_SPR.h*sf);
       }
     }
   }
@@ -11189,32 +11343,36 @@ function drawHubTasks(x,T,P,t,C,day,devant){
     const draw=(px,py,sc,bob,mov,face)=>drawAs(id,px,py,sc,bob,mov,face);
     if(tk.tal==="peche"){
       const droite=slot===1;                   // 1er pêcheur berge gauche, 2e berge droite
-      const gx=hubPeche(P,droite), gy0=hubPecheY(P,gx);
+      const gx=etangPost?etangPost.x+(droite?1:-1)*(etangPost.r.dw*.58):hubPeche(P,droite),
+            gy0=etangPost?etangPost.y:hubPecheY(P,gx);
       const k=Math.min(1,el/TRAVEL);
       if(!!devant!==(k<1))return;              // trajet → passe avant ; en poste → arrière
       const px=nestX+(gx-nestX)*ease(k), py=nestY+(gy0-nestY)*ease(k);
-      const sc=2+(1.15-2)*ease(k);
+      const scFin=HOUSING_V1?creatureHousingScale(P,gy0):1.15;
+      const sc=tailleDepart+(scFin-tailleDepart)*ease(k);
       if(k>=1){ /* canne SOUS la créature, inclinée vers la mare ; le bouchon flotte DEDANS */
         /* EN MER le bouchon ne va pas au centre d'un étang : il part vers le large,
            donc VERS LE HAUT, un peu au-delà du rivage. Le pêcheur regarde son bouchon. */
-        const mer=hubPecheEnMer(), marePk=hubPecheMare();
+        const mer=!etangPost&&hubPecheEnMer(), marePk=!etangPost&&hubPecheMare();
         /* à la MARE, le bouchon part de la rive proche vers le centre : un peu vers
            l'intérieur en x, et DANS l'eau en y — quelques px au-dessus du bord relevé
            dans mareCol, avec le petit clapot habituel */
-        const bx=mer ? Math.round(gx+(droite?-22:22))
+        const bx=etangPost ? Math.round(etangPost.x+(droite?-10:10)*etangPost.scale)
+                 : mer ? Math.round(gx+(droite?-22:22))
                  : marePk ? Math.round(gx+(droite?-20:20))
                  : P.pdX+(droite?12:-12)*P.fPd;
-        const by=mer ? Math.round(hubRivage(P,bx)-11+Math.sin(t/16+slot))
+        const by=etangPost ? Math.round(etangPost.y-etangPost.r.dh*.34+Math.sin(t/16+slot))
+                 : mer ? Math.round(hubRivage(P,bx)-11+Math.sin(t/16+slot))
                  : marePk ? Math.round(((P.mareCol&&P.mareCol.bas[bx]>=0)?P.mareCol.bas[bx]:gy0-12)-8+Math.sin(t/16+slot))
                  : P.pdY+1+Math.round(Math.sin(t/16+slot));
-        const dir=(mer||marePk) ? (bx>px?1:-1) : (droite?-1:1);
+        const dir=(etangPost||mer||marePk) ? (bx>px?1:-1) : (droite?-1:1);
         const rx0=px, ry0=py-9,                // base, cachée par le corps
               rx1=px+12*dir, ry1=py-30;        // pointe, au-dessus, côté eau
         x.strokeStyle="#5e4028";x.lineWidth=2;
         x.beginPath();x.moveTo(rx0,ry0);x.lineTo(rx1,ry1);x.stroke();
         x.strokeStyle="#8a6a3c";x.lineWidth=1;
         x.beginPath();x.moveTo(rx0+dir,ry0);x.lineTo(rx1+dir,ry1);x.stroke();
-        draw(px,py,sc,0,false,(mer||marePk)?(bx>px):!droite);   // installé : face à l'eau
+        draw(px,py,sc,0,false,(etangPost||mer||marePk)?(bx>px):!droite);   // installé : face à l'eau
         x.strokeStyle="rgba(220,230,240,.45)";x.lineWidth=1;
         x.beginPath();x.moveTo(rx1,ry1);
         x.quadraticCurveTo((rx1+bx)/2,(ry1+by)/2+8,bx,by-2);x.stroke();
@@ -11227,11 +11385,13 @@ function drawHubTasks(x,T,P,t,C,day,devant){
         draw(px,py,sc,0,true,gx>nestX);   // trajet : plus de sautillement
       }
     }else if(tk.tal==="cuisine"){
-      const gx=slot===1?196:134, gy0=P.fireY+13;   // 1er cuisinier à gauche de la marmite, 2e à droite
+      const gx=feuPost?feuX+(slot===1?1:-1)*Math.max(24,18*feuPost.scale):(slot===1?196:134),
+            gy0=feuPost?feuY:P.fireY+13;   // le cuisinier suit le foyer déplacé
       const k=Math.min(1,el/TRAVEL);
       if(!!devant!==(k<1))return;              // trajet → passe avant ; au gril → arrière
       const px=nestX+(gx-nestX)*ease(k), py=nestY+(gy0-nestY)*ease(k);
-      const sc=2+(1.8-2)*ease(k);
+      const scFin=HOUSING_V1?creatureHousingScale(P,gy0):1.8;
+      const sc=tailleDepart+(scFin-tailleDepart)*ease(k);
       const fache=k>=1&&!S.camp.fire;   // fâché tant que le feu est éteint, calmé dès la reprise
       /* ⚠️ AU GRIL, IL EST IMMOBILE — comme le pêcheur installé, qui a toujours été
          peint `draw(...,0,false,...)`. Le cuisinier était le seul poste à faire
@@ -11251,7 +11411,7 @@ function drawHubTasks(x,T,P,t,C,day,devant){
       if(k>=1&&slot===0){
         for(let i=0;i<3;i++){const ph=((t*0.9+i*30)%80)/80;
           x.globalAlpha=.38*(1-ph);
-          T.P2(161+i*4+Math.round(Math.sin(t/12+i*2)*1.5),P.fireY-46-ph*18,"#e8e8e0");}
+          T.P2(feuX-4+i*4+Math.round(Math.sin(t/12+i*2)*1.5),feuY-58-ph*18,"#e8e8e0");}
         x.globalAlpha=1;
       }
     }else{ /* exploration : sort par le couloir tente/panneau, gagne le MILIEU de sa
@@ -11817,7 +11977,15 @@ let HUB_ACTS=[];
 function hubWalkFree(P,cx,cy){
   if(HOUSING_V1){
     const z=housingZone(P);
-    return cx>=18&&cx<=P.W-18&&cy>=z.top&&cy<=z.bottom;
+    if(cx<18||cx>P.W-18||cy<z.top||cy>z.bottom)return false;
+    /* Collision par la BASE COLORÉE : chaque objet forme une petite barrière sur sa
+       rangée de 5 px. La créature peut passer devant ou derrière, mais jamais couper
+       cette ligne ; elle doit atteindre l'une des deux extrémités et la contourner. */
+    const demi=Math.max(5,8*creatureHousingScale(P,cy));
+    return !housingRects.some(r=>{
+      if(!r||!r.it||r.it.id===housingSelected&&housingDrag)return false;
+      return Math.abs(cy-r.footY)<3.25&&cx+demi>r.baseX0-2&&cx-demi<r.baseX1+2;
+    });
   }
   if(cx<40||cx>292)return false;
   const boxes=[
@@ -11830,7 +11998,7 @@ function hubWalkFree(P,cx,cy){
   return !boxes.some(b=>cx>b[0]&&cx<b[2]&&cy>b[1]&&cy<b[3]);
 }
 function hubPathClear(P,x0,y0,x1,y1){
-  const d=Math.hypot(x1-x0,y1-y0), n=Math.max(2,Math.ceil(d/7));
+  const d=Math.hypot(x1-x0,y1-y0), n=Math.max(2,Math.ceil(d/3));
   for(let i=0;i<=n;i++)if(!hubWalkFree(P,x0+(x1-x0)*i/n,y0+(y1-y0)*i/n))return false;
   return true;
 }
@@ -13324,11 +13492,10 @@ function majJour(){
 }
 /* `feuMaj()` fait s'écouler le combustible en temps réel et bascule `S.camp.fire` : sans
    ce battement régulier, le feu ne mourrait qu'au prochain geste du joueur. */
-setInterval(()=>{try{majJour();}catch(e){}try{feuMaj();}catch(e){}try{checkTasks();}catch(e){}
-  try{manxTick();}catch(e){}},20000);
+setInterval(()=>{try{majJour();}catch(e){}try{feuMaj();}catch(e){}try{checkTasks();}catch(e){}},20000);
 document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="visible"){
-    try{majJour();}catch(e){}try{feuMaj();}catch(e){}try{manxTick();}catch(e){}
+    try{majJour();}catch(e){}try{feuMaj();}catch(e){}
     /* au retour d'une longue absence, l'ardoise se met à jour tout de suite plutôt
        qu'au prochain battement de 20 s */
     try{expireQuetes();}catch(e){}}});
@@ -13397,7 +13564,6 @@ try{
     },1400);
   }
 }catch(e){}
-try{manxTick();}catch(e){}
 /* La table de mixage se construit au premier son joué ; si le contexte audio existe déjà
    (une page rechargée le réutilise), on lui recopie tout de suite les réglages sauvegardés. */
 try{mixApplique();}catch(e){}
