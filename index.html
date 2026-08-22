@@ -8318,10 +8318,16 @@ function campSkinImg(obj,t,day){
    Coordonnées persistées : x = largeur normalisée, p = profondeur dans le terrain
    constructible. La taille est calculée dans le canvas LOGIQUE de 330 px : elle ne
    dépend jamais de la largeur du navigateur. */
-const HOUSING_MIN=.14, HOUSING_MAX=.45, HOUSING_MULT=4, HOUSING_LIMIT_DY=10;
+/* Les objets passent à 75 % de leur taille précédente. La taille des créatures reste
+   indépendante (`CREATURE_HOUSING_MAX`) et ne change pas. */
+const HOUSING_MIN=.14, HOUSING_MAX=.45, HOUSING_MULT=3, HOUSING_LIMIT_DY=10;
 const CREATURE_HOUSING_MAX=3.2; /* ancienne taille max 2, augmentée de 60 % */
 let housingEdit=false,housingTab="objets",housingFamily="tente",housingSelected=null;
 let housingDrag=null,housingSnapshot=null,housingRects=[],housingPanelRect=null,housingPuffs=[];
+/* Prise en main directe des créatures : le corps et sa ligne de sol (`wk.fy`) restent
+   exactement sous le doigt. Seule l'ombre des terrestres descend temporairement ; la
+   perspective, les collisions et l'ordre des calques restent parfaitement stables. */
+let housingCreatureRects=[],housingCreaturePress=null,housingCreatureHold=null;
 const housingAlphaCache=new WeakMap();
 function housingListe(b){
   S.housing=S.housing||housingDef();S.housing.byBiome=S.housing.byBiome||{};
@@ -8338,12 +8344,39 @@ function housingPerspective(p){
 function housingDepth(P,y){
   const z=housingZone(P);return Math.max(0,Math.min(1,(y-z.top)/Math.max(1,z.bottom-z.top)));
 }
+/* Point libre le plus proche d'un lâcher. La recherche rayonne depuis les pieds de la
+   créature : elle sort donc par le bord le plus court de l'objet au lieu d'être
+   téléportée au centre du terrain. */
+function housingCreatureSortie(P,x,y){
+  const z=housingZone(P),bx=Math.max(18,Math.min(P.W-18,x)),by=Math.max(z.top,Math.min(z.bottom,y));
+  if(hubWalkFree(P,bx,by))return {x:bx,y:by};
+  for(let d=3;d<=Math.max(P.W,P.H);d+=3)for(let a=0;a<32;a++){
+    const q=a/32*Math.PI*2,nx=Math.max(18,Math.min(P.W-18,bx+Math.cos(q)*d));
+    const ny=Math.max(z.top,Math.min(z.bottom,by+Math.sin(q)*d));
+    if(hubWalkFree(P,nx,ny))return {x:nx,y:ny};
+  }
+  return {x:P.W/2,y:(z.top+z.bottom)/2};
+}
 function housingLayer(P,y){
   const z=housingZone(P);return Math.max(0,Math.floor((Math.max(z.top,Math.min(z.bottom,y))-z.top)/5));
 }
 function housingScale(p){return HOUSING_MULT*HOUSING_MAX*housingPerspective(p);}
 function creatureHousingScale(P,y){
   return CREATURE_HOUSING_MAX*housingPerspective(housingDepth(P,y));
+}
+/* Déformation des surfaces couchées, calée sur celle du terrain. Le modèle source est
+   l'ACCUEIL (facteur 1) ; à mesure que la scène s'ouvre, la profondeur disponible du
+   sol augmente et la composante verticale de la surface augmente dans le même rapport. */
+function housingFlatY(P){
+  const H=P.H,HbA=Math.round(HUB_FRAC0*H),skyA=H-HbA;
+  const hzA=Math.round(skyA+HbA*HUB_SKY0),spanA=Math.max(1,(H-4)-(hzA+HOUSING_LIMIT_DY));
+  const z=housingZone(P);return Math.max(.8,Math.min(1.85,(z.bottom-z.top)/spanA));
+}
+function housingFlatCampY(P){
+  const H=P.H,HbA=Math.round(HUB_FRAC0*H),skyA=H-HbA;
+  const hzA=Math.round(skyA+HbA*HUB_SKY0),spanA=Math.max(1,(H-4)-(hzA+HOUSING_LIMIT_DY));
+  const hzC=Math.round(H*HUB_SKY1),spanC=Math.max(1,(H-4)-(hzC+HOUSING_LIMIT_DY));
+  return spanC/spanA;
 }
 function housingBBox(im){
   if(!im)return {l:0,t:0,r:1,b:1,cx:.5,bl:0,br:1};
@@ -8398,7 +8431,7 @@ function housingStableBBox(it,im){
 }
 function housingNatureFamilies(bio){
   const b=bio||hubBiome(),B=BIOMES[b]||{}, out=[
-    {id:"arbre",nom:"Arbres",ic:"🌳",vars:[{nom:"Arbre animé",kind:"tree",factor:1,prix:90}]},
+    {id:"arbre",nom:"Arbres",ic:"🌳",vars:[{nom:"Arbre animé",kind:"tree",factor:1.2,prix:90}]},
     {id:"etang",nom:"Petits étangs",ic:"💧",vars:[{nom:"Petit étang",kind:"special",special:"etang",factor:1,prix:160}]}
   ];
   if(B.avantEls&&B.avantEls.length)out.push({id:"rochers",nom:"Rochers",ic:"🪨",
@@ -8436,9 +8469,9 @@ function housingImg(it,day,t){
   return null;
 }
 const housingSpecialCache={};
-let housingPondMaskCache=null;
-function housingSpecialImg(kind,day,t){
-  const key=kind+"|"+(day?1:0),c=housingSpecialCache[key]||(housingSpecialCache[key]=document.createElement("canvas"));
+const housingPondMaskCache={};
+function housingSpecialImg(kind,day,t,part){
+  const key=kind+"|"+(day?1:0)+"|"+(part||"tout"),c=housingSpecialCache[key]||(housingSpecialCache[key]=document.createElement("canvas"));
   const g=c.getContext("2d");c.width=kind==="etang"?116:kind==="drapeau"?34:kind==="feu"?38:42;c.height=kind==="etang"?54:kind==="drapeau"?58:38;g.clearRect(0,0,c.width,c.height);
   const R=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
   const dark=day?1:.55, col=h=>{const n=parseInt(h.slice(1),16),q=i=>Math.round((n>>i&255)*dark).toString(16).padStart(2,"0");return "#"+q(16)+q(8)+q(0);};
@@ -8446,22 +8479,26 @@ function housingSpecialImg(kind,day,t){
     /* Petit étang sans contour artificiel : eau, nénuphars, vaguelettes et roseaux.
        Le canvas reste strictement fixe ; seules les ondulations intérieures évoluent. */
     const cx=58,cy=31,ell=(x0,y0,rx,ry,co)=>{g.fillStyle=co;g.beginPath();g.ellipse(x0,y0,rx,ry,0,0,7);g.fill();};
-    const wg=g.createLinearGradient(0,cy-10,0,cy+11);
-    if(day){wg.addColorStop(0,"#8ec2e6");wg.addColorStop(.45,"#4a7cb4");wg.addColorStop(1,"#2a507e");}
-    else{wg.addColorStop(0,"#2c3d72");wg.addColorStop(.45,"#16224e");wg.addColorStop(1,"#0d1534");}
-    ell(cx,cy,44,10,wg);
-    g.save();g.beginPath();g.ellipse(cx,cy,43.5,9.6,0,0,7);g.clip();
-    for(let i=0;i<14;i++)R(cx-44+hubHash(i,62)*88,cy-9+hubHash(i,63)*18,3+hubHash(i,64)*8,1,i%3?"rgba(255,255,255,.10)":"rgba(255,255,255,.18)");
-    const wc=day?"rgba(240,248,255,.65)":"rgba(196,210,244,.5)";
-    for(let s=0;s<2;s++){const ph=(((t||0)/110)+s*.5)%1,ox=cx+(s?15:-17),oy=cy+(s?2:-1);
-      g.globalAlpha=(1-ph)*.45;g.strokeStyle=wc;g.lineWidth=1;g.beginPath();g.ellipse(ox,oy,1.5+ph*11,(1.5+ph*11)*.38,0,0,7);g.stroke();g.globalAlpha=1;}
-    g.restore();
-    const pad=(px,py,r,fl)=>{ell(px,py+1,r,r*.44,day?"#1f4a26":"#0e2a16");ell(px,py,r,r*.46,day?"#3f8a44":"#1e4a28");
-      if(fl){R(px-1,py-4,2,2,day?"#ffd3e0":"#9f8fc0");R(px,py-3,1,1,"#ffd24d");}};
-    pad(cx-26,cy+3,6,1);pad(cx-5,cy-3,5,0);pad(cx+15,cy+4,7,1);pad(cx+31,cy-2,4,0);pad(cx-38,cy-3,4,0);
-    const rc=day?"#3f7a3d":"#1e4227",rt=day?"#8a5a2e":"#4a3020";
-    [[-42,3],[-34,-3],[-26,4],[-18,-1],[20,3],[28,-3],[36,3],[42,-1]].forEach((r,i)=>{const bx=cx+r[0],by=cy+r[1],sw=Math.sin((t||0)/74+i*1.1)*2.6,h=9+(i*5)%6;
-      g.strokeStyle=rc;g.lineWidth=1;g.beginPath();g.moveTo(bx,by);g.quadraticCurveTo(bx+sw*.25,by-h*.55,bx+sw,by-h);g.stroke();R(bx+sw-1,by-h-6,2,7,rt);});
+    if(part!=="vertical"){
+      const wg=g.createLinearGradient(0,cy-10,0,cy+11);
+      if(day){wg.addColorStop(0,"#8ec2e6");wg.addColorStop(.45,"#4a7cb4");wg.addColorStop(1,"#2a507e");}
+      else{wg.addColorStop(0,"#2c3d72");wg.addColorStop(.45,"#16224e");wg.addColorStop(1,"#0d1534");}
+      ell(cx,cy,44,10,wg);
+      g.save();g.beginPath();g.ellipse(cx,cy,43.5,9.6,0,0,7);g.clip();
+      for(let i=0;i<14;i++)R(cx-44+hubHash(i,62)*88,cy-9+hubHash(i,63)*18,3+hubHash(i,64)*8,1,i%3?"rgba(255,255,255,.10)":"rgba(255,255,255,.18)");
+      const wc=day?"rgba(240,248,255,.65)":"rgba(196,210,244,.5)";
+      for(let s=0;s<2;s++){const ph=(((t||0)/110)+s*.5)%1,ox=cx+(s?15:-17),oy=cy+(s?2:-1);
+        g.globalAlpha=(1-ph)*.45;g.strokeStyle=wc;g.lineWidth=1;g.beginPath();g.ellipse(ox,oy,1.5+ph*11,(1.5+ph*11)*.38,0,0,7);g.stroke();g.globalAlpha=1;}
+      g.restore();
+      const pad=(px,py,r,fl)=>{ell(px,py+1,r,r*.44,day?"#1f4a26":"#0e2a16");ell(px,py,r,r*.46,day?"#3f8a44":"#1e4a28");
+        if(fl){R(px-1,py-4,2,2,day?"#ffd3e0":"#9f8fc0");R(px,py-3,1,1,"#ffd24d");}};
+      pad(cx-26,cy+3,6,1);pad(cx-5,cy-3,5,0);pad(cx+15,cy+4,7,1);pad(cx+31,cy-2,4,0);pad(cx-38,cy-3,4,0);
+    }
+    if(part!=="flat"){
+      const rc=day?"#3f7a3d":"#1e4227",rt=day?"#8a5a2e":"#4a3020";
+      [[-42,3],[-34,-3],[-26,4],[-18,-1],[20,3],[28,-3],[36,3],[42,-1]].forEach((r,i)=>{const bx=cx+r[0],by=cy+r[1],sw=Math.sin((t||0)/74+i*1.1)*2.6,h=9+(i*5)%6;
+        g.strokeStyle=rc;g.lineWidth=1;g.beginPath();g.moveTo(bx,by);g.quadraticCurveTo(bx+sw*.25,by-h*.55,bx+sw,by-h);g.stroke();R(bx+sw-1,by-h-6,2,7,rt);});
+    }
   }else if(kind==="feu"){
     [[5,32,7,4],[14,30,8,5],[24,32,7,4]].forEach(a=>R(a[0],a[1],a[2],a[3],col("#75614c")));
     R(8,29,23,4,col("#4a2d18"));const ph=Math.sin((t||0)/4);
@@ -8480,21 +8517,21 @@ function housingSpecialImg(kind,day,t){
    couvrant toute la boucle des roseaux : un pixel utilisé par une seule frame reste donc
    interdit pendant toute l'animation. L'ondulation visuelle ne peut jamais déplacer le
    hit marker ni ouvrir momentanément un passage. */
-function housingPondMask(){
-  if(housingPondMaskCache)return housingPondMaskCache;
+function housingPondMask(part){
+  part=part||"tout";if(housingPondMaskCache[part])return housingPondMaskCache[part];
   const w=116,h=54,mask=new Uint8Array(w*h),tmp=document.createElement("canvas");tmp.width=w;tmp.height=h;
   const q=tmp.getContext("2d",{willReadFrequently:true});
   for(let i=0;i<48;i++){
-    const im=housingSpecialImg("etang",true,i/48*Math.PI*2*74);
+    const im=housingSpecialImg("etang",true,i/48*Math.PI*2*74,part);
     q.clearRect(0,0,w,h);q.drawImage(im,0,0);const d=q.getImageData(0,0,w,h).data;
     for(let p=0;p<mask.length;p++)if(d[p*4+3]>10)mask[p]=1;
   }
-  return housingPondMaskCache={w,h,data:mask};
+  return housingPondMaskCache[part]={w,h,data:mask};
 }
-function housingPondTouche(r,cx,cy,demi){
-  const m=housingPondMask(),rx0=cx-demi,rx1=cx+demi,ry0=cy-3.25,ry1=cy+3.25;
-  let sx0=Math.max(0,Math.floor((rx0-r.dx)/r.dw*m.w)),sx1=Math.min(m.w-1,Math.ceil((rx1-r.dx)/r.dw*m.w));
-  const sy0=Math.max(0,Math.floor((ry0-r.dy)/r.dh*m.h)),sy1=Math.min(m.h-1,Math.ceil((ry1-r.dy)/r.dh*m.h));
+function housingPondMaskTouche(m,r,cx,cy,demi,dx,dy,dw,dh){
+  const rx0=cx-demi,rx1=cx+demi,ry0=cy-3.25,ry1=cy+3.25;
+  let sx0=Math.max(0,Math.floor((rx0-dx)/dw*m.w)),sx1=Math.min(m.w-1,Math.ceil((rx1-dx)/dw*m.w));
+  const sy0=Math.max(0,Math.floor((ry0-dy)/dh*m.h)),sy1=Math.min(m.h-1,Math.ceil((ry1-dy)/dh*m.h));
   if(sx1<sx0||sy1<sy0)return false;
   for(let sy=sy0;sy<=sy1;sy++)for(let sx=sx0;sx<=sx1;sx++){
     const mx=r.it.flip?(m.w-1-sx):sx;
@@ -8502,9 +8539,74 @@ function housingPondTouche(r,cx,cy,demi){
   }
   return false;
 }
+function housingPondTouche(r,cx,cy,demi){
+  const base=42/54,pivot=31/54,dyPlat=r.footY-base*r.dh*r.flatY;
+  if(housingPondMaskTouche(housingPondMask("flat"),r,cx,cy,demi,r.dx,dyPlat,r.dw,r.dh*r.flatY))return true;
+  const centre=r.footY+(pivot-base)*r.dh*r.flatY,dyRoseaux=centre-pivot*r.dh;
+  return housingPondMaskTouche(housingPondMask("vertical"),r,cx,cy,demi,r.dx,dyRoseaux,r.dw,r.dh);
+}
 function housingFireIndex(){
   const ff=.35+.65*feuForce();
   return Math.floor(performance.now()/(FEU_SPR.delay*(1.8-.8*ff)))%FEU_SPR.frames.length;
+}
+function housingFireFlat(r){
+  const mini=1/Math.max(.01,r.flatCampY),sol=mini+(1-mini)*hubEase(Math.max(0,Math.min(1,hubT)));
+  /* Les pierres sont des volumes posés sur une surface : elles accompagnent la
+     parallaxe, mais n'en prennent que 38 %. Elles restent donc rondes à l'accueil. */
+  return .62+.38*sol;
+}
+let housingFireMaskCache=null;
+function housingFireMask(){
+  if(housingFireMaskCache)return housingFireMaskCache;
+  const im=feuInit().off;if(!im||!im.complete||!im.naturalWidth)return null;
+  const w=im.naturalWidth,h=im.naturalHeight,c=document.createElement("canvas");c.width=w;c.height=h;
+  const q=c.getContext("2d",{willReadFrequently:true});q.drawImage(im,0,0);const d=q.getImageData(0,0,w,h).data,m=new Uint8Array(w*h);
+  for(let i=0;i<m.length;i++)if(d[i*4+3]>10)m[i]=1;
+  return housingFireMaskCache={w,h,data:m};
+}
+function housingFireTouche(r,cx,cy,demi){
+  const m=housingFireMask();if(!m)return false;const sc=r.dw/FEU_SPR.w,bw=m.w*sc,bh=m.h*sc,fy=housingFireFlat(r);
+  return housingPondMaskTouche(m,r,cx,cy,demi,r.footX-bw/2+sc,r.footY-bh*fy+sc,bw,bh*fy);
+}
+/* Les images `glow` contiennent à la fois la FLAMME et les reflets orange peints sur
+   les pierres. Les déplacer ensemble faisait flotter les reflets avec la flamme.
+   Séparation pixel-par-pixel avec la silhouette du foyer éteint : ce qui la recouvre
+   appartient au foyer ; ce qui est en dehors appartient réellement à la flamme. */
+const housingFireLayerCache=[],housingFireHaloCache=[];
+function housingFireLayers(idx){
+  if(housingFireLayerCache[idx])return housingFireLayerCache[idx];
+  const rt=feuInit(),g=rt.glows[idx],off=rt.off;
+  if(!g||!g.complete||!g.naturalWidth||!off||!off.complete||!off.naturalWidth)return null;
+  const mk=()=>{const c=document.createElement("canvas");c.width=FEU_SPR.w;c.height=FEU_SPR.h;return c;};
+  const flamme=mk(),reflet=mk(),cf=flamme.getContext("2d"),cr=reflet.getContext("2d");
+  const ox=FEU_SPR.ax-Math.round(off.naturalWidth/2)+1,oy=FEU_SPR.ay-off.naturalHeight+1;
+  cf.drawImage(g,0,0);cf.globalCompositeOperation="destination-out";cf.drawImage(off,ox,oy);
+  /* Le masque du foyer mordait dans le cœur de la flamme là où celle-ci passe devant
+     les pierres. On restitue uniquement sa zone haute et centrale ; les reflets bas
+     restent, eux, dans le calque comprimé des pierres. */
+  cf.globalCompositeOperation="source-over";cf.drawImage(g,17,0,28,42,17,0,28,42);
+  cr.drawImage(g,0,0);cr.globalCompositeOperation="destination-in";cr.drawImage(off,ox,oy);
+  /* Certains pixels très sombres du contour extérieur des pierres dépassent d'un pixel
+     le masque du foyer éteint. Ils étaient donc pris pour de la flamme et restaient
+     immobiles pendant la transition. Dans la moitié basse du sprite, tout pixel sombre
+     appartient au volume du foyer : on le transfère dans `reflet`, qui suit les pierres. */
+  const df=cf.getImageData(0,0,FEU_SPR.w,FEU_SPR.h),dr=cr.getImageData(0,0,FEU_SPR.w,FEU_SPR.h);
+  for(let y=38;y<FEU_SPR.h;y++)for(let x=0;x<FEU_SPR.w;x++){
+    const i=(y*FEU_SPR.w+x)*4;
+    if(df.data[i+3]>8&&Math.max(df.data[i],df.data[i+1],df.data[i+2])<155){
+      if(df.data[i+3]>=dr.data[i+3]){dr.data[i]=df.data[i];dr.data[i+1]=df.data[i+1];dr.data[i+2]=df.data[i+2];dr.data[i+3]=df.data[i+3];}
+      df.data[i+3]=0;
+    }
+  }
+  cf.putImageData(df,0,0);cr.putImageData(dr,0,0);
+  return housingFireLayerCache[idx]={flamme,reflet};
+}
+function housingFireHalo(idx){
+  if(housingFireHaloCache[idx])return housingFireHaloCache[idx];
+  const L=housingFireLayers(idx);if(!L)return null;
+  const c=document.createElement("canvas");c.width=FEU_SPR.w+FEU_MARGE*2;c.height=FEU_SPR.h+FEU_MARGE*2;
+  const q=c.getContext("2d");q.filter="blur(4px)";q.drawImage(L.flamme,FEU_MARGE,FEU_MARGE);q.filter="none";
+  return housingFireHaloCache[idx]=c;
 }
 function housingFireImg(day){
   const r=feuInit();
@@ -8515,14 +8617,25 @@ function housingItemRect(it,P,day,t){
   const im=housingImg(it,day,t);if(!im||!(im.naturalWidth||im.width))return null;
   const v=housingVar(it)||{factor:1},box=housingStableBBox(it,im),z=housingZone(P);
   const p=Math.max(0,Math.min(1,Number(it.p)||0)), sc=housingScale(p)*(v.factor||1);
-  const nw=im.naturalWidth||im.width,nh=im.naturalHeight||im.height,dw=nw*sc,dh=nh*sc;
+  /* Le foyer possède deux cadres sources différents (allumé 62×62, éteint 54×32).
+     Sa géométrie spatiale reste toujours le cadre CAMP 62×62 : aucune variation de
+     taille ou d'ancre lors de l'allumage, et la transition part d'une référence unique. */
+  const nw=it.family==="feu"?FEU_SPR.w:(im.naturalWidth||im.width);
+  const nh=it.family==="feu"?FEU_SPR.h:(im.naturalHeight||im.height),dw=nw*sc,dh=nh*sc;
   const footY=z.top+p*Math.max(1,z.bottom-z.top),center=it.flip?(1-box.cx):box.cx;
   const footX=Math.max(0,Math.min(1,Number(it.x)||.5))*P.W;
   const dx=footX-center*dw,dy=footY-box.b*dh;
-  return {it,im,box,dx,dy,dw,dh,footX,footY,layer:housingLayer(P,footY),
+  const flatY=housingFlatY(P),flatCampY=housingFlatCampY(P);
+  let y0=dy+box.t*dh,y1=dy+box.b*dh;
+  if(it.family==="etang"){
+    const base=42/54,pivot=31/54,dyPlat=footY-base*dh*flatY;
+    const centre=footY+(pivot-base)*dh*flatY,dyRoseaux=centre-pivot*dh;
+    y0=Math.min(dyPlat+box.t*dh*flatY,dyRoseaux+box.t*dh);y1=Math.max(footY,dyRoseaux+box.b*dh);
+  }
+  return {it,im,box,dx,dy,dw,dh,footX,footY,layer:housingLayer(P,footY),flatY,flatCampY,day,animT:t||0,
     baseX0:it.flip?footX*2-(dx+box.br*dw):dx+box.bl*dw,
     baseX1:it.flip?footX*2-(dx+box.bl*dw):dx+box.br*dw,
-    x0:dx+box.l*dw,y0:dy+box.t*dh,x1:dx+box.r*dw,y1:dy+box.b*dh};
+    x0:dx+box.l*dw,y0,x1:dx+box.r*dw,y1};
 }
 function housingPoste(family,P,day,t,tab){
   const it=housingListe(hubBiome()).find(o=>(o.tab||"objets")===(tab||"objets")&&o.family===family);
@@ -8535,7 +8648,7 @@ function hubDrawHousing(x,P,t,day){
   list.forEach(it=>{
     const r=housingItemRect(it,P,day,t);if(!r)return;
     if(it.family==="feu"&&S.camp.fire){
-      const h=feuHalo(housingFireIndex());
+      const h=housingFireHalo(housingFireIndex());
       if(h){const sc=r.dw/(r.im.naturalWidth||r.im.width),ff=.35+.65*feuForce();x.save();
         x.globalCompositeOperation="lighter";x.globalAlpha=(day?.40:.54)*ff;x.imageSmoothingEnabled=true;
         x.drawImage(h,r.dx-FEU_MARGE*sc,r.dy-FEU_MARGE*sc,r.dw+FEU_MARGE*2*sc,r.dh+FEU_MARGE*2*sc);x.restore();}
@@ -8570,7 +8683,38 @@ function housingFlammes(it){
 function housingPeindreRect(x,r){
   if(!r||!r.im)return;x.save();
   if(r.it.flip){x.translate(r.footX*2,0);x.scale(-1,1);}
-  x.imageSmoothingEnabled=false;x.drawImage(r.im,r.dx,r.dy,r.dw,r.dh);
+  x.imageSmoothingEnabled=false;
+  if(r.it.family==="etang"){
+    /* Source = ACCUEIL. L'eau couchée prend exactement l'ouverture verticale du sol.
+       Les roseaux gardent leur hauteur ; seul leur centre d'ancrage voyage avec l'eau. */
+    const base=42/54,pivot=31/54,plat=housingSpecialImg("etang",r.day,r.animT,"flat");
+    const vertical=housingSpecialImg("etang",r.day,r.animT,"vertical");
+    const dyPlat=r.footY-base*r.dh*r.flatY;
+    x.drawImage(plat,r.dx,dyPlat,r.dw,r.dh*r.flatY);
+    const centre=r.footY+(pivot-base)*r.dh*r.flatY,dyRoseaux=centre-pivot*r.dh;
+    x.drawImage(vertical,r.dx,dyRoseaux,r.dw,r.dh);
+  }else if(r.it.family==="feu"){
+    /* Source = CAMP, donc transformation inverse : le foyer est intact au camp et
+       s'aplatit vers l'accueil. La flamme est une couche verticale jamais écrasée. */
+    const rt=feuInit(),fy=housingFireFlat(r);
+    const base=r.day?rt.off:(feuOffNight()||rt.off);
+    if(base&&base.complete&&base.naturalWidth){
+      /* Taille NATIVE du foyer 54×32 dans le repère 62×62, même calage centre-bas que
+         l'ancien camp. Seule sa hauteur est comprimée autour de sa ligne de contact. */
+      const sc=r.dw/FEU_SPR.w,bw=base.naturalWidth*sc,bh=base.naturalHeight*sc;
+      const bx=r.footX-bw/2+sc,by=r.footY-bh*fy+sc;
+      x.drawImage(base,bx,by,bw,bh*fy);
+    }
+    if(S.camp.fire){
+      const idx=housingFireIndex(),L=housingFireLayers(idx);
+      if(L){
+        /* Reflets sur les pierres = partie du foyer : même pivot au sol et même
+           compression. Flamme = couche verticale : cadre normal, aucune parallaxe. */
+        x.drawImage(L.reflet,r.dx,r.footY-r.box.b*r.dh*fy,r.dw,r.dh*fy);
+        x.drawImage(L.flamme,r.dx,r.dy,r.dw,r.dh);
+      }
+    }
+  }else x.drawImage(r.im,r.dx,r.dy,r.dw,r.dh);
   const flammes=housingFlammes(r.it);
   if(flammes.length){
     /* Même repère local que l'image : translation, perspective, skin et miroir sont
@@ -8697,6 +8841,48 @@ function housingInit(){
   document.getElementById("housingDelete").onclick=()=>{const a=housingListe(hubBiome()),i=a.findIndex(v=>v.id===housingSelected);if(i>=0){
     const r=housingRects.find(q=>q.it.id===housingSelected);if(r)housingPuffs.push({x:r.footX,y:r.footY,t0:performance.now()});
     a.splice(i,1);housingSelected=null;housingSfxPouf();save();housingRenderUI();}};
+  /* Appui long sur une créature : après un court délai elle répond, s'anime plus vite
+     et suit le doigt. Le pointeur est capturé pour que le déplacement reste fluide
+     même si le doigt sort momentanément de sa silhouette. */
+  const posCreature=e=>{const q=cv.getBoundingClientRect();return {
+    x:(e.clientX-q.left)*cv.width/q.width,y:(e.clientY-q.top)*cv.height/q.height};};
+  const finCreature=e=>{
+    const p=housingCreaturePress;if(!p||p.pointer!==e.pointerId)return false;
+    clearTimeout(p.timer);
+    if(p.active&&housingCreatureHold&&housingCreatureHold.id===p.id){
+      const wk=hubWalks[p.id],vol=!!(CREATURES[p.id]||{}).fly;
+      if(wk){wk.state="idle";wk.wait=(performance.now()/16.67)+120;wk.tx=wk.fx;wk.ty=wk.fy;
+        wk.holdLift=0;const libre=hubPos?housingCreatureSortie(hubPos,wk.fx,wk.fy):{x:wk.fx,y:wk.fy};
+        const dist=Math.hypot(libre.x-wk.fx,libre.y-wk.fy);
+        wk.drop={t0:performance.now(),dur:Math.min(420,190+dist*2.2),x0:wk.fx,y0:wk.fy,x1:libre.x,y1:libre.y,vol};}
+      housingCreatureHold=null;save();
+    }
+    housingCreaturePress=null;return p.active;
+  };
+  cv.addEventListener("pointerdown",e=>{
+    const m=posCreature(e),r=[...housingCreatureRects].reverse().find(v=>m.x>=v.x0&&m.x<=v.x1&&m.y>=v.y0&&m.y<=v.y1);
+    if(!r)return;
+    const w=hubWalks[r.id],p=housingCreaturePress={id:r.id,rang:r.rang,pointer:e.pointerId,x0:m.x,y0:m.y,
+      offX:w?w.fx-m.x:0,offY:w?w.fy-m.y:0,active:false,timer:null};
+    p.timer=setTimeout(()=>{if(housingCreaturePress!==p)return;p.active=true;
+      housingCreatureHold={id:p.id,rang:p.rang,pointer:p.pointer};
+      const wk=hubWalks[p.id];if(wk){wk.state="held";wk.tx=wk.fx;wk.ty=wk.fy;delete wk.drop;}
+      try{sfxCry(p.id,1.15);}catch(_e){}
+      const rt=gifRT(p.id);if(rt)rt.boostUntil=performance.now()+60000;
+    },380);
+    try{cv.setPointerCapture(e.pointerId)}catch(_e){}
+    e.preventDefault();e.stopImmediatePropagation();
+  });
+  cv.addEventListener("pointermove",e=>{
+    const p=housingCreaturePress;if(!p||p.pointer!==e.pointerId)return;
+    const m=posCreature(e);
+    if(p.active&&hubPos){const z=housingZone(hubPos),wk=hubWalks[p.id];if(wk){
+      const ox=wk.fx;wk.fx=Math.max(18,Math.min(hubPos.W-18,m.x+p.offX));wk.fy=Math.max(z.top,Math.min(z.bottom,m.y+p.offY));
+      wk.tx=wk.fx;wk.ty=wk.fy;wk.dir=wk.fx>=ox?1:-1;wk.state="held";}}
+    e.preventDefault();e.stopImmediatePropagation();
+  });
+  cv.addEventListener("pointerup",e=>{if(finCreature(e)){e.preventDefault();e.stopImmediatePropagation();}},true);
+  cv.addEventListener("pointercancel",e=>{finCreature(e);},true);
   cv.addEventListener("pointerdown",e=>{
     if(!housingEdit)return;const q=cv.getBoundingClientRect(),mx=(e.clientX-q.left)*cv.width/q.width,my=(e.clientY-q.top)*cv.height/q.height;
     const r=[...housingRects].reverse().find(v=>mx>=v.x0&&mx<=v.x1&&my>=v.y0&&my<=v.y1);
@@ -11096,8 +11282,12 @@ function drawHub(t){
          pour plus lointaines qu'elles ne sont et laissait le décor les recouvrir à tort.
          Invisible en mode camp où les marges sont larges, décisif à l'accueil où la
          bande de promenade est comprimée à une cinquantaine de pixels. */
-      return creatureSceneBox(o.cid,o.wk.fx,o.wk.fy,g.scale);
+      const b=creatureSceneBox(o.cid,o.wk.fx,o.wk.fy,g.scale),lift=g.holdLift||0;
+      b.y0-=lift;b.y1-=lift;return b;
     });
+    /* Silhouettes réelles exposées au gestionnaire d'appui long. Elles suivent le
+       dessin jusque pendant le soulèvement, sans créer de calque HTML approximatif. */
+    housingCreatureRects=actifs.map((o,i)=>Object.assign({id:o.cid,rang:o.rang},boites[i]));
     /* ---- REMISE EN ORDRE GLOBALE ENTRE TOUTES LES CRÉATURES ----
        Les créatures EN POSTE (cuisine, pêche, exploration) sont peintes avant les
        promeneurs. Redessiner simplement la créature en poste au-dessus d'un promeneur
@@ -11244,6 +11434,25 @@ function hubMajPromene(P,t,cid,rang){
     hubWalks[cid]={fx:dep,fy:depY,tx:dep,ty:depY,state:"idle",wait:t+90+rang*70};
   }
   const wk=hubWalks[cid];
+  const tenu=!!(housingCreatureHold&&housingCreatureHold.id===cid);
+  if(tenu){
+    wk.state="held";wk.tx=wk.fx;wk.ty=wk.fy;
+    /* Le corps reste exactement sous le doigt. Pour une terrestre, seule l'ombre
+       s'éloigne vers le bas ; une volante conserve son ombre habituelle. */
+    wk.holdLift=0;wk.shadowDrop=(CREATURES[cid]||{}).fly?0:10*creatureHousingScale(P,wk.fy);
+    return;
+  }
+  /* Retombée après le lâcher. Si les pieds étaient dans un hit marker, la position
+     glisse simultanément vers sa sortie libre la plus proche. L'ombre revient sous la
+     créature pendant ce trajet ; le pouf attend le contact final. */
+  if(wk.drop){const d=wk.drop,q=Math.min(1,(performance.now()-d.t0)/d.dur),e=1-Math.pow(1-q,3);
+    wk.fx=d.x0+(d.x1-d.x0)*e;wk.fy=d.y0+(d.y1-d.y0)*e;wk.tx=wk.fx;wk.ty=wk.fy;
+    wk.holdLift=0;wk.shadowDrop=d.vol?0:10*creatureHousingScale(P,wk.fy)*(1-e);
+    if(q>=1){const vol=d.vol;delete wk.drop;wk.shadowDrop=0;
+      if(!vol){housingPuffs.push({x:wk.fx,y:wk.fy,t0:performance.now()});housingSfxPouf();}}
+    else return;
+  }else wk.holdLift=0;
+  wk.shadowDrop=0;
   /* Anti-blocage : une créature est coincée si elle est SUR un obstacle OU HORS de la
      bande piétonne (ex. sous le panneau, au-dessus de la zone de marche) — là, presque
      aucune cible n'est atteignable et elle n'en sort plus. On la glisse alors tout droit
@@ -11324,7 +11533,7 @@ function hubGeoPromene(P,t,cid,rang){
   const ax=Math.round(wk.fx-9*scale), ay=Math.round(wk.fy-yOff*scale);
   const celeb=(rang===0)&&Date.now()<hubCelebUntil;
   const jump=celeb?[0,-2,-3,-1,0,-2][Math.floor(t/7)%6]*2:0;
-  return {wk,step,ax,ay,celeb,jump,scale,p};
+  return {wk,step,ax,ay,celeb,jump,scale,p,holdLift:wk.holdLift||0};
 }
 /* Emprise VISUELLE réelle d'une créature dans la scène. La boîte générique de 18×17
    était trop courte pour l'Orc et les GIF hauts : leur tête pouvait échapper au test
@@ -11349,22 +11558,23 @@ function creatureSceneBox(id,px,py,sc){
 function hubOmbrePromene(x,T,P,t,cid,rang){
   const g=hubGeoPromene(P,t,cid,rang);
   const cr=CREATURES[cid]||{}, vol=cr.fly||0;
-  const sx0=g.wk.fx, sy0=g.wk.fy-4*g.scale+vol;
+  const sx0=g.wk.fx, sy0=g.wk.fy-4*g.scale+vol+(g.wk.shadowDrop||0);
   const ecart=Math.min(1,(vol-g.jump)/14);         // s'éloigne du sol → ombre plus discrète
   const rx=(vol?9.5:11.5)*(g.scale/2)*(1-ecart*.22);
   x.save();x.translate(sx0,sy0);x.scale(1,.32);x.translate(-sx0,-sy0);
-  T.glow(sx0,sy0,rx,"0,0,0",(vol?.20:.28)*(1-ecart*.35));
+  T.glow(sx0,sy0,rx,"0,0,0",(vol?.20:.30)*(1-ecart*.35));
   x.restore();
 }
 /* PASSE 2 — l'aura, la créature et ses cœurs de célébration. */
 function hubCorpsPromene(x,T,P,t,day,cid,rang){
-  const {wk,step,ax,ay,celeb,jump,scale}=hubGeoPromene(P,t,cid,rang);
+  const {wk,step,ax,ay,celeb,jump,scale,holdLift}=hubGeoPromene(P,t,cid,rang);
+  const tenu=!!(housingCreatureHold&&housingCreatureHold.id===cid),ta=tenu?t*1.65:t;
   /* l'aura n'entoure QUE la n°1 */
   if(rang===0&&S.streak>0){
     const au=AURAS[S.cosmetics.aura]||AURAS.braise, sA=Math.min(S.streak/8,1);
     T.glow(wk.fx,ay+9*scale,(11+sA*5)*scale,au.rgb,(0.42+0.30*sA)*(0.88+0.12*Math.sin(t/9)));
   }
-  drawAvatarOnCamp(x,ax,ay-step+jump,scale,t,wk.state==="walk"||celeb,(wk.dir||-1)>0,cid);
+  drawAvatarOnCamp(x,ax,ay-step+jump-holdLift,scale,ta,wk.state==="walk"||celeb||tenu,(wk.dir||-1)>0,cid);
   if(celeb){
     for(let i=0;i<5;i++){const a=t/3+i*1.256;
       T.P2(wk.fx+Math.cos(a)*17,wk.fy-18+Math.sin(a)*11,i%2?"#ffe07a":"#fff2b0");}
@@ -12148,6 +12358,7 @@ function hubWalkFree(P,cx,cy){
     return !housingRects.some(r=>{
       if(!r||!r.it||r.it.id===housingSelected&&housingDrag)return false;
       if(r.it.family==="etang")return housingPondTouche(r,cx,cy,demi);
+      if(r.it.family==="feu")return housingFireTouche(r,cx,cy,demi);
       return Math.abs(cy-r.footY)<3.25&&cx+demi>r.baseX0-2&&cx-demi<r.baseX1+2;
     });
   }
