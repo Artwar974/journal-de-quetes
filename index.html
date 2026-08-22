@@ -8728,8 +8728,8 @@ function housingPeindreRect(x,r){
 /* Recomposition finale de la scène sur les rangées invisibles de 5 px. Objets,
    nature et créatures entrent dans LA MÊME pile ; aucune catégorie n'est privilégiée. */
 function hubHousingDepthPass(x,P,mobiles){
-  let ordre=0;const objets=housingRects.map(r=>({type:"objet",layer:r.layer,ordre:ordre++,x0:r.x0,y0:r.y0,x1:r.x1,y1:r.y1,peindre:()=>housingPeindreRect(x,r)}));
-  const creatures=(mobiles||[]).filter(m=>typeof m.peindre==="function").map(m=>({type:"creature",layer:housingLayer(P,m.fy),ordre:ordre++,x0:m.x0,y0:m.y0,x1:m.x1,y1:m.y1,peindre:m.peindre}));
+  let ordre=0;const objets=housingRects.map(r=>({type:"objet",plat:r.it.family==="etang"||r.it.family==="feu",layer:r.layer,ordre:ordre++,x0:r.x0,y0:r.y0,x1:r.x1,y1:r.y1,peindre:()=>housingPeindreRect(x,r)}));
+  const creatures=(mobiles||[]).filter(m=>typeof m.peindre==="function").map(m=>({type:"creature",tenu:!!(housingCreatureHold&&m.cid===housingCreatureHold.id),layer:housingLayer(P,m.fy),ordre:ordre++,x0:m.x0,y0:m.y0,x1:m.x1,y1:m.y1,peindre:m.peindre}));
   const touche=(a,b)=>a.x1>b.x0&&a.x0<b.x1&&a.y1>b.y0&&a.y0<b.y1;
   /* Un chevauchement est un GRAPHE, pas une paire isolée. Ancien bug : A (objet) touchait
      une créature et B (autre objet), mais B ne touchait pas directement la créature.
@@ -8748,7 +8748,12 @@ function hubHousingDepthPass(x,P,mobiles){
     /* Les groupes d'une seule catégorie ont déjà été peints dans le bon ordre. Seuls les
        groupes mêlant objet(s) et créature(s) ont besoin de la correction d'occlusion. */
     if(!groupe.some(o=>o.type==="objet")||!groupe.some(o=>o.type==="creature"))continue;
-    groupe.sort((a,b)=>a.layer-b.layer||a.ordre-b.ordre).forEach(o=>o.peindre());
+    groupe.sort((a,b)=>{
+      /* Une créature portée est physiquement soulevée par le joueur : elle reste au-dessus
+         des surfaces plates (eau et foyer), même si ses pieds traversent leur profondeur. */
+      if(a.tenu&&b.plat)return 1;if(b.tenu&&a.plat)return -1;
+      return a.layer-b.layer||a.ordre-b.ordre;
+    }).forEach(o=>o.peindre());
   }
 }
 function housingSfxPouf(){
@@ -11302,7 +11307,7 @@ function drawHub(t){
         hubMobiles.push({x0:a.x0,y0:a.y0,x1:a.x1,y1:a.y1,fy:a.fy,vol:a.vol?1:0,peindre:a.peindre}); });
       actifs.forEach((o,i)=>{
         const b=boites[i];
-        hubMobiles.push({x0:b.x0,y0:b.y0,x1:b.x1,y1:b.y1,fy:b.fy,
+        hubMobiles.push({cid:o.cid,x0:b.x0,y0:b.y0,x1:b.x1,y1:b.y1,fy:b.fy,
                    vol:(CREATURES[o.cid]||{}).fly?1:0,
                    peindre:()=>hubCorpsPromene(x,T,P,t,day,o.cid,o.rang)});
       });
