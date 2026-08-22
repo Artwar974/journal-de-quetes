@@ -1358,6 +1358,7 @@
   box-shadow:0 4px 12px #0009;pointer-events:auto}
 .housing-top strong{text-align:center;font:700 13px var(--mono);letter-spacing:.8px;text-shadow:0 2px #000}
 .housing-top button,.housing-action{border:1px solid #c9a35e;background:#3d2917;color:#fff;border-radius:10px;min-width:40px;height:36px;font-size:18px}
+#housingCancel{font-size:25px;line-height:1;font-family:Arial,sans-serif;font-weight:400}
 .housing-sheet{position:absolute;left:50%;top:calc(62px + env(safe-area-inset-top,0px));transform:translateX(-50%);
   width:min(330px,calc(100vw - 16px));padding:7px;background:linear-gradient(180deg,#3c2919f2,#21150ded);
   border:2px solid #c39348;border-radius:13px;box-shadow:0 5px 14px #0009;pointer-events:auto;overflow:hidden}
@@ -1525,14 +1526,14 @@
 <!-- Éditeur du Refuge : la scène reste visible ; seul ce tiroir reçoit les gestes. -->
 <section class="housing-ui" id="housingUi" aria-label="Mode housing">
   <div class="housing-top">
-    <button id="housingCancel" aria-label="Retour">‹</button>
+    <button id="housingCancel" aria-label="Quitter le mode Housing">×</button>
     <strong>AMÉNAGER LE REFUGE</strong>
     <button id="housingShop" aria-label="Ouvrir la boutique Housing">🛍️</button>
   </div>
   <div class="housing-actions" id="housingActions">
     <button class="housing-action object-only" id="housingDelete" aria-label="Ranger l'objet">🗑<small>Ranger</small></button>
     <button class="housing-action object-only" id="housingFlip" aria-label="Inverser horizontalement">⇄<small>Inverser</small></button>
-    <button class="housing-action housing-done" id="housingDone" aria-label="Valider l'aménagement">✓ VALIDER</button>
+    <button class="housing-action housing-done" id="housingDone" aria-label="Valider et poser l'objet sélectionné">✓ VALIDER</button>
   </div>
   <div class="housing-sheet">
     <div class="housing-tabs">
@@ -1602,10 +1603,9 @@ function audioDef(){const o={master:{v:1}};Object.keys(MIX).forEach(k=>o[k]={v:1
    Cinq paliers par objet et par biome. Le palier 0 est le look de base du biome ;
    les paliers 1-4 sont les évolutions des modèles de l'utilisateur, embarquées dans
    CAMPSKINS (ligne injectée par campskins-injecte3.ps1, clés = ids de BIOMES).
-   Progression voulue par l'utilisateur : SIX biomes prévus, chacun avec ses paliers
-   0-4 — quand tous les paliers d'un biome sont possédés, le biome suivant s'ouvre
-   automatiquement (voir biomeComplet/biomeDebloque). Calibrage : les six biomes se
-   débloquent en 8-9 mois de jeu quotidien (détail sur CAMP_TIERS ci-dessous).
+   Progression voulue par l'utilisateur : les BIOMES et leur catalogue se débloquent
+   uniquement avec le niveau. Le niveau du palier 0 est le seuil d'entrée du biome ;
+   les autres paliers conservent ensuite leur propre niveau requis.
    ⚠️ Déclaré ICI, dans le bloc des catalogues : lu par seed() et load(), qui tournent
    bien avant les sections de rendu (zone morte sinon — leçon de MIX). */
 /* ---- Calibrage 6 BIOMES sur 8-9 mois de jeu quotidien (design 2026-08-10) ----
@@ -1667,6 +1667,11 @@ const CAMPOBJ={
    mais chaque structure devient un objet libre. Les anciennes garde-robes servent
    directement de catalogue : aucune image n'est dupliquée dans le fichier. */
 const HOUSING_V1=true;
+/* Structures fonctionnelles : on peut posséder plusieurs apparences, mais une seule
+   structure de chaque famille peut être installée dans un biome. Les autres skins
+   restent dans l'inventaire et servent à remplacer l'apparence de celle déjà posée. */
+const HOUSING_UNIQUES=new Set(["panneau","feu","tente"]);
+function housingUnique(fam){return HOUSING_UNIQUES.has(fam);}
 function housingDef(){
   const byBiome={}; BIOME_ORDRE.forEach(b=>byBiome[b]=[]);
   const stock={};BIOME_ORDRE.forEach(b=>["tente","panneau","journal","oeuf"].forEach(f=>stock[b+"|objets|"+f+"|0"]=1));
@@ -1887,6 +1892,17 @@ function load(){
        reste dans la sauvegarde historique, mais n'est pas recréée automatiquement. */
     if(!s.housing||!s.housing.byBiome)s.housing=housingDef();
     BIOME_ORDRE.forEach(b=>{if(!Array.isArray(s.housing.byBiome[b]))s.housing.byBiome[b]=[];});
+    /* Une ancienne sauvegarde peut contenir plusieurs structures désormais uniques.
+       On garde la première posée ; les suivantes retournent implicitement à l'inventaire
+       puisque le stock possédé n'est jamais diminué. */
+    BIOME_ORDRE.forEach(b=>{
+      const vus=new Set();
+      s.housing.byBiome[b]=s.housing.byBiome[b].filter(o=>{
+        if(!housingUnique(o.family))return true;
+        if(vus.has(o.family))return false;
+        vus.add(o.family);return true;
+      });
+    });
     /* Housing V2 : chaque exemplaire est désormais un vrai objet possédé. Les skins
        achetés dans l'ancienne boutique donnent chacun un exemplaire ; une décoration
        déjà posée est toujours couverte, afin qu'une migration ne la confisque jamais. */
@@ -4789,9 +4805,8 @@ function shopCampHTML(){
   return entete+BIOME_ORDRE.map(b=>{
     const nom=bioIc(b)+" "+bioNom(b);
     if(!biomeDebloqueReel(b)){
-      const prec=BIOMES[BIOME_ORDRE[BIOME_ORDRE.indexOf(b)-1]];
       return `<div class="shop-bio lock"><div class="tete">🔒 ${nom}
-        <span class="note">Possède tous les habillages ${prec.nom}</span></div></div>`;
+        <span class="note">Niveau ${biomeNiveauRequis(b)} requis</span></div></div>`;
     }
     const section=(tab,titre)=>{
       const familles=housingFamilies(tab,b);
@@ -4864,18 +4879,12 @@ function buyCampSkin(bio,obj,t){
   if((cs.owned[obj]||[]).includes(t))return false;
   if(levelInfo(S.xpTotal).level<tier.niv){toast("Niveau "+tier.niv+" requis 🔒");return false;}
   if(S.coins<tier.prix){toast("Pas assez de pièces 🪙");return false;}
-  const dejaFini=biomeComplet(bio);
   S.coins-=tier.prix;
   cs.owned[obj].push(t);
   cs.equip[obj]=t;                                  // acheté = équipé, comme le reste de la boutique
   save();renderHUD();playSound("piece");celebrate();
   campStaticKey="";if(launchOpen)try{drawHub(0);}catch(e){}
   toast(CAMPOBJ[obj].nom+" « "+tier.nom+" » installé ! 🏕️");
-  /* progression multi-biome : dès que TOUS les paliers de ce biome sont possédés, le
-     suivant s'ouvre tout seul — l'annonce passe après le toast d'achat */
-  const suiv=BIOME_ORDRE[BIOME_ORDRE.indexOf(bio)+1];
-  if(!dejaFini&&biomeComplet(bio)&&suiv)
-    setTimeout(()=>{try{toast("Nouveau biome débloqué : "+bioNom(suiv)+" "+bioIc(suiv)+" — glisse sur le côté au camp !");}catch(e){}},1700);
   return true;
 }
 function equipCampSkin(bio,obj,t){
@@ -7083,9 +7092,14 @@ function biomeComplet(b){
   (_bcCache||(_bcCache={}))[b]=r;
   return r;
 }
+/* Le palier 0 porte le niveau d'entrée du biome : prairie 1, banquise 16,
+   plage 24, forêt 30 et Volcanyon 35. Aucun achat ni collection complète n'est requis. */
+function biomeNiveauRequis(id){
+  const t=campTiers(id);return (t&&t[0]&&t[0].niv)||1;
+}
 function biomeDebloqueReel(id){
-  const i=BIOME_ORDRE.indexOf(id);
-  return i<=0||biomeComplet(BIOME_ORDRE[i-1]);
+  if(BIOME_ORDRE.indexOf(id)<0)return false;
+  return !!S&&levelInfo(S.xpTotal||0).level>=biomeNiveauRequis(id);
 }
 /* Mode APERÇU (Réglages → Jeu) : visite libre des biomes pas encore gagnés, en tenue
    palier 4 — RUNTIME SEULEMENT, jamais persisté : la progression réelle, la boutique
@@ -8352,6 +8366,36 @@ function housingBBox(im){
   }catch(e){}
   housingAlphaCache.set(im,box);return box;
 }
+const housingAnimBoxCache={};
+function housingUnionBBox(cle,images){
+  if(housingAnimBoxCache[cle])return housingAnimBoxCache[cle];
+  const ims=(images||[]).filter(Boolean);if(!ims.length)return null;
+  const w=ims[0].naturalWidth||ims[0].width,h=ims[0].naturalHeight||ims[0].height;
+  if(!w||!h||!ims.every(im=>(im.complete===undefined||im.complete)&&(im.naturalWidth||im.width)))return null;
+  const c=document.createElement("canvas");c.width=w;c.height=h;const q=c.getContext("2d");
+  ims.forEach(im=>q.drawImage(im,0,0,w,h));
+  return housingAnimBoxCache[cle]=housingBBox(c);
+}
+function housingStableBBox(it,im){
+  const v=housingVar(it)||{};
+  if(v.special==="feu"){
+    /* Les 12 frames ont été dessinées sur le même repère. L'ancre officielle du foyer
+       (30,57) reste donc immuable, même si une flamme dépasse davantage sur une frame. */
+    return {l:0,t:0,r:1,b:FEU_SPR.ay/FEU_SPR.h,cx:FEU_SPR.ax/FEU_SPR.w,bl:.12,br:.88};
+  }
+  /* Depuis le retrait du contour de sable, le dernier pixel coloré est à y=41.
+     Garder l'ancienne base y=51 créait une ligne de profondeur invisible 10 px sous
+     l'eau : une créature visuellement plus basse pouvait alors être classée derrière.
+     La base spatiale est désormais exactement le bas coloré de l'étang. */
+  if(v.special==="etang")return {l:0,t:0,r:1,b:42/54,cx:.5,bl:.38,br:.62};
+  if(v.kind==="tree"){
+    const u=housingUnionBBox("arbres",typeof TREE_FR!=="undefined"?TREE_FR:[]);
+    /* Si les images ne sont pas encore toutes chargées, on fige immédiatement une
+       empreinte conservatrice : elle ne sera pas remplacée en cours d'animation. */
+    return u||(housingAnimBoxCache.arbres={l:0,t:0,r:1,b:1,cx:.5,bl:.42,br:.58});
+  }
+  return housingBBox(im);
+}
 function housingNatureFamilies(bio){
   const b=bio||hubBiome(),B=BIOMES[b]||{}, out=[
     {id:"arbre",nom:"Arbres",ic:"🌳",vars:[{nom:"Arbre animé",kind:"tree",factor:1,prix:90}]},
@@ -8392,18 +8436,32 @@ function housingImg(it,day,t){
   return null;
 }
 const housingSpecialCache={};
+let housingPondMaskCache=null;
 function housingSpecialImg(kind,day,t){
   const key=kind+"|"+(day?1:0),c=housingSpecialCache[key]||(housingSpecialCache[key]=document.createElement("canvas"));
-  const g=c.getContext("2d");c.width=kind==="etang"?72:kind==="drapeau"?34:kind==="feu"?38:42;c.height=kind==="etang"?34:kind==="drapeau"?58:38;g.clearRect(0,0,c.width,c.height);
+  const g=c.getContext("2d");c.width=kind==="etang"?116:kind==="drapeau"?34:kind==="feu"?38:42;c.height=kind==="etang"?54:kind==="drapeau"?58:38;g.clearRect(0,0,c.width,c.height);
   const R=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
   const dark=day?1:.55, col=h=>{const n=parseInt(h.slice(1),16),q=i=>Math.round((n>>i&255)*dark).toString(16).padStart(2,"0");return "#"+q(16)+q(8)+q(0);};
   if(kind==="etang"){
-    const ph=(Math.sin((t||0)/11)+1)/2;
-    g.fillStyle=day?"rgba(38,105,139,.68)":"rgba(24,56,91,.72)";g.beginPath();g.ellipse(36,20,34,12,0,0,7);g.fill();
-    g.strokeStyle=day?"#8bc9d1":"#557c9f";g.lineWidth=2;g.beginPath();g.ellipse(36,19,29,8,0,0,7);g.stroke();
-    g.strokeStyle=day?`rgba(210,245,238,${(.35+.3*ph).toFixed(2)})`:`rgba(151,193,216,${(.25+.25*ph).toFixed(2)})`;
-    g.lineWidth=1;g.beginPath();g.ellipse(30+ph*10,18,8+ph*4,2.5,0,0,7);g.stroke();
-    R(4,24,8,3,col("#526f43"));R(58,23,10,3,col("#526f43"));
+    /* Petit étang sans contour artificiel : eau, nénuphars, vaguelettes et roseaux.
+       Le canvas reste strictement fixe ; seules les ondulations intérieures évoluent. */
+    const cx=58,cy=31,ell=(x0,y0,rx,ry,co)=>{g.fillStyle=co;g.beginPath();g.ellipse(x0,y0,rx,ry,0,0,7);g.fill();};
+    const wg=g.createLinearGradient(0,cy-10,0,cy+11);
+    if(day){wg.addColorStop(0,"#8ec2e6");wg.addColorStop(.45,"#4a7cb4");wg.addColorStop(1,"#2a507e");}
+    else{wg.addColorStop(0,"#2c3d72");wg.addColorStop(.45,"#16224e");wg.addColorStop(1,"#0d1534");}
+    ell(cx,cy,44,10,wg);
+    g.save();g.beginPath();g.ellipse(cx,cy,43.5,9.6,0,0,7);g.clip();
+    for(let i=0;i<14;i++)R(cx-44+hubHash(i,62)*88,cy-9+hubHash(i,63)*18,3+hubHash(i,64)*8,1,i%3?"rgba(255,255,255,.10)":"rgba(255,255,255,.18)");
+    const wc=day?"rgba(240,248,255,.65)":"rgba(196,210,244,.5)";
+    for(let s=0;s<2;s++){const ph=(((t||0)/110)+s*.5)%1,ox=cx+(s?15:-17),oy=cy+(s?2:-1);
+      g.globalAlpha=(1-ph)*.45;g.strokeStyle=wc;g.lineWidth=1;g.beginPath();g.ellipse(ox,oy,1.5+ph*11,(1.5+ph*11)*.38,0,0,7);g.stroke();g.globalAlpha=1;}
+    g.restore();
+    const pad=(px,py,r,fl)=>{ell(px,py+1,r,r*.44,day?"#1f4a26":"#0e2a16");ell(px,py,r,r*.46,day?"#3f8a44":"#1e4a28");
+      if(fl){R(px-1,py-4,2,2,day?"#ffd3e0":"#9f8fc0");R(px,py-3,1,1,"#ffd24d");}};
+    pad(cx-26,cy+3,6,1);pad(cx-5,cy-3,5,0);pad(cx+15,cy+4,7,1);pad(cx+31,cy-2,4,0);pad(cx-38,cy-3,4,0);
+    const rc=day?"#3f7a3d":"#1e4227",rt=day?"#8a5a2e":"#4a3020";
+    [[-42,3],[-34,-3],[-26,4],[-18,-1],[20,3],[28,-3],[36,3],[42,-1]].forEach((r,i)=>{const bx=cx+r[0],by=cy+r[1],sw=Math.sin((t||0)/74+i*1.1)*2.6,h=9+(i*5)%6;
+      g.strokeStyle=rc;g.lineWidth=1;g.beginPath();g.moveTo(bx,by);g.quadraticCurveTo(bx+sw*.25,by-h*.55,bx+sw,by-h);g.stroke();R(bx+sw-1,by-h-6,2,7,rt);});
   }else if(kind==="feu"){
     [[5,32,7,4],[14,30,8,5],[24,32,7,4]].forEach(a=>R(a[0],a[1],a[2],a[3],col("#75614c")));
     R(8,29,23,4,col("#4a2d18"));const ph=Math.sin((t||0)/4);
@@ -8418,6 +8476,32 @@ function housingSpecialImg(kind,day,t){
   }
   return c;
 }
+/* Masque de collision IMMOBILE de l'étang. Il réunit les pixels colorés de 48 instants
+   couvrant toute la boucle des roseaux : un pixel utilisé par une seule frame reste donc
+   interdit pendant toute l'animation. L'ondulation visuelle ne peut jamais déplacer le
+   hit marker ni ouvrir momentanément un passage. */
+function housingPondMask(){
+  if(housingPondMaskCache)return housingPondMaskCache;
+  const w=116,h=54,mask=new Uint8Array(w*h),tmp=document.createElement("canvas");tmp.width=w;tmp.height=h;
+  const q=tmp.getContext("2d",{willReadFrequently:true});
+  for(let i=0;i<48;i++){
+    const im=housingSpecialImg("etang",true,i/48*Math.PI*2*74);
+    q.clearRect(0,0,w,h);q.drawImage(im,0,0);const d=q.getImageData(0,0,w,h).data;
+    for(let p=0;p<mask.length;p++)if(d[p*4+3]>10)mask[p]=1;
+  }
+  return housingPondMaskCache={w,h,data:mask};
+}
+function housingPondTouche(r,cx,cy,demi){
+  const m=housingPondMask(),rx0=cx-demi,rx1=cx+demi,ry0=cy-3.25,ry1=cy+3.25;
+  let sx0=Math.max(0,Math.floor((rx0-r.dx)/r.dw*m.w)),sx1=Math.min(m.w-1,Math.ceil((rx1-r.dx)/r.dw*m.w));
+  const sy0=Math.max(0,Math.floor((ry0-r.dy)/r.dh*m.h)),sy1=Math.min(m.h-1,Math.ceil((ry1-r.dy)/r.dh*m.h));
+  if(sx1<sx0||sy1<sy0)return false;
+  for(let sy=sy0;sy<=sy1;sy++)for(let sx=sx0;sx<=sx1;sx++){
+    const mx=r.it.flip?(m.w-1-sx):sx;
+    if(m.data[sy*m.w+mx])return true;
+  }
+  return false;
+}
 function housingFireIndex(){
   const ff=.35+.65*feuForce();
   return Math.floor(performance.now()/(FEU_SPR.delay*(1.8-.8*ff)))%FEU_SPR.frames.length;
@@ -8429,7 +8513,7 @@ function housingFireImg(day){
 }
 function housingItemRect(it,P,day,t){
   const im=housingImg(it,day,t);if(!im||!(im.naturalWidth||im.width))return null;
-  const v=housingVar(it)||{factor:1},box=housingBBox(im),z=housingZone(P);
+  const v=housingVar(it)||{factor:1},box=housingStableBBox(it,im),z=housingZone(P);
   const p=Math.max(0,Math.min(1,Number(it.p)||0)), sc=housingScale(p)*(v.factor||1);
   const nw=im.naturalWidth||im.width,nh=im.naturalHeight||im.height,dw=nw*sc,dh=nh*sc;
   const footY=z.top+p*Math.max(1,z.bottom-z.top),center=it.flip?(1-box.cx):box.cx;
@@ -8483,10 +8567,25 @@ function hubHousingDepthPass(x,P,mobiles){
   let ordre=0;const objets=housingRects.map(r=>({type:"objet",layer:r.layer,ordre:ordre++,x0:r.x0,y0:r.y0,x1:r.x1,y1:r.y1,peindre:()=>housingPeindreRect(x,r)}));
   const creatures=(mobiles||[]).filter(m=>typeof m.peindre==="function").map(m=>({type:"creature",layer:housingLayer(P,m.fy),ordre:ordre++,x0:m.x0,y0:m.y0,x1:m.x1,y1:m.y1,peindre:m.peindre}));
   const touche=(a,b)=>a.x1>b.x0&&a.x0<b.x1&&a.y1>b.y0&&a.y0<b.y1;
-  /* On ne recompose que les groupes qui se recouvrent : pas de double passage inutile
-     sur les pixels translucides des éléments isolés. */
-  const pile=[...objets.filter(o=>creatures.some(c=>touche(o,c))),...creatures.filter(c=>objets.some(o=>touche(o,c)))];
-  pile.sort((a,b)=>a.layer-b.layer||a.ordre-b.ordre).forEach(o=>o.peindre());
+  /* Un chevauchement est un GRAPHE, pas une paire isolée. Ancien bug : A (objet) touchait
+     une créature et B (autre objet), mais B ne touchait pas directement la créature.
+     La passe reprenait A + créature, oubliait B, puis repeignait A par-dessus B : l'objet
+     semblait bondir au premier plan. On recompose maintenant toute la composante liée,
+     y compris les objets reliés de proche en proche, dans l'ordre absolu de profondeur. */
+  const tous=[...objets,...creatures],vus=new Set();
+  for(let depart=0;depart<tous.length;depart++){
+    if(vus.has(depart))continue;
+    const indices=[],file=[depart];vus.add(depart);
+    while(file.length){
+      const i=file.pop();indices.push(i);
+      for(let j=0;j<tous.length;j++)if(!vus.has(j)&&touche(tous[i],tous[j])){vus.add(j);file.push(j);}
+    }
+    const groupe=indices.map(i=>tous[i]);
+    /* Les groupes d'une seule catégorie ont déjà été peints dans le bon ordre. Seuls les
+       groupes mêlant objet(s) et créature(s) ont besoin de la correction d'occlusion. */
+    if(!groupe.some(o=>o.type==="objet")||!groupe.some(o=>o.type==="creature"))continue;
+    groupe.sort((a,b)=>a.layer-b.layer||a.ordre-b.ordre).forEach(o=>o.peindre());
+  }
 }
 function housingSfxPouf(){
   if(typeof sfxOn==="function"&&!sfxOn())return;try{const ac=audioCtx(),g=ac.createGain(),o=ac.createOscillator(),n=ac.createBufferSource();
@@ -8512,7 +8611,12 @@ function housingRenderUI(){
   }).join(""):"";
   const sel=housingListe(hubBiome()).find(o=>o.id===housingSelected);
   document.getElementById("housingActions").classList.toggle("on",!!sel);
-  document.getElementById("housingHelp").textContent=sel?"Glisse pour déplacer · choisis un modèle pour changer son skin":"Choisis une famille, puis un modèle à placer.";
+  const done=document.getElementById("housingDone");
+  if(done){
+    done.innerHTML=sel?"✓ POSER":"✓ TERMINER";
+    done.setAttribute("aria-label",sel?"Poser l'objet sélectionné":"Valider l'aménagement et quitter le mode Housing");
+  }
+  document.getElementById("housingHelp").textContent=sel?"Glisse pour déplacer · puis appuie sur Poser":"Choisis un objet, ou appuie sur Terminer pour quitter.";
   fr.querySelectorAll("[data-hfam]").forEach(e=>e.onclick=()=>{housingFamily=e.dataset.hfam;housingRenderUI();});
   sr.querySelectorAll("[data-hskin]").forEach(e=>e.onclick=()=>housingChoose(Number(e.dataset.hskin)));
 }
@@ -8523,11 +8627,19 @@ function housingChoose(i){
     if(housingDispo(hubBiome(),housingTab,housingFamily,i)<1){toast("Aucun exemplaire libre — disponible dans la Boutique");return;}
     sel.skin=i;save();housingRenderUI();return;
   }
-  if(housingDispo(hubBiome(),housingTab,housingFamily,i)<1){toast("Achète d'abord cet objet dans la Boutique 🛍️");return;}
-  if(housingFamily==="panneau"){
-    const ancien=list.find(o=>o.family==="panneau");
-    if(ancien){housingSelected=ancien.id;ancien.skin=i;toast("Un seul panneau de quêtes par biome");save();housingRenderUI();return;}
+  if(housingUnique(housingFamily)){
+    const ancien=list.find(o=>o.family===housingFamily);
+    if(ancien){
+      if((ancien.skin||0)!==i){
+        if(housingDispo(hubBiome(),housingTab,housingFamily,i)<1){toast("Aucun exemplaire libre — disponible dans la Boutique");return;}
+        ancien.skin=i;
+      }
+      housingSelected=ancien.id;
+      toast("Un seul "+((housingFamilies(housingTab).find(f=>f.id===housingFamily)||{}).nom||"objet spécial")+" par biome");
+      save();housingRenderUI();return;
+    }
   }
+  if(housingDispo(hubBiome(),housingTab,housingFamily,i)<1){toast("Achète d'abord cet objet dans la Boutique 🛍️");return;}
   if(list.length>=40){toast("Le refuge est plein pour le moment");return;}
   const it={id:uid(),tab:housingTab,family:housingFamily,skin:i,x:.5,p:.67,flip:false};
   list.push(it);housingSelected=it.id;save();housingRenderUI();
@@ -8549,8 +8661,17 @@ function closeHousing(garder){
 function housingInit(){
   const cv=document.getElementById("camp");if(!cv||cv._housing)return;cv._housing=1;
   document.querySelectorAll("[data-htab]").forEach(e=>e.onclick=()=>{housingTab=e.dataset.htab;housingFamily=housingTab==="objets"?"tente":"arbre";housingSelected=null;housingRenderUI();});
-  document.getElementById("housingDone").onclick=()=>closeHousing(true);
-  document.getElementById("housingCancel").onclick=()=>closeHousing(false);
+  document.getElementById("housingDone").onclick=()=>{
+    /* Avec une sélection : POSER confirme seulement l'objet courant et permet
+       d'enchaîner. Sans sélection : TERMINER valide l'ensemble et quitte le Housing. */
+    if(!housingSelected){closeHousing(true);return;}
+    housingDrag=null;housingSelected=null;save();
+    housingSnapshot=JSON.stringify(S.housing||housingDef());
+    housingRenderUI();toast("Objet posé ✓");
+  };
+  /* La croix est désormais l'unique sortie normale du mode Housing. Elle conserve
+     tout ce qui est actuellement placé, y compris le dernier objet déplacé. */
+  document.getElementById("housingCancel").onclick=()=>closeHousing(true);
   document.getElementById("housingShop").onclick=()=>{closeHousing(true);hideLaunch();cur="boutique";renderTabs();renderList();animTab();};
   document.getElementById("housingFlip").onclick=()=>{const o=housingListe(hubBiome()).find(v=>v.id===housingSelected);if(o){o.flip=!o.flip;save();}};
   document.getElementById("housingDelete").onclick=()=>{const a=housingListe(hubBiome()),i=a.findIndex(v=>v.id===housingSelected);if(i>=0){
@@ -12000,12 +12121,13 @@ function hubWalkFree(P,cx,cy){
   if(HOUSING_V1){
     const z=housingZone(P);
     if(cx<18||cx>P.W-18||cy<z.top||cy>z.bottom)return false;
-    /* Collision par la BASE COLORÉE : chaque objet forme une petite barrière sur sa
-       rangée de 5 px. La créature peut passer devant ou derrière, mais jamais couper
-       cette ligne ; elle doit atteindre l'une des deux extrémités et la contourner. */
+    /* Les objets ordinaires bloquent leur base colorée. L'ÉTANG est une surface : tous
+       les pixels de son masque fixe sont interdits, donc une créature doit réellement
+       contourner l'eau au lieu de pouvoir la traverser par l'avant ou par l'arrière. */
     const demi=Math.max(5,8*creatureHousingScale(P,cy));
     return !housingRects.some(r=>{
       if(!r||!r.it||r.it.id===housingSelected&&housingDrag)return false;
+      if(r.it.family==="etang")return housingPondTouche(r,cx,cy,demi);
       return Math.abs(cy-r.footY)<3.25&&cx+demi>r.baseX0-2&&cx-demi<r.baseX1+2;
     });
   }
@@ -12062,7 +12184,7 @@ function voyagerBiome(sens){
   const ordre=BIOME_ORDRE, suiv=ordre.indexOf(hubBiome())+sens;
   if(suiv<0||suiv>=ordre.length)return;
   const b=ordre[suiv];
-  if(!biomeDebloque(b))toast("🔒 "+bioNom(b)+" — possède d'abord tous les habillages !");
+  if(!biomeDebloque(b))toast("🔒 "+bioNom(b)+" — niveau "+biomeNiveauRequis(b)+" requis");
   else setBiome(b,sens>0?-1:1);
 }
 /* Un overlay est-il ouvert par-dessus le camp ? (Nid, taverne, éclosion, modale.)
@@ -13184,8 +13306,16 @@ function hubSuitLeSol(){
 function hubPlacePip(){
   const P=hubPos, e=document.getElementById("hubPip");
   if(!P||!e||e.style.display==="none")return;
-  e.style.left=(294/P.W*100)+"%";
-  e.style.top=((P.bdT+14)/P.H*100)+"%";
+  /* En Housing, le panneau est libre : la pastille doit suivre SON rectangle réel à
+     chaque image, y compris pendant un glissé, et non l'ancien emplacement préfabriqué. */
+  const px=v=>v/P.W*100+"%",py=v=>v/P.H*100+"%";
+  if(HOUSING_V1&&housingPanelRect){
+    e.style.left=px(housingPanelRect.x1-4);
+    e.style.top=py(housingPanelRect.y0+4);
+  }else{
+    e.style.left=px(294);
+    e.style.top=py(P.bdT+14);
+  }
 }
 /* à appeler APRÈS le dessin : les zones tactiles se posent sur la géométrie enfin figée */
 function hubApresDessin(){
