@@ -8540,9 +8540,7 @@ function hubDrawHousing(x,P,t,day){
         x.globalCompositeOperation="lighter";x.globalAlpha=(day?.40:.54)*ff;x.imageSmoothingEnabled=true;
         x.drawImage(h,r.dx-FEU_MARGE*sc,r.dy-FEU_MARGE*sc,r.dw+FEU_MARGE*2*sc,r.dh+FEU_MARGE*2*sc);x.restore();}
     }
-    x.save();
-    if(it.flip){x.translate(r.footX*2,0);x.scale(-1,1);}
-    x.imageSmoothingEnabled=false;x.drawImage(r.im,r.dx,r.dy,r.dw,r.dh);x.restore();
+    housingPeindreRect(x,r);
     housingRects.push(r);
     if(it.family==="panneau")housingPanelRect=r;
     if(housingEdit&&it.id===housingSelected){
@@ -8556,10 +8554,32 @@ function hubDrawHousing(x,P,t,day){
       x.fillStyle=i%3===0?"#fff4cf":i%3===1?"#d9c7a1":"#a99373";x.beginPath();x.arc(p.x+Math.cos(a)*r,p.y-8+Math.sin(a)*r*.65,sz,0,Math.PI*2);x.fill();}
     x.restore();});
 }
+/* Flammes embarquées dans les modèles Housing. On lit le skin de CET exemplaire,
+   jamais l'ancien équipement global : plusieurs modèles peuvent cohabiter. */
+function housingFlammes(it){
+  if(!it||it.tab==="nature")return [];
+  const B=it.stockBio||hubBiome(),M=(typeof CAMPMETA!=="undefined"&&CAMPMETA[B])?CAMPMETA[B]:null;
+  if(!M)return [];const sk=it.skin||0,out=[];
+  const ajoute=cle=>{const m=M[cle]&&M[cle][sk];if(!m)return;
+    (Array.isArray(m[0])?m:[m]).forEach(f=>out.push({x:f[0],y:f[1],froid:f[2]===1,e:f[3]||1}));};
+  if(it.family==="journal")ajoute("journal");
+  if(it.family==="tente"){ajoute("tente");ajoute("tnFl");}
+  if(it.family==="panneau")ajoute("pnFl");
+  return out;
+}
 function housingPeindreRect(x,r){
   if(!r||!r.im)return;x.save();
   if(r.it.flip){x.translate(r.footX*2,0);x.scale(-1,1);}
-  x.imageSmoothingEnabled=false;x.drawImage(r.im,r.dx,r.dy,r.dw,r.dh);x.restore();
+  x.imageSmoothingEnabled=false;x.drawImage(r.im,r.dx,r.dy,r.dw,r.dh);
+  const flammes=housingFlammes(r.it);
+  if(flammes.length){
+    /* Même repère local que l'image : translation, perspective, skin et miroir sont
+       donc hérités mathématiquement, sans coordonnées d'écran à recalculer. */
+    const nw=r.im.naturalWidth||r.im.width,nh=r.im.naturalHeight||r.im.height;
+    x.translate(r.dx,r.dy);x.scale(r.dw/nw,r.dh/nh);
+    peindreFlammes(x,flammes,0,0,flammeT(),hubPal(hubDay()).glowK);
+  }
+  x.restore();
 }
 /* Recomposition finale de la scène sur les rangées invisibles de 5 px. Objets,
    nature et créatures entrent dans LA MÊME pile ; aucune catégorie n'est privilégiée. */
