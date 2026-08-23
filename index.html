@@ -9392,13 +9392,13 @@ function buildHub(W,H,day){
       const bordMer=Math.max(merY+1,HZ-15);
       const gd=x.createLinearGradient(0,merY,0,bordMer);
       if(day){
-        gd.addColorStop(0,"rgba(4,54,112,.28)");
-        gd.addColorStop(.30,"rgba(15,91,151,.12)");
+        gd.addColorStop(0,"rgba(2,36,91,.43)");
+        gd.addColorStop(.30,"rgba(9,72,135,.18)");
         gd.addColorStop(.68,"rgba(92,199,225,.17)");
         gd.addColorStop(1,"rgba(145,225,238,.44)");
       }else{
-        gd.addColorStop(0,"rgba(2,16,43,.30)");
-        gd.addColorStop(.35,"rgba(8,45,79,.13)");
+        gd.addColorStop(0,"rgba(1,10,34,.42)");
+        gd.addColorStop(.35,"rgba(5,35,69,.18)");
         gd.addColorStop(.72,"rgba(52,126,157,.10)");
         gd.addColorStop(1,"rgba(79,166,184,.26)");
       }
@@ -10225,7 +10225,7 @@ function hubBateauGrec(x,P,t,day){
     grecBoatImage=new Image();grecBoatImage.onload=()=>{if(launchOpen)drawHub(0)};
     grecBoatImage.src=GREC_BOAT_SRC;
   }
-  if(grecBoatImage.complete&&grecBoatImage.naturalWidth)x.drawImage(grecBoatImage,-22,-23,44,23);
+  if(grecBoatImage.complete&&grecBoatImage.naturalWidth)x.drawImage(grecBoatImage,-20,-21,40,21);
   x.restore();
 }
 function hubSecondPlanGrec(x,P,day){
