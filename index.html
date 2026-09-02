@@ -9,9 +9,6 @@
     :root {
       color-scheme: dark;
       --ink: #f8f1de;
-      --muted: rgba(248, 241, 222, .68);
-      --line: rgba(255, 255, 255, .14);
-      --panel: rgba(8, 12, 24, .76);
       --accent: #ffd898;
     }
 
@@ -26,8 +23,6 @@
       color: var(--ink);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-
-    button, input { font: inherit; }
 
     body {
       display: grid;
@@ -47,8 +42,8 @@
 
     .stage-shell {
       position: relative;
-      width: min(100vw, calc(100vh * 941 / 1672));
-      height: min(100vh, calc(100vw * 1672 / 941));
+      width: min(100vw, calc(100vh * 720 / 1280));
+      height: min(100vh, calc(100vw * 1280 / 720));
       overflow: hidden;
       background: #11182c;
       box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 32px 90px rgba(0,0,0,.72);
@@ -81,173 +76,6 @@
       height: 100%;
     }
 
-    /* Aucun filtre global ne doit recouvrir les calques solides. La profondeur
-       est désormais produite uniquement à l'intérieur du canvas, avant la
-       restauration finale de l'Olympe et du premier plan. */
-    .vignette { display: none; }
-
-    .status {
-      position: absolute;
-      top: max(14px, env(safe-area-inset-top));
-      left: 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 12px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(7, 10, 20, .58);
-      box-shadow: 0 10px 30px rgba(0,0,0,.2);
-      backdrop-filter: blur(14px) saturate(1.15);
-      -webkit-backdrop-filter: blur(14px) saturate(1.15);
-      user-select: none;
-    }
-
-    .status, .celestial-state { display: none !important; }
-
-    .sun-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 14px var(--accent);
-      transition: background 1s ease, box-shadow 1s ease;
-    }
-
-    .status-copy { display: grid; gap: 1px; }
-    .period { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-    .clock { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
-
-    .celestial-state {
-      position: absolute;
-      top: max(15px, env(safe-area-inset-top));
-      right: 14px;
-      padding: 8px 10px;
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 999px;
-      background: rgba(7, 10, 20, .42);
-      color: rgba(255,255,255,.72);
-      font-size: 9px;
-      font-weight: 750;
-      letter-spacing: .09em;
-      text-transform: uppercase;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      user-select: none;
-    }
-
-    .controls {
-      position: absolute;
-      left: 14px;
-      right: 14px;
-      bottom: max(14px, env(safe-area-inset-bottom));
-      display: grid;
-      gap: 9px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: var(--panel);
-      box-shadow: 0 16px 45px rgba(0,0,0,.34);
-      backdrop-filter: blur(18px) saturate(1.2);
-      -webkit-backdrop-filter: blur(18px) saturate(1.2);
-      transition: opacity .25s ease, transform .25s ease;
-    }
-
-    /* Version intégrée : le temps vient de l'horloge locale, sans commandes de simulation. */
-    .controls, .method { display: none !important; }
-
-    .stage-shell.cinematic .controls {
-      opacity: 0;
-      transform: translateY(18px);
-      pointer-events: none;
-    }
-
-    .control-row { display: flex; align-items: center; gap: 9px; }
-
-    .icon-button {
-      flex: 0 0 auto;
-      display: grid;
-      place-items: center;
-      width: 34px;
-      height: 34px;
-      border: 1px solid rgba(255,255,255,.16);
-      border-radius: 50%;
-      background: rgba(255,255,255,.09);
-      color: var(--ink);
-      cursor: pointer;
-    }
-
-    .icon-button:focus-visible, .method-button:focus-visible, input:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-
-    .method-button {
-      flex: 0 0 auto;
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 999px;
-      padding: 7px 10px;
-      background: rgba(255,255,255,.07);
-      color: var(--ink);
-      font-size: 10px;
-      font-weight: 750;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      cursor: pointer;
-    }
-
-    .timeline { flex: 1; min-width: 0; }
-
-    input[type="range"] {
-      width: 100%;
-      height: 18px;
-      margin: 0;
-      accent-color: var(--accent);
-      cursor: pointer;
-    }
-
-    .ticks {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      margin-top: 2px;
-      color: rgba(255,255,255,.52);
-      font-size: 8px;
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-    .ticks span:nth-child(2), .ticks span:nth-child(3) { text-align: center; }
-    .ticks span:last-child { text-align: right; }
-
-    .speed {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--muted);
-      font-size: 10px;
-    }
-
-    .method {
-      position: absolute;
-      inset: 14px;
-      z-index: 4;
-      display: none;
-      align-content: end;
-      padding: 18px;
-      border: 1px solid rgba(255,255,255,.17);
-      border-radius: 22px;
-      background: linear-gradient(180deg, rgba(5,8,16,.2), rgba(5,8,16,.94) 48%);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .method.open { display: grid; }
-    .method h2 { margin: 0 0 8px; font-family: Georgia, serif; font-size: 22px; font-weight: 500; }
-    .method p { margin: 0 0 12px; color: var(--muted); font-size: 12px; line-height: 1.5; }
-    .method ol { margin: 0 0 16px; padding-left: 18px; color: rgba(255,255,255,.82); font-size: 11px; line-height: 1.55; }
-    .method li + li { margin-top: 6px; }
-    .method .close { justify-self: start; }
-
     .loading {
       position: absolute;
       inset: 0;
@@ -264,71 +92,34 @@
 
     @media (min-width: 840px) {
       .stage-shell { border-radius: 22px; max-height: calc(100vh - 30px); }
-      .controls { left: 20px; right: 20px; bottom: 20px; }
-      .status { top: 20px; left: 20px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .ambient, .sun-dot, .controls, .loading { transition: none; }
+      .ambient, .loading { transition: none; }
     }
   </style>
 </head>
 <body>
   <div class="ambient" aria-hidden="true"></div>
-  <main class="stage-shell cinematic" id="stageShell" aria-label="Environnement ATHENA synchronisé avec l’heure locale">
-    <canvas id="scene" width="941" height="1672"></canvas>
-    <div class="vignette" aria-hidden="true"></div>
-
-    <div class="status" aria-live="polite">
-      <span class="sun-dot" aria-hidden="true"></span>
-      <span class="status-copy">
-        <span class="period" id="period">Lever</span>
-        <span class="clock" id="clock">06:00</span>
-      </span>
-    </div>
-    <div class="celestial-state" id="celestialState" aria-live="polite">Soleil levant</div>
-
-    <section class="controls" aria-label="Contrôles de la simulation">
-      <div class="control-row">
-        <button class="icon-button" id="play" type="button" aria-label="Mettre en pause">Ⅱ</button>
-        <div class="timeline">
-          <input id="timeline" type="range" min="0" max="1" step="0.0005" value="0" aria-label="Moment de la journée">
-          <div class="ticks" aria-hidden="true">
-            <span>06 h</span><span>12 h</span><span>18 h</span><span>00 h</span>
-          </div>
-        </div>
-        <button class="method-button" id="methodButton" type="button">Méthode</button>
-      </div>
-      <div class="speed">
-        <span>Cycle complet</span>
-        <label><input id="speed" type="range" min="24" max="96" step="8" value="48" aria-label="Durée du cycle en secondes"> <span id="speedValue">48 s</span></label>
-      </div>
-    </section>
-
-    <aside class="method" id="method" aria-labelledby="methodTitle">
-      <h2 id="methodTitle">Méthode lumineuse verrouillée</h2>
-      <p>La géométrie reste strictement identique. Seules la couleur, la valeur, l’atmosphère et la direction de lumière évoluent.</p>
-      <ol>
-        <li>Interpolation douce entre les quatre masters validés selon une chronologie réaliste : aube vers 06 h, plein jour jusqu’en début de soirée, coucher à partir de 18 h 30 et nuit vers 20 h 45.</li>
-        <li>Le masque de lumière renforce localement les surfaces exposées, sans éclairage uniforme.</li>
-        <li>Le masque d’ombre conserve les volumes, les plans superposés et la lisibilité du terrain constructible.</li>
-        <li>Chaque astre est composé de couches indépendantes : disque, halo interne, halo atmosphérique, grain lumineux et rayons directionnels.</li>
-        <li>La hauteur de l’astre pilote le rendu : halos et rayons chauds se renforcent près de l’horizon, puis deviennent plus nets et discrets au zénith.</li>
-        <li>Le soleil et la lune se lèvent tous deux à droite et se couchent à gauche ; leur position module aussi la couleur et l’intensité reçues par la carte.</li>
-        <li>La matière animée de la mer commence exactement à la ligne d’horizon ; ses rides grandissent progressivement vers le premier plan.</li>
-        <li>Les remous et reflets sont découpés par un masque d’eau dédié et ne traversent jamais le mont.</li>
-        <li>Les halos et les rayons sont occultés par le mont Olympe : l’astre s’intègre au paysage au lieu de flotter au-dessus.</li>
-        <li>Les courbes d’accélération ralentissent près de chaque état de référence pour éviter toute rupture visible.</li>
-      </ol>
-      <button class="method-button close" id="closeMethod" type="button">Revenir à la simulation</button>
-    </aside>
-
+  <main class="stage-shell" aria-label="Environnement ATHENA synchronisé avec l’heure locale">
+    <canvas id="scene" width="720" height="1280"></canvas>
     <div class="loading" id="loading">Préparation des états lumineux…</div>
   </main>
 
   <script>
-    const W = 941;
-    const H = 1672;
+    // La vidéo source est en 720 × 1280. Travailler directement à cette
+    // définition évite de suréchantillonner six canevas plein écran sans
+    // apporter de détail visible sur téléphone.
+    const W = 720;
+    const H = 1280;
+    const DESIGN_W = 941;
+    const DESIGN_H = 1672;
+    const SCALE = W / DESIGN_W;
+    const waterGeometry = {
+      horizon: Math.round(H * 498 / DESIGN_H),
+      bottom: Math.round(H * 1011 / DESIGN_H)
+    };
+    const WATER_H = waterGeometry.bottom - waterGeometry.horizon;
     const canvas = document.querySelector('#scene');
     // Le mode desynchronized autorise une présentation avant la fin du dessin
     // et provoquait du tearing perceptible comme un clignotement rapide.
@@ -347,38 +138,33 @@
     auraCanvas.width = W;
     auraCanvas.height = H;
     const auraCtx = auraCanvas.getContext('2d');
-    const waterSurfaceCanvas = document.createElement('canvas');
-    waterSurfaceCanvas.width = W;
-    waterSurfaceCanvas.height = H;
-    const waterSurfaceCtx = waterSurfaceCanvas.getContext('2d');
     const oceanVideoCanvas = document.createElement('canvas');
     oceanVideoCanvas.width = W;
-    oceanVideoCanvas.height = H;
+    oceanVideoCanvas.height = WATER_H;
     const oceanVideoCtx = oceanVideoCanvas.getContext('2d');
     const baseSceneCanvas = document.createElement('canvas');
     baseSceneCanvas.width = W;
     baseSceneCanvas.height = H;
     const baseSceneCtx = baseSceneCanvas.getContext('2d');
+    const foregroundSceneCanvas = document.createElement('canvas');
+    foregroundSceneCanvas.width = W;
+    foregroundSceneCanvas.height = H;
+    const foregroundSceneCtx = foregroundSceneCanvas.getContext('2d');
+    const waterDepthCanvas = document.createElement('canvas');
+    waterDepthCanvas.width = W;
+    waterDepthCanvas.height = WATER_H;
+    const waterDepthCtx = waterDepthCanvas.getContext('2d');
     const reflectionCanvas = document.createElement('canvas');
     reflectionCanvas.width = W;
-    reflectionCanvas.height = H;
+    reflectionCanvas.height = WATER_H;
     const reflectionCtx = reflectionCanvas.getContext('2d');
-    const shell = document.querySelector('#stageShell');
-    const timeline = document.querySelector('#timeline');
-    const speed = document.querySelector('#speed');
-    const speedValue = document.querySelector('#speedValue');
-    const playButton = document.querySelector('#play');
-    const periodLabel = document.querySelector('#period');
-    const clockLabel = document.querySelector('#clock');
-    const celestialStateLabel = document.querySelector('#celestialState');
     const loading = document.querySelector('#loading');
-    const method = document.querySelector('#method');
 
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const localFileMode = window.location.protocol === 'file:';
     const oceanVideo = document.createElement('video');
     oceanVideo.src = 'assets/LOOP_EAU.mp4?v=original-cycle-restored-20260902';
-    oceanVideo.loop = true;
+    oceanVideo.loop = false;
     oceanVideo.muted = true;
     oceanVideo.playsInline = true;
     oceanVideo.preload = 'auto';
@@ -387,14 +173,29 @@
     document.body.appendChild(oceanVideo);
     oceanVideo.autoplay = true;
     oceanVideo.id = 'oceanVideoSource';
+    const oceanVideoRelay = document.createElement('video');
+    oceanVideoRelay.src = oceanVideo.src;
+    oceanVideoRelay.loop = false;
+    oceanVideoRelay.muted = true;
+    oceanVideoRelay.playsInline = true;
+    oceanVideoRelay.preload = 'auto';
+    oceanVideoRelay.hidden = true;
+    oceanVideoRelay.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(oceanVideoRelay);
     let oceanVideoReady = false;
+    let oceanVideoRelayReady = false;
     let oceanFrameCached = false;
-
-    const waterGeometry = { horizon: 498, bottom: 1011 };
+    let activeOceanVideo = oceanVideo;
+    let relayOceanVideo = oceanVideoRelay;
+    let oceanHandoffStartedAt = 0;
+    let oceanHandoffActive = false;
+    let oceanHandoffPending = false;
+    const oceanHandoffLead = .24;
+    const oceanHandoffDuration = 190;
 
     const celestialProfiles = {
       sun: {
-        discRadius: 20,
+        discRadius: 20 * SCALE,
         innerHalo: 2.2,
         outerHalo: 5.8,
         haloPower: .62,
@@ -407,7 +208,7 @@
         ray: [255, 183, 104]
       },
       moon: {
-        discRadius: 24,
+        discRadius: 24 * SCALE,
         innerHalo: 1.75,
         outerHalo: 3.8,
         haloPower: .34,
@@ -459,14 +260,13 @@
     ];
 
     const assets = {};
-    let playing = true;
-    let position = 0;
-    let cycleSeconds = Number(speed.value);
-    let previousTime = performance.now();
     let animationClock = 0;
-    let lastRenderTime = 0;
-    let lastUiUpdateTime = 0;
-    let draggingTimeline = false;
+    let nextFrameAt = 0;
+    let lastLightingUpdate = -Infinity;
+    let litBaseSceneReady = false;
+    let lastWaterDepthUpdate = -Infinity;
+    let waterDepthReady = false;
+    const targetFrameDuration = 1000 / 24;
     const stabilizedCelestialPositions = { sun: null, moon: null };
 
     function loadImage(src) {
@@ -605,20 +405,23 @@
       baseSceneCtx.globalAlpha = 1;
       baseSceneCtx.clearRect(0, 0, W, H);
       baseSceneCtx.drawImage(canvas, 0, 0);
+
+      // Le premier plan ne change qu'avec l'éclairage (une fois par seconde),
+      // pas avec chaque image de la mer. On le prépare donc une seule fois ici.
+      foregroundSceneCtx.globalCompositeOperation = 'source-over';
+      foregroundSceneCtx.globalAlpha = 1;
+      foregroundSceneCtx.clearRect(0, 0, W, H);
+      foregroundSceneCtx.drawImage(baseSceneCanvas, 0, 0);
+      foregroundSceneCtx.globalCompositeOperation = 'destination-in';
+      foregroundSceneCtx.drawImage(assets.sceneForegroundOcclusion, 0, 0, W, H);
+      foregroundSceneCtx.globalCompositeOperation = 'source-over';
     }
 
     function restoreForegroundLayers() {
-      effectCtx.globalCompositeOperation = 'source-over';
-      effectCtx.globalAlpha = 1;
-      effectCtx.clearRect(0, 0, W, H);
-      effectCtx.drawImage(baseSceneCanvas, 0, 0);
-      effectCtx.globalCompositeOperation = 'destination-in';
-      effectCtx.drawImage(assets.sceneForegroundOcclusion, 0, 0, W, H);
-
       ctx.save();
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
-      ctx.drawImage(effectCanvas, 0, 0);
+      ctx.drawImage(foregroundSceneCanvas, 0, 0);
       ctx.restore();
     }
 
@@ -649,11 +452,47 @@
     function syncOceanVideoPlayback() {
       if (!oceanVideoReady) return;
       if (reducedMotionQuery.matches) {
-        oceanVideo.pause();
-        oceanVideo.currentTime = 0;
+        activeOceanVideo.pause();
+        relayOceanVideo.pause();
+        activeOceanVideo.currentTime = 0;
+        relayOceanVideo.currentTime = 0;
+        oceanHandoffActive = false;
+        oceanHandoffPending = false;
         return;
       }
-      oceanVideo.play().catch(() => {});
+      activeOceanVideo.play().catch(() => {});
+    }
+
+    function updateOceanVideoHandoff() {
+      if (!oceanVideoReady || !oceanVideoRelayReady || reducedMotionQuery.matches) return 0;
+      const duration = activeOceanVideo.duration;
+      if (!Number.isFinite(duration) || duration <= oceanHandoffLead) return 0;
+
+      if (!oceanHandoffActive && !oceanHandoffPending && activeOceanVideo.currentTime >= duration - oceanHandoffLead) {
+        oceanHandoffPending = true;
+        relayOceanVideo.currentTime = 0;
+        relayOceanVideo.play().then(() => {
+          oceanHandoffStartedAt = performance.now();
+          oceanHandoffActive = true;
+          oceanHandoffPending = false;
+        }).catch(() => {
+          oceanHandoffPending = false;
+        });
+      }
+
+      if (!oceanHandoffActive) return 0;
+      const blend = clamp((performance.now() - oceanHandoffStartedAt) / oceanHandoffDuration);
+      if (blend >= 1) {
+        activeOceanVideo.pause();
+        activeOceanVideo.currentTime = 0;
+        const previousVideo = activeOceanVideo;
+        activeOceanVideo = relayOceanVideo;
+        relayOceanVideo = previousVideo;
+        oceanHandoffActive = false;
+        oceanHandoffPending = false;
+        return 0;
+      }
+      return blend;
     }
 
     function drawAnimatedOcean(hour) {
@@ -662,13 +501,42 @@
       // Au raccord de boucle, le lecteur peut perdre son état « prêt » pendant
       // une ou deux images. On conserve alors la dernière frame valide au lieu
       // de retirer brutalement toute la couche lumineuse de la mer.
-      if (oceanVideoReady && oceanVideo.readyState >= 2) {
+      const requestedRelayBlend = updateOceanVideoHandoff();
+      if (oceanVideoReady && activeOceanVideo.readyState >= 2) {
+        // Le fondu ne commence qu'après réception d'une vraie image du relais.
+        // Sinon l'ancienne frame perdait déjà son opacité, ce qui produisait
+        // précisément la disparition/réapparition observée sur certains cycles.
+        const relayDrawable = requestedRelayBlend > 0
+          && relayOceanVideo.readyState >= 2
+          && !relayOceanVideo.paused;
+        const relayBlend = relayDrawable ? requestedRelayBlend : 0;
         oceanVideoCtx.globalCompositeOperation = 'source-over';
+        oceanVideoCtx.clearRect(0, 0, W, WATER_H);
+        oceanVideoCtx.globalAlpha = 1 - relayBlend;
+        oceanVideoCtx.drawImage(
+          activeOceanVideo,
+          0, waterGeometry.horizon, W, WATER_H,
+          0, 0, W, WATER_H
+        );
+        if (relayDrawable) {
+          // Addition pondérée : les deux contributions totalisent toujours 1,
+          // donc le raccord ne provoque ni baisse de luminosité ni flash.
+          oceanVideoCtx.globalCompositeOperation = 'lighter';
+          oceanVideoCtx.globalAlpha = relayBlend;
+          oceanVideoCtx.drawImage(
+            relayOceanVideo,
+            0, waterGeometry.horizon, W, WATER_H,
+            0, 0, W, WATER_H
+          );
+        }
         oceanVideoCtx.globalAlpha = 1;
-        oceanVideoCtx.clearRect(0, 0, W, H);
-        oceanVideoCtx.drawImage(oceanVideo, 0, 0, W, H);
+        oceanVideoCtx.globalCompositeOperation = 'source-over';
         oceanVideoCtx.globalCompositeOperation = 'destination-in';
-        oceanVideoCtx.drawImage(assets.waterMask, 0, 0, W, H);
+        oceanVideoCtx.drawImage(
+          assets.waterMask,
+          0, waterGeometry.horizon, W, WATER_H,
+          0, 0, W, WATER_H
+        );
         oceanFrameCached = true;
       }
       if (!oceanFrameCached) return;
@@ -678,38 +546,42 @@
       ctx.save();
       ctx.globalCompositeOperation = 'luminosity';
       ctx.globalAlpha = night ? .3 : sunset ? .56 : .7;
-      ctx.drawImage(oceanVideoCanvas, 0, 0);
+      ctx.drawImage(oceanVideoCanvas, 0, waterGeometry.horizon);
       ctx.globalCompositeOperation = 'soft-light';
       ctx.globalAlpha = night ? .18 : sunset ? .28 : .34;
-      ctx.drawImage(oceanVideoCanvas, 0, 0);
+      ctx.drawImage(oceanVideoCanvas, 0, waterGeometry.horizon);
       ctx.restore();
     }
 
     function drawWaterDepthGradient(hour) {
       const { sunset, night } = waterPalette(hour);
-      effectCtx.globalCompositeOperation = 'source-over';
-      effectCtx.globalAlpha = 1;
-      effectCtx.clearRect(0, 0, W, H);
+      if (!waterDepthReady || animationClock - lastWaterDepthUpdate >= 1000) {
+        waterDepthCtx.globalCompositeOperation = 'source-over';
+        waterDepthCtx.globalAlpha = 1;
+        waterDepthCtx.clearRect(0, 0, W, WATER_H);
 
-      const depthGradient = effectCtx.createLinearGradient(
-        0,
-        waterGeometry.horizon,
-        0,
-        waterGeometry.bottom
-      );
-      depthGradient.addColorStop(0, 'rgba(8,18,42,0)');
-      depthGradient.addColorStop(.38, 'rgba(8,18,42,.04)');
-      depthGradient.addColorStop(.72, 'rgba(5,13,34,.18)');
-      depthGradient.addColorStop(1, `rgba(3,9,27,${night ? .46 : sunset ? .38 : .32})`);
-      effectCtx.fillStyle = depthGradient;
-      effectCtx.fillRect(0, waterGeometry.horizon, W, waterGeometry.bottom - waterGeometry.horizon);
-      effectCtx.globalCompositeOperation = 'destination-in';
-      effectCtx.drawImage(assets.waterEffectMask, 0, 0, W, H);
+        const depthGradient = waterDepthCtx.createLinearGradient(0, 0, 0, WATER_H);
+        depthGradient.addColorStop(0, 'rgba(8,18,42,0)');
+        depthGradient.addColorStop(.38, 'rgba(8,18,42,.04)');
+        depthGradient.addColorStop(.72, 'rgba(5,13,34,.18)');
+        depthGradient.addColorStop(1, `rgba(3,9,27,${night ? .46 : sunset ? .38 : .32})`);
+        waterDepthCtx.fillStyle = depthGradient;
+        waterDepthCtx.fillRect(0, 0, W, WATER_H);
+        waterDepthCtx.globalCompositeOperation = 'destination-in';
+        waterDepthCtx.drawImage(
+          assets.waterEffectMask,
+          0, waterGeometry.horizon, W, WATER_H,
+          0, 0, W, WATER_H
+        );
+        waterDepthCtx.globalCompositeOperation = 'source-over';
+        lastWaterDepthUpdate = animationClock;
+        waterDepthReady = true;
+      }
 
       ctx.save();
       ctx.globalCompositeOperation = 'multiply';
       ctx.globalAlpha = 1;
-      ctx.drawImage(effectCanvas, 0, 0);
+      ctx.drawImage(waterDepthCanvas, 0, waterGeometry.horizon);
       ctx.restore();
     }
 
@@ -723,129 +595,6 @@
         : hour > 18.5 ? smoothRange(18.5, 20.75, hour)
         : 0;
       return { sunset, night };
-    }
-
-    function drawWaterSurface(hour) {
-      const { horizon, bottom } = waterGeometry;
-      const { sunset, night } = waterPalette(hour);
-      const motion = reducedMotionQuery.matches ? 0 : animationClock;
-      waterSurfaceCtx.globalCompositeOperation = 'source-over';
-      waterSurfaceCtx.filter = 'none';
-      waterSurfaceCtx.clearRect(0, 0, W, H);
-
-      // Matière continue dès la ligne d'horizon : les vaguelettes ne reposent
-      // plus sur une bande d'eau neutre.
-      const base = waterSurfaceCtx.createLinearGradient(0, horizon, 0, bottom);
-      base.addColorStop(0, night
-        ? 'rgba(42,73,133,.25)'
-        : sunset
-          ? `rgba(105,86,145,${.11 + sunset * .12})`
-          : 'rgba(44,121,176,.12)');
-      base.addColorStop(.42, night
-        ? 'rgba(24,66,130,.18)'
-        : sunset
-          ? `rgba(65,113,169,${.08 + sunset * .08})`
-          : 'rgba(18,103,171,.08)');
-      base.addColorStop(1, night
-        ? 'rgba(17,42,101,.26)'
-        : 'rgba(33,133,183,.12)');
-      waterSurfaceCtx.fillStyle = base;
-      waterSurfaceCtx.fillRect(0, horizon, W, bottom - horizon + 1);
-
-      // Une trame très fine colle l'animation à la base des montagnes. Elle
-      // évite la bande d'eau immobile sans créer de ligne horizontale dure.
-      waterSurfaceCtx.save();
-      waterSurfaceCtx.globalCompositeOperation = 'screen';
-      waterSurfaceCtx.lineCap = 'round';
-      for (let row = 0; row < 11; row++) {
-        const y = horizon + row * 2.15;
-        const segments = 22 + row;
-        const drift = Math.sin(motion * .00018 + row * 1.47) * 5;
-        waterSurfaceCtx.lineWidth = .48 + row * .025;
-        waterSurfaceCtx.strokeStyle = sunset
-          ? `rgba(255,218,187,${.10 + row * .003})`
-          : night
-            ? `rgba(151,184,239,${.065 + row * .002})`
-            : `rgba(181,232,247,${.085 + row * .003})`;
-        for (let segment = 0; segment < segments; segment++) {
-          const seed = 400 + row * 37 + segment * 11;
-          const center = (segment + .5) * W / segments + drift + Math.sin(seed) * 4;
-          const halfWidth = 2.2 + seededNoise(seed, 29) * (4.8 + row * .24);
-          waterSurfaceCtx.beginPath();
-          waterSurfaceCtx.moveTo(center - halfWidth, y);
-          waterSurfaceCtx.quadraticCurveTo(
-            center,
-            y + Math.sin(motion * .0003 + seed) * (.2 + row * .035),
-            center + halfWidth,
-            y
-          );
-          waterSurfaceCtx.stroke();
-        }
-      }
-      waterSurfaceCtx.restore();
-
-      // Nappes larges et irrégulières, sans trame répétée.
-      waterSurfaceCtx.save();
-      waterSurfaceCtx.globalCompositeOperation = 'screen';
-      waterSurfaceCtx.filter = 'blur(18px)';
-      for (let index = 0; index < 5; index++) {
-        const phase = motion * (.000025 + index * .000003) + index * 1.71;
-        const cx = W * (.12 + index * .2) + Math.sin(phase) * (70 + index * 8);
-        const cy = horizon + 48 + index * 84 + Math.cos(phase * 1.3) * 24;
-        const radius = 95 + index * 31;
-        const glow = waterSurfaceCtx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-        glow.addColorStop(0, `rgba(${sunset ? '255,181,142' : night ? '111,153,232' : '104,205,238'},${.045 + index * .008})`);
-        glow.addColorStop(1, 'rgba(0,0,0,0)');
-        waterSurfaceCtx.fillStyle = glow;
-        waterSurfaceCtx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
-      }
-      waterSurfaceCtx.restore();
-
-      // Les rides commencent à un pixel de l'horizon, puis grandissent vers
-      // le premier plan pour restituer la profondeur.
-      waterSurfaceCtx.save();
-      waterSurfaceCtx.globalCompositeOperation = 'screen';
-      waterSurfaceCtx.lineCap = 'round';
-      for (let row = 0; row < 24; row++) {
-        const depth = row / 23;
-        const perspective = Math.pow(depth, 1.5);
-        const y = horizon + 1 + perspective * (bottom - horizon - 3);
-        const laneWidth = 7 + perspective * 94;
-        const amplitude = .35 + perspective * 4.2;
-        const speedPhase = motion * (.00022 - perspective * .00009);
-        const segments = 7 + Math.round((1 - perspective) * 5);
-        waterSurfaceCtx.lineWidth = .45 + perspective * 2.2;
-        waterSurfaceCtx.strokeStyle = sunset
-          ? `rgba(255,207,166,${.04 + perspective * .11})`
-          : night
-            ? `rgba(142,178,240,${.025 + perspective * .07})`
-            : `rgba(151,224,245,${.035 + perspective * .10})`;
-        for (let segment = 0; segment < segments; segment++) {
-          const seed = row * 19 + segment * 7;
-          const center = (segment + .5) * W / segments
-            + Math.sin(speedPhase + seed) * (8 + perspective * 22);
-          const width = laneWidth * (.35 + seededNoise(seed, 19) * .95);
-          waterSurfaceCtx.beginPath();
-          waterSurfaceCtx.moveTo(center - width, y);
-          waterSurfaceCtx.quadraticCurveTo(
-            center,
-            y + Math.sin(speedPhase * 2 + seed) * amplitude,
-            center + width,
-            y
-          );
-          waterSurfaceCtx.stroke();
-        }
-      }
-      waterSurfaceCtx.restore();
-
-      waterSurfaceCtx.globalCompositeOperation = 'destination-in';
-      waterSurfaceCtx.drawImage(assets.waterEffectMask, 0, 0, W, H);
-
-      ctx.save();
-      ctx.globalCompositeOperation = night ? 'screen' : 'soft-light';
-      ctx.globalAlpha = night ? .42 : .72;
-      ctx.drawImage(waterSurfaceCanvas, 0, 0);
-      ctx.restore();
     }
 
     function hoursSince(startHour, hour) {
@@ -868,15 +617,6 @@
         }
       }
       return { current: states[3], next: states[3], easedT: 0 };
-    }
-
-    function getPeriodName(hour) {
-      // Aligne le libellé sur la minute arrondie affichée par l’horloge.
-      const displayedHour = Math.round(hour * 60) / 60;
-      if (displayedHour >= daylightSchedule.nightStart || displayedHour < daylightSchedule.sunriseStart) return 'Nuit';
-      if (displayedHour < daylightSchedule.dayStart) return 'Lever';
-      if (displayedHour < daylightSchedule.sunsetStart) return 'Jour';
-      return 'Coucher';
     }
 
     function orbit(t, startX, endX, horizonY, apexY) {
@@ -931,7 +671,7 @@
           sunsetBias,
           visibility: fadeIn * fadeOut,
           image: assets.sun,
-          size: mix(104, 132, horizonFactor),
+          size: mix(104, 132, horizonFactor) * SCALE,
           lightColor: sunsetBias > .1 ? 'rgba(255,132,69,.96)' : 'rgba(255,239,197,.86)',
           lightPower: .018 + .066 * horizonFactor * (.35 + .65 * sunsetBias),
           reflectionColor: sunsetBias > .1 ? 'rgba(255,177,104,.92)' : 'rgba(255,244,208,.72)',
@@ -958,7 +698,7 @@
           sunsetBias: 0,
           visibility: fadeIn * fadeOut,
           image: assets.moon,
-          size: mix(102, 116, altitude),
+          size: mix(102, 116, altitude) * SCALE,
           lightColor: 'rgba(151,183,255,.88)',
           lightPower: .022 + .026 * altitude,
           reflectionColor: 'rgba(174,201,255,.9)',
@@ -992,19 +732,18 @@
     function drawWaterReflection(celestial) {
       if (!celestial || celestial.visibility <= .01) return;
       reflectionCtx.globalCompositeOperation = 'source-over';
-      reflectionCtx.clearRect(0, 0, W, H);
+      reflectionCtx.clearRect(0, 0, W, WATER_H);
       reflectionCtx.fillStyle = celestial.reflectionColor;
 
-      const horizonY = waterGeometry.horizon;
       const xOrigin = celestial.x;
       const reflectionDepths = [.01, .055, .12, .21, .32, .45, .61, .79, .98];
       for (let index = 0; index < reflectionDepths.length; index++) {
         const depth = reflectionDepths[index];
-        const y = horizonY + depth * 438 + Math.sin(animationClock * .0012 + index * 1.7) * (1 + depth * 3);
-        const spread = 10 + depth * 104;
+        const y = depth * (438 * SCALE) + Math.sin(animationClock * .0012 + index * 1.7) * ((1 + depth * 3) * SCALE);
+        const spread = (10 + depth * 104) * SCALE;
         const drift = Math.sin(index * 2.13 + animationClock * .00065) * spread * .29;
         const width = spread * (.38 + .62 * Math.sin(index * 2.8 + 1.2) ** 2);
-        const height = 1.7 + depth * 3.5;
+        const height = (1.7 + depth * 3.5) * SCALE;
         reflectionCtx.globalAlpha = (1 - depth * .48) * (.32 + .38 * Math.sin(index * 1.91) ** 2);
         reflectionCtx.beginPath();
         reflectionCtx.ellipse(xOrigin + drift, y, width, height, 0, 0, Math.PI * 2);
@@ -1013,27 +752,31 @@
 
       reflectionCtx.globalAlpha = 1;
       reflectionCtx.globalCompositeOperation = 'destination-in';
-      reflectionCtx.drawImage(assets.waterMask, 0, 0, W, H);
+      reflectionCtx.drawImage(
+        assets.waterMask,
+        0, waterGeometry.horizon, W, WATER_H,
+        0, 0, W, WATER_H
+      );
 
       // Le reflet reste pleinement présent près de l'horizon, puis se fond
       // progressivement dans la matière de l'eau en allant vers le premier plan.
       const reflectionFade = reflectionCtx.createLinearGradient(
         0,
-        waterGeometry.horizon,
         0,
-        waterGeometry.bottom
+        0,
+        WATER_H
       );
       reflectionFade.addColorStop(0, 'rgba(255,255,255,1)');
       reflectionFade.addColorStop(.28, 'rgba(255,255,255,.88)');
       reflectionFade.addColorStop(.68, 'rgba(255,255,255,.38)');
       reflectionFade.addColorStop(1, 'rgba(255,255,255,.05)');
       reflectionCtx.fillStyle = reflectionFade;
-      reflectionCtx.fillRect(0, waterGeometry.horizon, W, waterGeometry.bottom - waterGeometry.horizon);
+      reflectionCtx.fillRect(0, 0, W, WATER_H);
 
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
       ctx.globalAlpha = celestial.reflectionPower * celestial.directVisibility;
-      ctx.drawImage(reflectionCanvas, 0, 0);
+      ctx.drawImage(reflectionCanvas, 0, waterGeometry.horizon);
       ctx.restore();
     }
 
@@ -1307,29 +1050,13 @@
       ctx.restore();
     }
 
-    function describeCelestial(hour, celestials) {
-      const sun = celestials.find(item => item.kind === 'sun');
-      const moon = celestials.find(item => item.kind === 'moon');
-      if (sun) {
-        if (sun.t < .18) return 'Soleil levant';
-        if (sun.t > .78) return 'Soleil couchant';
-        return sun.altitude > .78 ? 'Soleil au zénith' : 'Course du soleil';
-      }
-      if (moon) return moon.altitude > .72 ? 'Lune haute' : 'Course de la lune';
-      return hour < daylightSchedule.sunriseStart ? 'Avant l’aube' : 'Crépuscule';
-    }
-
-    function getLocalClock() {
+    function getLocalHour() {
       const now = new Date();
-      const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600 + now.getMilliseconds() / 3600000;
-      const label = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      return { hour, label };
+      return now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600 + now.getMilliseconds() / 3600000;
     }
 
-    function render() {
-      const { hour, label } = getLocalClock();
+    function rebuildLitBaseScene(hour) {
       const { current, next, easedT } = getVisualBlend(hour);
-
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
       ctx.drawImage(assets[current.file], 0, 0, W, H);
@@ -1344,10 +1071,24 @@
 
       paintMaskedColor(assets.lightMask, lightColor, lightPower, 'screen');
       paintMaskedColor(assets.shadowMask, '#071027', shadowPower, 'multiply');
-      // Capture le paysage éclairé avant toute matière marine. Cette copie
-      // sert ensuite à replacer exactement l'Olympe et le premier plan au-dessus
-      // de la vidéo, des vagues, des reflets et des shaders de la mer.
       captureLitBaseScene();
+      document.documentElement.style.setProperty('--accent', accent);
+      lastLightingUpdate = animationClock;
+      litBaseSceneReady = true;
+    }
+
+    function render() {
+      const hour = getLocalHour();
+      // Les grands masters, les masques de lumière et les ombres évoluent à
+      // l'échelle de l'heure. Une mise à jour par seconde est visuellement
+      // continue et évite plusieurs compositions plein écran à chaque frame.
+      if (!litBaseSceneReady || animationClock - lastLightingUpdate >= 1000) {
+        rebuildLitBaseScene(hour);
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        ctx.drawImage(baseSceneCanvas, 0, 0);
+      }
 
       const celestials = getCelestials(hour);
       drawAnimatedOcean(hour);
@@ -1356,74 +1097,61 @@
       for (const celestial of celestials) drawWaterReflection(celestial);
       for (const celestial of celestials) drawCelestialSystem(celestial);
       restoreForegroundLayers();
-
-      // Les informations d'interface n'ont pas besoin d'être recalculées à
-      // 60 i/s. Les limiter évite de relancer continuellement les transitions
-      // CSS pendant que le canvas est présenté par le compositeur.
-      const uiNow = performance.now();
-      if (uiNow - lastUiUpdateTime >= 250) {
-        document.documentElement.style.setProperty('--accent', accent);
-        periodLabel.textContent = getPeriodName(hour);
-        clockLabel.textContent = label;
-        celestialStateLabel.textContent = describeCelestial(hour, celestials);
-        lastUiUpdateTime = uiNow;
-      }
     }
 
     function frame(now) {
-      animationClock = now;
-      previousTime = now;
-      // La vidéo source est en 24 i/s. L'ancien échantillonnage forcé à 30 i/s
-      // produisait une cadence 4:5 irrégulière : certaines frames restaient
-      // affichées une fois, d'autres deux, ce qui ressemblait à un flash.
-      // Le rendu suit désormais directement le rafraîchissement du navigateur.
-      render();
-      lastRenderTime = now;
+      // Le MP4 source contient 24 images par seconde. Dessiner le pipeline
+      // complet à 60 i/s recalculait les mêmes frames plus de deux fois et
+      // surchargeait inutilement le processeur et le GPU.
+      if (nextFrameAt === 0) nextFrameAt = now;
+      if (now >= nextFrameAt) {
+        animationClock = now;
+        render();
+        nextFrameAt += targetFrameDuration;
+        if (now - nextFrameAt > targetFrameDuration) {
+          nextFrameAt = now + targetFrameDuration;
+        }
+      }
       requestAnimationFrame(frame);
     }
-
-    function togglePlay() {
-      playing = !playing;
-      playButton.textContent = playing ? 'Ⅱ' : '▶';
-      playButton.setAttribute('aria-label', playing ? 'Mettre en pause' : 'Reprendre');
-    }
-
-    playButton.textContent = playing ? 'Ⅱ' : '▶';
-    playButton.setAttribute('aria-label', playing ? 'Mettre en pause' : 'Reprendre');
-
-    playButton.addEventListener('click', togglePlay);
-    timeline.addEventListener('pointerdown', () => { draggingTimeline = true; });
-    timeline.addEventListener('input', () => { position = Number(timeline.value); render(); });
-    window.addEventListener('pointerup', () => { draggingTimeline = false; });
-    speed.addEventListener('input', () => {
-      cycleSeconds = Number(speed.value);
-      speedValue.textContent = `${cycleSeconds} s`;
-    });
-
-    document.querySelector('#methodButton').addEventListener('click', () => method.classList.add('open'));
-    document.querySelector('#closeMethod').addEventListener('click', () => method.classList.remove('open'));
-    method.addEventListener('click', event => { if (event.target === method) method.classList.remove('open'); });
 
     oceanVideo.addEventListener('canplay', () => {
       oceanVideoReady = true;
       syncOceanVideoPlayback();
     });
+    oceanVideoRelay.addEventListener('canplay', () => {
+      oceanVideoRelayReady = true;
+      // Ce lecteur doit rester en lecture lorsqu'il prépare le prochain
+      // raccord. L'ancien test le remettait en pause à chaque seconde
+      // réutilisation, d'où le gel exactement tous les deux cycles.
+      if (
+        oceanVideoRelay !== activeOceanVideo
+        && !oceanHandoffPending
+        && !oceanHandoffActive
+      ) {
+        oceanVideoRelay.pause();
+        oceanVideoRelay.currentTime = 0;
+      }
+    });
     oceanVideo.addEventListener('error', () => {
       oceanVideoReady = false;
       console.warn('La boucle vidéo de la mer est indisponible ; le rendu statique reste actif.');
     });
+    oceanVideoRelay.addEventListener('error', () => {
+      oceanVideoRelayReady = false;
+      console.warn('Le relais de boucle vidéo est indisponible ; le lecteur principal reste actif.');
+    });
+    const recoverEndedOceanVideo = event => {
+      if (event.currentTarget !== activeOceanVideo || oceanHandoffActive || oceanHandoffPending) return;
+      activeOceanVideo.currentTime = 0;
+      activeOceanVideo.play().catch(() => {});
+    };
+    oceanVideo.addEventListener('ended', recoverEndedOceanVideo);
+    oceanVideoRelay.addEventListener('ended', recoverEndedOceanVideo);
     reducedMotionQuery.addEventListener('change', syncOceanVideoPlayback);
     window.addEventListener('pointerdown', syncOceanVideoPlayback, { once: true });
     oceanVideo.load();
-
-    window.addEventListener('keydown', event => {
-      if (event.code === 'Space' && event.target.tagName !== 'INPUT') {
-        event.preventDefault();
-        togglePlay();
-      }
-      if (event.key === 'Escape') method.classList.remove('open');
-      if (event.key.toLowerCase() === 'c') shell.classList.toggle('cinematic');
-    });
+    oceanVideoRelay.load();
 
     Promise.all([
       ...states.map(async state => { assets[state.file] = await loadImage(state.file); }),
@@ -1469,14 +1197,17 @@
       );
       // Le PNG contient quelques pixels alpha isolés hors de la bande du
       // relief. Seule la silhouette réellement visible doit occulter l'astre.
-      assets.distantMountainsLayer = clipAlphaLayerToBand(results[10], 350, 525);
+      assets.distantMountainsLayer = clipAlphaLayerToBand(
+        results[10],
+        Math.round(H * 350 / DESIGN_H),
+        Math.round(H * 525 / DESIGN_H)
+      );
       assets.mountainOcclusion = combineAlphaLayers(
         assets.mountLayer,
         assets.distantMountainsLayer
       );
       assets.mountainSampler = localFileMode ? null : createAlphaSampler(assets.mountainOcclusion);
       loading.classList.add('done');
-      previousTime = performance.now();
       requestAnimationFrame(frame);
     }).catch(error => {
       const message = error instanceof Error ? error.message : String(error);
