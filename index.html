@@ -354,6 +354,7 @@
     const method = document.querySelector('#method');
 
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const localFileMode = window.location.protocol === 'file:';
     const oceanVideo = document.createElement('video');
     oceanVideo.src = 'assets/LOOP_EAU.mp4?v=original-cycle-restored-20260902';
     oceanVideo.loop = true;
@@ -452,8 +453,8 @@
         const image = new Image();
         image.decoding = 'async';
         image.onload = () => resolve(image);
-        image.onerror = reject;
-        image.src = `assets/${src}`;
+        image.onerror = () => reject(new Error(`Source visuelle introuvable ou illisible : assets/${src}`));
+        image.src = new URL(`assets/${src}`, document.baseURI).href;
       });
     }
 
@@ -564,7 +565,7 @@
     }
 
     function paintMaskedColor(mask, color, alpha, composite) {
-      if (alpha <= .001) return;
+      if (!mask || alpha <= .001) return;
       effectCtx.globalCompositeOperation = 'source-over';
       effectCtx.clearRect(0, 0, W, H);
       effectCtx.fillStyle = color;
@@ -601,7 +602,7 @@
     }
 
     function paintDirectionalLight(mask, celestial) {
-      if (!celestial || celestial.visibility <= .001) return;
+      if (!mask || !celestial || celestial.visibility <= .001) return;
       effectCtx.globalCompositeOperation = 'source-over';
       effectCtx.clearRect(0, 0, W, H);
       const radius = celestial.kind === 'sun' ? W * .92 : W * .72;
@@ -1414,8 +1415,11 @@
       loadImage('layers/MONTAGNES.png'),
       loadImage('layers/PREMIER_PLAN.png')
     ]).then(results => {
-      assets.lightMask = createLuminanceMask(results[4], false);
-      assets.shadowMask = createLuminanceMask(results[5], true);
+      // Les pixels d'images locales ne peuvent pas être lus par getImageData
+      // depuis file:// (canvas « tainted »). Les masters restent utilisables
+      // directement ; les masques calculés sont réservés au mode HTTP/HTTPS.
+      assets.lightMask = localFileMode ? null : createLuminanceMask(results[4], false);
+      assets.shadowMask = localFileMode ? null : createLuminanceMask(results[5], true);
       assets.sun = results[6];
       assets.moon = results[7];
       assets.mountLayer = results[9];
@@ -1449,12 +1453,13 @@
         assets.mountLayer,
         assets.distantMountainsLayer
       );
-      assets.mountainSampler = createAlphaSampler(assets.mountainOcclusion);
+      assets.mountainSampler = localFileMode ? null : createAlphaSampler(assets.mountainOcclusion);
       loading.classList.add('done');
       previousTime = performance.now();
       requestAnimationFrame(frame);
     }).catch(error => {
-      loading.textContent = 'Impossible de charger les sources visuelles';
+      const message = error instanceof Error ? error.message : String(error);
+      loading.textContent = `Impossible de charger les sources visuelles — ${message}`;
       console.error(error);
     });
   </script>
