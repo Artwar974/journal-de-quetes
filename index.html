@@ -54,6 +54,27 @@
       box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 32px 90px rgba(0,0,0,.72);
     }
 
+    /* Les téléphones modernes sont plus longs que le ratio de la composition.
+       On remplit alors tout le viewport et on recadre doucement les côtés,
+       plutôt que de laisser une bande vide sous la scène. */
+    @media (max-width: 600px) and (orientation: portrait) {
+      html, body { min-height: 100vh; height: 100vh; min-height: 100dvh; height: 100dvh; }
+      .stage-shell {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100dvh;
+        box-shadow: none;
+      }
+      .stage-shell > canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+      }
+    }
+
     canvas {
       display: block;
       width: 100%;
