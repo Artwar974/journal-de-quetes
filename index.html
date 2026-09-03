@@ -10,12 +10,24 @@
       color-scheme: dark;
       --ink: #f8f1de;
       --accent: #ffd898;
+      --ambient-sky: #5c91b7;
+      --ambient-mid: #263f5a;
+      --ambient-ground: #07111d;
+      --safe-width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+      --safe-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    }
+
+    @supports (height: 100dvh) {
+      :root {
+        --safe-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      }
     }
 
     * { box-sizing: border-box; }
 
     html, body {
       width: 100%;
+      height: 100%;
       min-height: 100%;
       margin: 0;
       overflow: hidden;
@@ -28,52 +40,41 @@
       display: grid;
       place-items: center;
       isolation: isolate;
+      padding:
+        env(safe-area-inset-top, 0px)
+        env(safe-area-inset-right, 0px)
+        env(safe-area-inset-bottom, 0px)
+        env(safe-area-inset-left, 0px);
     }
 
     .ambient {
       position: fixed;
       inset: -20%;
-      z-index: -2;
+      z-index: 0;
+      pointer-events: none;
       background:
         radial-gradient(circle at 48% 38%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 42%),
-        linear-gradient(160deg, #11192f, #040711 62%);
+        linear-gradient(to bottom, var(--ambient-sky) 0 34%, var(--ambient-mid) 56%, var(--ambient-ground) 88%);
       transition: background 1.4s ease;
     }
 
     .stage-shell {
       position: relative;
-      width: min(100vw, calc(100vh * 720 / 1280));
-      height: min(100vh, calc(100vw * 1280 / 720));
+      width: min(var(--safe-width), calc(var(--safe-height) * 9 / 16));
+      height: min(var(--safe-height), calc(var(--safe-width) * 16 / 9));
       overflow: hidden;
       background: #11182c;
       box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 32px 90px rgba(0,0,0,.72);
-    }
-
-    /* Les téléphones modernes sont plus longs que le ratio de la composition.
-       On remplit alors tout le viewport et on recadre doucement les côtés,
-       plutôt que de laisser une bande vide sous la scène. */
-    @media (max-width: 600px) and (orientation: portrait) {
-      html, body { min-height: 100vh; height: 100vh; min-height: 100dvh; height: 100dvh; }
-      .stage-shell {
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        max-height: 100vh;
-        max-height: 100dvh;
-        box-shadow: none;
-      }
-      .stage-shell > canvas {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: center;
-      }
+      contain: layout paint size;
+      transform: translateZ(0);
+      z-index: 1;
     }
 
     canvas {
       display: block;
       width: 100%;
       height: 100%;
+      object-fit: contain;
     }
 
     .loading {
@@ -91,11 +92,173 @@
     .loading.done { opacity: 0; pointer-events: none; }
 
     @media (min-width: 840px) {
-      .stage-shell { border-radius: 22px; max-height: calc(100vh - 30px); }
+      .stage-shell { border-radius: 22px; }
+    }
+
+    @media (max-width: 839px) {
+      .stage-shell { box-shadow: none; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .ambient, .loading { transition: none; }
+    }
+  </style>
+  <style>
+    .journal-open {
+      position: fixed;
+      right: max(14px, env(safe-area-inset-right, 0px));
+      bottom: max(14px, env(safe-area-inset-bottom, 0px));
+      z-index: 10;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 46px;
+      padding: 0 16px;
+      border: 1px solid rgba(255, 232, 183, .42);
+      border-radius: 999px;
+      color: #fff5dc;
+      background: rgba(10, 17, 35, .78);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .32);
+      font: 700 14px/1 system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    .journal-open:focus-visible,
+    .journal-close:focus-visible,
+    .journal-tabs button:focus-visible {
+      outline: 3px solid rgba(255, 216, 152, .8);
+      outline-offset: 3px;
+    }
+    .journal-shell {
+      width: min(560px, calc(100vw - 24px));
+      height: min(760px, calc(100dvh - 24px));
+      max-width: none;
+      max-height: none;
+      margin: auto;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid rgba(255, 236, 198, .3);
+      border-radius: 24px;
+      color: #f8f1de;
+      background: rgba(10, 16, 33, .94);
+      box-shadow: 0 32px 100px rgba(0, 0, 0, .7);
+    }
+    .journal-shell::backdrop {
+      background: rgba(2, 5, 13, .58);
+      backdrop-filter: blur(5px);
+    }
+    .journal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, .09);
+    }
+    .journal-head p {
+      margin: 0 0 5px;
+      color: #ffd898;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .2em;
+    }
+    .journal-head h1 {
+      margin: 0;
+      font-size: clamp(20px, 5vw, 28px);
+      line-height: 1.05;
+    }
+    .journal-close {
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 50%;
+      color: inherit;
+      background: rgba(255, 255, 255, .06);
+      font: 300 30px/1 system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .journal-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+    }
+    .journal-tabs button {
+      min-width: 0;
+      min-height: 54px;
+      padding: 7px 4px;
+      border: 0;
+      border-radius: 14px;
+      color: rgba(248, 241, 222, .62);
+      background: transparent;
+      font: 650 11px/1.15 system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .journal-tabs button span {
+      display: block;
+      margin-top: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .journal-tabs button.is-active {
+      color: #fff7e4;
+      background: rgba(255, 216, 152, .14);
+    }
+    .journal-content {
+      height: calc(100% - 151px - env(safe-area-inset-top, 0px));
+      padding: 18px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+      overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .journal-section-title { margin: 0 0 5px; font-size: 19px; }
+    .journal-section-subtitle {
+      margin: 0 0 16px;
+      color: rgba(248, 241, 222, .58);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .journal-list { display: grid; gap: 9px; }
+    .journal-card,
+    .journal-empty {
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, .09);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .055);
+    }
+    .journal-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .journal-card-icon { font-size: 22px; }
+    .journal-card strong,
+    .journal-card small { display: block; }
+    .journal-card strong { line-height: 1.25; }
+    .journal-card small {
+      margin-top: 5px;
+      color: rgba(248, 241, 222, .58);
+      line-height: 1.35;
+    }
+    .journal-diary-text { white-space: pre-wrap; line-height: 1.6; }
+    @media (max-width: 600px) {
+      .journal-open span:last-child { display: none; }
+      .journal-open { width: 48px; padding: 0; justify-content: center; }
+      .journal-shell {
+        width: 100vw;
+        height: 100dvh;
+        border: 0;
+        border-radius: 0;
+      }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .journal-open,
+      .journal-shell { background: #0a1021; }
+      .journal-shell::backdrop { backdrop-filter: none; }
     }
   </style>
 </head>
@@ -106,6 +269,27 @@
     <div class="loading" id="loading">Préparation des états lumineux…</div>
   </main>
 
+  <button class="journal-open" id="journalOpen" type="button" aria-haspopup="dialog">
+    <span aria-hidden="true">📖</span><span>Journal</span>
+  </button>
+
+  <dialog class="journal-shell" id="journalDialog" aria-labelledby="journalTitle">
+    <div class="journal-head">
+      <div>
+        <p>ATHENA</p>
+        <h1 id="journalTitle">Journal de quêtes</h1>
+      </div>
+      <button class="journal-close" id="journalClose" type="button" aria-label="Fermer le journal">×</button>
+    </div>
+    <nav class="journal-tabs" aria-label="Sections du journal">
+      <button type="button" class="is-active" data-journal-tab="quests">⚔️ <span>Quêtes</span></button>
+      <button type="button" data-journal-tab="agenda">📅 <span>Agenda</span></button>
+      <button type="button" data-journal-tab="history">📜 <span>Historique</span></button>
+      <button type="button" data-journal-tab="diary">📔 <span>Carnet</span></button>
+    </nav>
+    <section class="journal-content" id="journalContent" aria-live="polite"></section>
+  </dialog>
+
   <script>
     // La vidéo source est en 720 × 1280. Travailler directement à cette
     // définition évite de suréchantillonner six canevas plein écran sans
@@ -115,6 +299,9 @@
     const DESIGN_W = 941;
     const DESIGN_H = 1672;
     const SCALE = W / DESIGN_W;
+    const MOUNT_FRAME_COUNT = 5;
+    const MOUNT_FRAME_MS = 140;
+    const MOUNT_CROP = { x: 120, y: 48, width: 600, height: 482 };
     const waterGeometry = {
       horizon: Math.round(H * 498 / DESIGN_H),
       bottom: Math.round(H * 1011 / DESIGN_H)
@@ -150,18 +337,16 @@
     foregroundSceneCanvas.width = W;
     foregroundSceneCanvas.height = H;
     const foregroundSceneCtx = foregroundSceneCanvas.getContext('2d');
-    const treeMotionCanvas = document.createElement('canvas');
-    treeMotionCanvas.width = W;
-    treeMotionCanvas.height = H;
-    const treeMotionCtx = treeMotionCanvas.getContext('2d');
-    const treeSourceCanvas = document.createElement('canvas');
-    treeSourceCanvas.width = W;
-    treeSourceCanvas.height = H;
-    const treeSourceCtx = treeSourceCanvas.getContext('2d');
-    const waterfallCanvas = document.createElement('canvas');
-    waterfallCanvas.width = W;
-    waterfallCanvas.height = H;
-    const waterfallCtx = waterfallCanvas.getContext('2d');
+    const animatedMountCanvas = document.createElement('canvas');
+    animatedMountCanvas.width = MOUNT_CROP.width;
+    animatedMountCanvas.height = MOUNT_CROP.height;
+    const animatedMountCtx = animatedMountCanvas.getContext('2d');
+    animatedMountCtx.imageSmoothingEnabled = true;
+    animatedMountCtx.imageSmoothingQuality = 'high';
+    const mountEffectCanvas = document.createElement('canvas');
+    mountEffectCanvas.width = MOUNT_CROP.width;
+    mountEffectCanvas.height = MOUNT_CROP.height;
+    const mountEffectCtx = mountEffectCanvas.getContext('2d');
     const waterDepthCanvas = document.createElement('canvas');
     waterDepthCanvas.width = W;
     waterDepthCanvas.height = WATER_H;
@@ -196,7 +381,10 @@
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const localFileMode = window.location.protocol === 'file:';
     const cloudVideo = document.createElement('video');
-    cloudVideo.src = 'assets/CLOUDS_KEYED_FLIPPED_SMOOTH.webm?v=painted-smooth-60fps-20260902';
+    const cloudVideoSupported = cloudVideo.canPlayType('video/webm; codecs="vp9"') !== '';
+    if (cloudVideoSupported) {
+      cloudVideo.src = 'assets/CLOUDS_KEYED_FLIPPED_SMOOTH.webm?v=painted-smooth-60fps-20260902';
+    }
     cloudVideo.loop = true;
     cloudVideo.muted = true;
     cloudVideo.playsInline = true;
@@ -209,6 +397,21 @@
     cloudVideo.setAttribute('aria-hidden', 'true');
     document.body.appendChild(cloudVideo);
     let cloudVideoReady = false;
+    let cloudFallbackReady = false;
+    let cloudFallbackRequested = false;
+    const cloudFallbackImage = new Image();
+    cloudFallbackImage.decoding = 'async';
+    cloudFallbackImage.onload = () => { cloudFallbackReady = true; };
+    cloudFallbackImage.onerror = () => {
+      cloudFallbackReady = false;
+      console.warn('La solution de secours animée des nuages est indisponible.');
+    };
+    function requestCloudFallback() {
+      if (cloudFallbackRequested) return;
+      cloudFallbackRequested = true;
+      cloudFallbackImage.src = 'assets/CLOUDS_KEYED_FLIPPED.webp?v=mobile-fallback-20260903';
+    }
+    if (!cloudVideoSupported) requestCloudFallback();
     const oceanVideo = document.createElement('video');
     oceanVideo.src = 'assets/LOOP_EAU.mp4?v=continuous-clock-whites-20260902';
     oceanVideo.loop = false;
@@ -270,10 +473,10 @@
     };
 
     const states = [
-      { name: 'Lever', file: 'MASTER_SUNRISE_LOCKED.png', skyFile: 'SKY_SUNRISE_CLEAN.png', hour: 6, accent: '#ffd59f', light: '#ffc991', lightPower: .055, shadowPower: .025, cloudOpacity: .98, cloudColor: '#e9acb0', cloudColorPower: .5 },
-      { name: 'Jour', file: 'MASTER_DAYLIGHT_LOCKED.png', skyFile: 'SKY_DAYLIGHT_CLEAN.png', hour: 12, accent: '#fff4ce', light: '#fff2cf', lightPower: .025, shadowPower: .012, cloudOpacity: 1, cloudColor: '#d9dfe8', cloudColorPower: .3 },
-      { name: 'Coucher', file: 'MASTER_SUNSET_LOCKED.png', skyFile: 'SKY_SUNSET_CLEAN.png', hour: 18, accent: '#ff9b6f', light: '#ff9b70', lightPower: .065, shadowPower: .042, cloudOpacity: 1, cloudColor: '#df9588', cloudColorPower: .54 },
-      { name: 'Nuit', file: 'MASTER_NIGHT_LOCKED.png', skyFile: 'SKY_NIGHT_CLEAN.png', hour: 0, accent: '#9eb7ff', light: '#9eb8ff', lightPower: .024, shadowPower: .07, cloudOpacity: .72, cloudColor: '#46519a', cloudColorPower: .76 }
+      { name: 'Lever', mountFrames: 'sunrise', file: 'MASTER_SUNRISE_LOCKED.png', skyFile: 'SKY_SUNRISE_CLEAN.png', hour: 6, accent: '#ffd59f', ambientSky: '#74688f', ambientMid: '#514b69', ambientGround: '#111927', light: '#ffd3aa', lightPower: .055, shadow: '#4d4668', shadowPower: .025, cloudOpacity: .98, cloudColor: '#fbd6be', cloudColorPower: .56, cloudContrast: 1.64, cloudBrightness: 1.44, cloudSaturation: .7, cloudTexturePower: .58, cloudHighlightPower: .24 },
+      { name: 'Jour', mountFrames: 'day', file: 'MASTER_DAYLIGHT_LOCKED.png', skyFile: 'SKY_DAYLIGHT_CLEAN.png', hour: 12, accent: '#fff4ce', ambientSky: '#5c91b7', ambientMid: '#365f7b', ambientGround: '#071c28', light: '#fff4dc', lightPower: .025, shadow: '#445468', shadowPower: .012, cloudOpacity: 1, cloudColor: '#e5e6e8', cloudColorPower: .44, cloudContrast: 1.6, cloudBrightness: 1.44, cloudSaturation: .58, cloudTexturePower: .5, cloudHighlightPower: .28 },
+      { name: 'Coucher', mountFrames: 'sunset', file: 'MASTER_SUNSET_LOCKED.png', skyFile: 'SKY_SUNSET_CLEAN.png', hour: 18, accent: '#ff9b6f', ambientSky: '#695977', ambientMid: '#4c405a', ambientGround: '#101a27', light: '#ffad7c', lightPower: .065, shadow: '#533a5d', shadowPower: .042, cloudOpacity: 1, cloudColor: '#fec29e', cloudColorPower: .64, cloudContrast: 1.68, cloudBrightness: 1.42, cloudSaturation: .76, cloudTexturePower: .56, cloudHighlightPower: .25 },
+      { name: 'Nuit', mountFrames: 'night', file: 'MASTER_NIGHT_LOCKED.png', skyFile: 'SKY_NIGHT_CLEAN.png', hour: 0, accent: '#9eb7ff', ambientSky: '#0b1947', ambientMid: '#071437', ambientGround: '#020715', light: '#8498e1', lightPower: .024, shadow: '#07152f', shadowPower: .07, cloudOpacity: .82, cloudColor: '#616cb8', cloudColorPower: .82, cloudContrast: 1.54, cloudBrightness: 1.24, cloudSaturation: .58, cloudTexturePower: .62, cloudHighlightPower: .18 }
     ];
 
     // Horaires par défaut du prototype. Cette configuration est volontairement
@@ -315,6 +518,8 @@
     let waterDepthReady = false;
     let lastSkyBackdropUpdate = -Infinity;
     let skyBackdropReady = false;
+    let renderLoopActive = false;
+    let renderFrameRequest = 0;
     const targetFrameDuration = 1000 / 24;
     const stabilizedCelestialPositions = { sun: null, moon: null };
     const skyStars = Array.from({ length: 300 }, (_, index) => ({
@@ -336,39 +541,6 @@
       power: mix(.42, 1, seededNoise(index, 619)),
       width: mix(.65, 1.25, seededNoise(index, 631))
     }));
-
-    // Zones très resserrées autour des arbres déjà peints dans les calques.
-    // Le décor n'est jamais effacé : seuls les pixels intérieurs à ces formes
-    // sont ré-échantillonnés. Les contours, le sol et le pied des troncs restent
-    // donc parfaitement fixes, sans révéler l'image située derrière.
-    const animatedTreeRegions = [
-      // Pins parasols du premier plan et des falaises latérales.
-      { kind: 'umbrella', cx: 94,  cy: 562, rx: 24, ry: 12, bottom: 606, amp: 1.65, speed: .54, phase: .3 },
-      { kind: 'umbrella', cx: 192, cy: 649, rx: 18, ry: 10, bottom: 687, amp: 1.35, speed: .61, phase: 2.1 },
-      { kind: 'umbrella', cx: 675, cy: 428, rx: 22, ry: 12, bottom: 472, amp: 1.45, speed: .49, phase: 4.0 },
-      { kind: 'umbrella', cx: 577, cy: 557, rx: 20, ry: 11, bottom: 599, amp: 1.55, speed: .57, phase: 5.3 },
-
-      // Cyprès du calque PREMIER_PLAN uniquement. Aucun masque n'est conservé
-      // sur l'Olympe : les coordonnées ci-dessous ciblent les arbres latéraux,
-      // ceux du rivage et les grandes silhouettes qui encadrent le bas.
-      { kind: 'cypress', cx: 42,  top: 505, bottom: 612, halfWidth: 12, amp: 2.8, speed: .42, phase: .7 },
-      { kind: 'cypress', cx: 22,  top: 552, bottom: 612, halfWidth: 9,  amp: 2.2, speed: .49, phase: 2.4 },
-      { kind: 'cypress', cx: 716, top: 430, bottom: 482, halfWidth: 7,  amp: 1.8, speed: .52, phase: 3.7 },
-      { kind: 'cypress', cx: 651, top: 552, bottom: 688, halfWidth: 15, amp: 3.0, speed: .45, phase: 4.1 },
-      { kind: 'cypress', cx: 706, top: 539, bottom: 705, halfWidth: 15, amp: 3.2, speed: .40, phase: 1.6 },
-      { kind: 'cypress', cx: 45,  top: 683, bottom: 776, halfWidth: 11, amp: 2.5, speed: .46, phase: 5.5 },
-      { kind: 'cypress', cx: 470, top: 716, bottom: 786, halfWidth: 8,  amp: 2.0, speed: .51, phase: 3.3 },
-      { kind: 'cypress', cx: 528, top: 727, bottom: 795, halfWidth: 8,  amp: 2.1, speed: .47, phase: 5.0 },
-      { kind: 'cypress', cx: 622, top: 738, bottom: 804, halfWidth: 9,  amp: 2.2, speed: .44, phase: 2.1 },
-      { kind: 'cypress', cx: 23,  top: 915, bottom: 1279, halfWidth: 48, amp: 4.8, speed: .31, phase: .4 },
-      { kind: 'cypress', cx: 61,  top: 984, bottom: 1279, halfWidth: 40, amp: 4.3, speed: .35, phase: 2.8 },
-      { kind: 'cypress', cx: 96,  top: 1170, bottom: 1279, halfWidth: 17, amp: 2.8, speed: .41, phase: 5.7 },
-      { kind: 'cypress', cx: 698, top: 1040, bottom: 1279, halfWidth: 43, amp: 4.3, speed: .33, phase: 4.6 },
-      { kind: 'cypress', cx: 661, top: 1097, bottom: 1279, halfWidth: 35, amp: 3.8, speed: .37, phase: 1.3 },
-      { kind: 'cypress', cx: 632, top: 1200, bottom: 1279, halfWidth: 18, amp: 2.6, speed: .43, phase: 3.9 }
-    ];
-    const umbrellaTreeRegions = animatedTreeRegions.filter(region => region.kind === 'umbrella');
-    const cypressTreeRegions = animatedTreeRegions.filter(region => region.kind === 'cypress');
 
     function loadImage(src) {
       return new Promise((resolve, reject) => {
@@ -400,10 +572,47 @@
       return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
     }
 
+    function srgbToLinear(value) {
+      value /= 255;
+      return value <= .04045 ? value / 12.92 : Math.pow((value + .055) / 1.055, 2.4);
+    }
+
+    function linearToSrgb(value) {
+      value = clamp(value, 0, 1);
+      const encoded = value <= .0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - .055;
+      return Math.round(clamp(encoded, 0, 1) * 255);
+    }
+
+    function rgbToOklab(rgb) {
+      const r = srgbToLinear(rgb[0]);
+      const g = srgbToLinear(rgb[1]);
+      const b = srgbToLinear(rgb[2]);
+      const l = Math.cbrt(.4122214708 * r + .5363325363 * g + .0514459929 * b);
+      const m = Math.cbrt(.2119034982 * r + .6806995451 * g + .1073969566 * b);
+      const s = Math.cbrt(.0883024619 * r + .2817188376 * g + .6299787005 * b);
+      return [
+        .2104542553 * l + .793617785 * m - .0040720468 * s,
+        1.9779984951 * l - 2.428592205 * m + .4505937099 * s,
+        .0259040371 * l + .7827717662 * m - .808675766 * s
+      ];
+    }
+
+    function oklabToRgb(lab) {
+      const l = Math.pow(lab[0] + .3963377774 * lab[1] + .2158037573 * lab[2], 3);
+      const m = Math.pow(lab[0] - .1055613458 * lab[1] - .0638541728 * lab[2], 3);
+      const s = Math.pow(lab[0] - .0894841775 * lab[1] - 1.291485548 * lab[2], 3);
+      return [
+        linearToSrgb(4.0767416621 * l - 3.3077115913 * m + .2309699292 * s),
+        linearToSrgb(-1.2684380046 * l + 2.6097574011 * m - .3413193965 * s),
+        linearToSrgb(-.0041960863 * l - .7034186147 * m + 1.707614701 * s)
+      ];
+    }
+
     function mixColor(a, b, t) {
-      const ca = hexToRgb(a);
-      const cb = hexToRgb(b);
-      return `rgb(${Math.round(mix(ca[0], cb[0], t))} ${Math.round(mix(ca[1], cb[1], t))} ${Math.round(mix(ca[2], cb[2], t))})`;
+      const ca = rgbToOklab(hexToRgb(a));
+      const cb = rgbToOklab(hexToRgb(b));
+      const mixed = oklabToRgb(ca.map((channel, index) => mix(channel, cb[index], t)));
+      return `rgb(${mixed[0]} ${mixed[1]} ${mixed[2]})`;
     }
 
     function createLuminanceMask(image, invert = false) {
@@ -442,6 +651,15 @@
       combinedCtx.globalCompositeOperation = 'source-over';
       for (const image of images) combinedCtx.drawImage(image, 0, 0, W, H);
       return combined;
+    }
+
+    function createAnimatedMountMask(image) {
+      const mask = document.createElement('canvas');
+      mask.width = W;
+      mask.height = H;
+      const maskCtx = mask.getContext('2d');
+      maskCtx.drawImage(image, MOUNT_CROP.x, MOUNT_CROP.y);
+      return mask;
     }
 
     function excludeMaskFromLayer(layer, excludedMask) {
@@ -501,173 +719,20 @@
       ctx.restore();
     }
 
-    function traceUmbrellaTreeShape(target, region) {
-      target.beginPath();
-      target.moveTo(region.cx + region.rx + 2, region.cy);
-      target.ellipse(region.cx, region.cy, region.rx + 2, region.ry * .82 + 2, 0, 0, Math.PI * 2);
-      target.moveTo(region.cx + 1, region.cy + region.ry * .1);
-      target.ellipse(
-        region.cx - region.rx * .5,
-        region.cy + region.ry * .12,
-        region.rx * .52 + 1,
-        region.ry * .68 + 1,
-        0, 0, Math.PI * 2
-      );
-      target.moveTo(region.cx + region.rx + 1, region.cy + region.ry * .12);
-      target.ellipse(
-        region.cx + region.rx * .5,
-        region.cy + region.ry * .12,
-        region.rx * .52 + 1,
-        region.ry * .68 + 1,
-        0, 0, Math.PI * 2
-      );
-      // Tronc et départ des branches, avec une base étroite pour ne pas
-      // découper le sol de la falaise autour de l'arbre.
-      target.moveTo(region.cx - 2.2, region.cy + region.ry * .22);
-      target.lineTo(region.cx + 2.2, region.cy + region.ry * .22);
-      target.lineTo(region.cx + 2.8, region.bottom - 2);
-      target.lineTo(region.cx - 2.8, region.bottom - 2);
-      target.closePath();
-    }
-
-    function createUmbrellaTreeMask() {
-      const mask = document.createElement('canvas');
-      mask.width = W;
-      mask.height = H;
-      const maskCtx = mask.getContext('2d');
-      maskCtx.fillStyle = '#fff';
-      for (const region of umbrellaTreeRegions) {
-        traceUmbrellaTreeShape(maskCtx, region);
-        maskCtx.fill();
-      }
-      return mask;
-    }
-
-    function traceTreeInterior(region) {
-      treeMotionCtx.beginPath();
-      if (region.kind === 'umbrella') {
-        // Plusieurs volumes réunis en une seule masse, volontairement plus
-        // petite que le houppier peint : aucun pixel voisin n'est inclus.
-        treeMotionCtx.moveTo(region.cx + region.rx, region.cy);
-        treeMotionCtx.ellipse(region.cx, region.cy, region.rx, region.ry * .72, 0, 0, Math.PI * 2);
-        treeMotionCtx.moveTo(region.cx, region.cy + region.ry * .08);
-        treeMotionCtx.ellipse(
-          region.cx - region.rx * .48,
-          region.cy + region.ry * .08,
-          region.rx * .48,
-          region.ry * .58,
-          0, 0, Math.PI * 2
-        );
-        treeMotionCtx.moveTo(region.cx + region.rx * .96, region.cy + region.ry * .08);
-        treeMotionCtx.ellipse(
-          region.cx + region.rx * .48,
-          region.cy + region.ry * .08,
-          region.rx * .48,
-          region.ry * .58,
-          0, 0, Math.PI * 2
-        );
-      } else {
-        const innerWidth = region.halfWidth * .72;
-        treeMotionCtx.moveTo(region.cx, region.top + 3);
-        treeMotionCtx.lineTo(region.cx + innerWidth, region.bottom - 7);
-        treeMotionCtx.lineTo(region.cx + innerWidth * .34, region.bottom - 3);
-        treeMotionCtx.lineTo(region.cx - innerWidth * .34, region.bottom - 3);
-        treeMotionCtx.lineTo(region.cx - innerWidth, region.bottom - 7);
-        treeMotionCtx.closePath();
-      }
-    }
-
-    function redrawTreeInterior(region, seconds) {
-      const top = region.kind === 'umbrella'
-        ? Math.floor(region.cy - region.ry * .68)
-        : region.top + 3;
-      const bottom = region.kind === 'umbrella'
-        ? Math.ceil(region.cy + region.ry * .56)
-        : region.bottom - 3;
-      const left = region.kind === 'umbrella'
-        ? Math.floor(region.cx - region.rx - 3)
-        : Math.floor(region.cx - region.halfWidth - 3);
-      const width = region.kind === 'umbrella'
-        ? Math.ceil(region.rx * 2 + 6)
-        : Math.ceil(region.halfWidth * 2 + 6);
-      const height = Math.max(1, bottom - top);
-
-      treeMotionCtx.save();
-      traceTreeInterior(region);
-      treeMotionCtx.clip();
-      // Les pixels déplacés remplacent ceux de l'arbre fixe dans cette zone.
-      // Avec source-over, les deux positions restaient visibles aux endroits
-      // semi-transparents et donnaient l'impression d'un arbre dédoublé.
-      treeMotionCtx.globalCompositeOperation = 'copy';
-
-      // Plusieurs ondes voyagent simultanément dans la hauteur de l'arbre.
-      // Elles sont déphasées et ne s'immobilisent jamais toutes ensemble : le
-      // mouvement reste continu, sans pause perceptible en bout de balancement.
-      const stripHeight = 3;
-      for (let y = top; y < bottom; y += stripHeight) {
-        const heightT = clamp((bottom - y) / height);
-        const anchored = smootherStep(heightT);
-        const mainWave = Math.sin(seconds * region.speed * 1.55 + region.phase + y * .105) * .58;
-        const crossWave = Math.sin(seconds * region.speed * 2.27 + region.phase * 1.73 - y * .071) * .29;
-        const leafWave = Math.sin(seconds * region.speed * 3.41 + region.phase * .63 + y * .163) * .13;
-        const motionWave = mainWave + crossWave + leafWave;
-        const shift = motionWave * region.amp * 2.8 * anchored;
-        treeMotionCtx.drawImage(
-          foregroundSceneCanvas,
-          left, y, width, stripHeight,
-          left + shift, y, width, stripHeight
-        );
-
-        // Une variation de valeur accompagne la déformation. Elle révèle le
-        // passage du vent dans les aplats très sombres sans modifier leur
-        // couleur générale ni sortir de la silhouette protégée.
-        const valueWave = Math.sin(seconds * region.speed * 2.05 + region.phase * 1.31 + y * .145);
-        treeMotionCtx.globalCompositeOperation = 'soft-light';
-        treeMotionCtx.fillStyle = valueWave >= 0
-          ? `rgba(214, 226, 211, ${valueWave * .16 * anchored})`
-          : `rgba(10, 18, 28, ${-valueWave * .13 * anchored})`;
-        treeMotionCtx.fillRect(left, y, width, stripHeight);
-        treeMotionCtx.globalCompositeOperation = 'copy';
-      }
-      treeMotionCtx.restore();
-    }
-
-    function buildTreeMotionLayer() {
-      treeMotionCtx.globalCompositeOperation = 'source-over';
-      treeMotionCtx.globalAlpha = 1;
-      treeMotionCtx.clearRect(0, 0, W, H);
-      treeMotionCtx.drawImage(foregroundSceneCanvas, 0, 0);
-
-      const seconds = animationClock / 1000;
-      for (const region of cypressTreeRegions) redrawTreeInterior(region, seconds);
-    }
-
-    function drawAnimatedUmbrellaTrees() {
-      const seconds = animationClock / 1000;
-      for (const region of umbrellaTreeRegions) {
-        const left = Math.floor(region.cx - region.rx - 5);
-        const top = Math.floor(region.cy - region.ry - 4);
-        const width = Math.ceil(region.rx * 2 + 10);
-        const height = Math.ceil(region.bottom - top + 2);
-        const primary = Math.sin(seconds * region.speed * 1.72 + region.phase) * .09;
-        const secondary = Math.sin(seconds * region.speed * 2.63 + region.phase * 1.47) * .035;
-        const angle = primary + secondary;
-        const breathe = 1 + Math.sin(seconds * region.speed * 2.18 + region.phase * .81) * .04;
-
-        ctx.save();
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = 1;
-        ctx.translate(region.cx, region.bottom - 2);
-        ctx.rotate(angle);
-        ctx.scale(breathe, 1);
-        ctx.translate(-region.cx, -(region.bottom - 2));
-        ctx.drawImage(
-          treeSourceCanvas,
-          left, top, width, height,
-          left, top, width, height
-        );
-        ctx.restore();
-      }
+    function paintMountMaskedColor(mask, color, alpha, composite) {
+      if (!mask || alpha <= .001) return;
+      mountEffectCtx.globalCompositeOperation = 'source-over';
+      mountEffectCtx.globalAlpha = 1;
+      mountEffectCtx.clearRect(0, 0, MOUNT_CROP.width, MOUNT_CROP.height);
+      mountEffectCtx.fillStyle = color;
+      mountEffectCtx.fillRect(0, 0, MOUNT_CROP.width, MOUNT_CROP.height);
+      mountEffectCtx.globalCompositeOperation = 'destination-in';
+      mountEffectCtx.drawImage(mask, 0, 0);
+      animatedMountCtx.save();
+      animatedMountCtx.globalAlpha = alpha;
+      animatedMountCtx.globalCompositeOperation = composite;
+      animatedMountCtx.drawImage(mountEffectCanvas, 0, 0);
+      animatedMountCtx.restore();
     }
 
     function captureLitBaseScene() {
@@ -686,25 +751,73 @@
       foregroundSceneCtx.drawImage(assets.sceneForegroundOcclusion, 0, 0, W, H);
       foregroundSceneCtx.globalCompositeOperation = 'source-over';
 
-      // Source colorisée des arbres séparés. Le masque alpha du premier plan
-      // élimine tout pixel de mer éventuellement compris dans les ellipses.
-      treeSourceCtx.globalCompositeOperation = 'source-over';
-      treeSourceCtx.globalAlpha = 1;
-      treeSourceCtx.clearRect(0, 0, W, H);
-      treeSourceCtx.drawImage(baseSceneCanvas, 0, 0);
-      treeSourceCtx.globalCompositeOperation = 'destination-in';
-      treeSourceCtx.drawImage(assets.foregroundLayer, 0, 0, W, H);
-      treeSourceCtx.drawImage(assets.umbrellaTreeMask, 0, 0, W, H);
-      treeSourceCtx.globalCompositeOperation = 'source-over';
     }
 
     function restoreForegroundLayers() {
-      buildTreeMotionLayer();
       ctx.save();
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
-      ctx.drawImage(treeMotionCanvas, 0, 0);
-      drawAnimatedUmbrellaTrees();
+      // Le premier plan d'origine reste entier et parfaitement fixe.
+      ctx.drawImage(foregroundSceneCanvas, 0, 0);
+      ctx.restore();
+    }
+
+    function drawAnimatedMount(hour) {
+      if (!assets.originalMountFrames || !assets.animatedMountBases || !assets.animatedMountFrames) return;
+      const lighting = getTemporalLightingState(hour);
+      const { current, next, easedT } = lighting;
+      const framePosition = reducedMotionQuery.matches
+        ? 0
+        : (animationClock / MOUNT_FRAME_MS) % MOUNT_FRAME_COUNT;
+      const frameIndex = Math.floor(framePosition);
+      const nextFrameIndex = (frameIndex + 1) % MOUNT_FRAME_COUNT;
+      const frameBlend = smootherStep(framePosition - frameIndex);
+
+      animatedMountCtx.globalCompositeOperation = 'source-over';
+      animatedMountCtx.globalAlpha = 1;
+      animatedMountCtx.filter = 'none';
+      animatedMountCtx.clearRect(0, 0, MOUNT_CROP.width, MOUNT_CROP.height);
+
+      const drawStaticState = (collection, state, stateOpacity) => {
+        const image = collection[state.mountFrames];
+        if (!image || stateOpacity <= .001) return;
+        animatedMountCtx.globalAlpha = stateOpacity;
+        animatedMountCtx.drawImage(image, 0, 0);
+      };
+
+      const drawWaterfallState = (state, stateOpacity) => {
+        const frames = assets.animatedMountFrames[state.mountFrames];
+        if (!frames || stateOpacity <= .001) return;
+        animatedMountCtx.globalAlpha = stateOpacity * (1 - frameBlend);
+        animatedMountCtx.drawImage(frames[frameIndex], 0, 0);
+        animatedMountCtx.globalAlpha = stateOpacity * frameBlend;
+        animatedMountCtx.drawImage(frames[nextFrameIndex], 0, 0);
+      };
+
+      // Le MONT d'origine reste en dessous du nouveau flanc. Le rocher du GIF
+      // est ensuite dessiné depuis une image fixe : seuls les pixels de l'eau
+      // changent de frame, ce qui élimine le scintillement de toute la montagne.
+      drawStaticState(assets.originalMountFrames, current, 1 - easedT);
+      drawStaticState(assets.originalMountFrames, next, easedT);
+      drawStaticState(assets.animatedMountBases, current, 1 - easedT);
+      drawStaticState(assets.animatedMountBases, next, easedT);
+
+      // Les cinq images d'eau sont pilotées par l'horloge de la scène. Le fond
+      // fixe reste visible sous l'interpolation, y compris au raccord 5 -> 1.
+      drawWaterfallState(current, 1 - easedT);
+      drawWaterfallState(next, easedT);
+      animatedMountCtx.globalAlpha = 1;
+
+      // Le mont animé est posé après le master éclairé : ses propres masques
+      // restaurent donc la même réponse lumière/ombre, sans recolorer l'eau à
+      // part ni modifier les images de l'animation.
+      paintMountMaskedColor(assets.mountLightMask, lighting.lightColor, lighting.lightPower, 'screen');
+      paintMountMaskedColor(assets.mountShadowMask, lighting.shadowColor, lighting.shadowPower, 'multiply');
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.drawImage(animatedMountCanvas, MOUNT_CROP.x, MOUNT_CROP.y);
       ctx.restore();
     }
 
@@ -734,13 +847,15 @@
 
     function syncOceanVideoPlayback() {
       if (!oceanVideoReady) return;
-      if (reducedMotionQuery.matches) {
+      if (reducedMotionQuery.matches || document.hidden) {
         activeOceanVideo.pause();
         relayOceanVideo.pause();
-        activeOceanVideo.currentTime = 0;
-        relayOceanVideo.currentTime = 0;
-        oceanHandoffActive = false;
-        oceanHandoffPending = false;
+        if (reducedMotionQuery.matches) {
+          activeOceanVideo.currentTime = 0;
+          relayOceanVideo.currentTime = 0;
+          oceanHandoffActive = false;
+          oceanHandoffPending = false;
+        }
         return;
       }
       activeOceanVideo.play().catch(() => {});
@@ -845,10 +960,8 @@
       if (!skyBackdropReady || animationClock - lastSkyBackdropUpdate >= 1000) {
         rebuildSkyBackdrop(hour);
       }
-      const { current, next, easedT } = getVisualBlend(hour);
-      const cloudOpacity = mix(current.cloudOpacity, next.cloudOpacity, easedT);
-      const cloudColor = mixColor(current.cloudColor, next.cloudColor, easedT);
-      const cloudColorPower = mix(current.cloudColorPower, next.cloudColorPower, easedT);
+      const lighting = getTemporalLightingState(hour);
+      const { cloudOpacity, cloudColor, cloudColorPower } = lighting;
       const { night } = waterPalette(hour);
 
       skyCtx.globalCompositeOperation = 'source-over';
@@ -861,11 +974,14 @@
       cloudCtx.filter = 'none';
       cloudCtx.clearRect(0, 0, W, SKY_H);
 
-      if (cloudVideoReady && cloudVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      const cloudSource = cloudVideoReady && cloudVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+        ? cloudVideo
+        : (cloudFallbackReady ? cloudFallbackImage : null);
+      if (cloudSource) {
         cloudCtx.save();
         cloudCtx.globalAlpha = .8 * cloudOpacity;
-        cloudCtx.filter = `contrast(${mix(1.68, 1.56, night)}) brightness(${mix(1.48, 1.28, night)}) saturate(${mix(.68, .54, night)})`;
-        cloudCtx.drawImage(cloudVideo, 0, 0, W, SKY_H);
+        cloudCtx.filter = `contrast(${lighting.cloudContrast}) brightness(${lighting.cloudBrightness}) saturate(${lighting.cloudSaturation})`;
+        cloudCtx.drawImage(cloudSource, 0, 0, W, SKY_H);
         cloudCtx.restore();
 
         if (assets.cloudPaintTexture) {
@@ -889,7 +1005,7 @@
 
           cloudCtx.save();
           cloudCtx.globalCompositeOperation = 'multiply';
-          cloudCtx.globalAlpha = mix(.76, .7, night);
+          cloudCtx.globalAlpha = lighting.cloudTexturePower;
           cloudCtx.drawImage(cloudTextureCanvas, 0, 0);
           cloudCtx.restore();
 
@@ -897,9 +1013,9 @@
           // sans effacer les creux et les traces sombres du masque pictural.
           cloudCtx.save();
           cloudCtx.globalCompositeOperation = 'screen';
-          cloudCtx.globalAlpha = mix(.18, .14, night) * cloudOpacity;
+          cloudCtx.globalAlpha = lighting.cloudHighlightPower * cloudOpacity;
           cloudCtx.filter = `grayscale(1) contrast(${mix(1.5, 1.4, night)}) brightness(${mix(1.42, 1.26, night)})`;
-          cloudCtx.drawImage(cloudVideo, 0, 0, W, SKY_H);
+          cloudCtx.drawImage(cloudSource, 0, 0, W, SKY_H);
           cloudCtx.restore();
         }
 
@@ -964,7 +1080,7 @@
     }
 
     function drawAnimatedOcean(hour) {
-      const { night } = waterPalette(hour);
+      const { day, night } = waterPalette(hour);
 
       // Au raccord de boucle, le lecteur peut perdre son état « prêt » pendant
       // une ou deux images. On conserve alors la dernière frame valide au lieu
@@ -980,9 +1096,14 @@
         const relayBlend = relayDrawable ? requestedRelayBlend : 0;
         oceanVideoCtx.globalCompositeOperation = 'source-over';
         oceanVideoCtx.clearRect(0, 0, W, WATER_H);
-        // La nuit réduit progressivement la luminance de la vidéo sans toucher
-        // à ses images, sa cadence ni son raccord de boucle.
-        oceanVideoCtx.filter = `brightness(${mix(.78, .36, night)}) contrast(${mix(.88, .96, night)}) saturate(${mix(1.08, 1.25, night)})`;
+        // Le jour retrouve la profondeur et la saturation relevées dans
+        // l'image témoin, puis la nuit reprend progressivement son traitement.
+        // Ces filtres travaillent chaque frame : les reliefs mobiles de l'eau
+        // restent donc la source de toute la luminance et de tout le contraste.
+        const dayBrightness = mix(.78, .98, day);
+        const dayContrast = mix(.88, 1.18, day);
+        const daySaturation = mix(1.08, 1.4, day);
+        oceanVideoCtx.filter = `brightness(${mix(dayBrightness, .36, night)}) contrast(${mix(dayContrast, .96, night)}) saturate(${mix(daySaturation, 1.25, night)})`;
         oceanVideoCtx.globalAlpha = 1 - relayBlend;
         oceanVideoCtx.drawImage(
           activeOceanVideo,
@@ -1002,8 +1123,21 @@
         }
         oceanVideoCtx.globalAlpha = 1;
         oceanVideoCtx.filter = 'none';
+        if (day > .001) {
+          // Palette relevée dans télécharger.png. Le mode color remplace teinte
+          // et saturation, mais conserve les valeurs animées de chaque vague.
+          const dayWaterGrade = oceanVideoCtx.createLinearGradient(0, 0, 0, WATER_H);
+          dayWaterGrade.addColorStop(0, '#7094ac');
+          dayWaterGrade.addColorStop(.45, '#3f83b5');
+          dayWaterGrade.addColorStop(1, '#296fa4');
+          oceanVideoCtx.globalCompositeOperation = 'color';
+          oceanVideoCtx.globalAlpha = day;
+          oceanVideoCtx.fillStyle = dayWaterGrade;
+          oceanVideoCtx.fillRect(0, 0, W, WATER_H);
+          oceanVideoCtx.globalAlpha = 1;
+        }
         // Palette directement relevée dans LAND_NIGHT : le mode color conserve
-        // la luminance animée des vagues tout en remplaçant leur teinte de jour.
+        // également la luminance animée des vagues.
         if (night > .001) {
           const nightWaterGrade = oceanVideoCtx.createLinearGradient(0, 0, 0, WATER_H);
           nightWaterGrade.addColorStop(0, '#263586');
@@ -1038,7 +1172,7 @@
     }
 
     function drawWaterDepthGradient(hour) {
-      const { sunset, night } = waterPalette(hour);
+      const { day, sunset, night } = waterPalette(hour);
       if (!waterDepthReady || animationClock - lastWaterDepthUpdate >= 1000) {
         waterDepthCtx.globalCompositeOperation = 'source-over';
         waterDepthCtx.globalAlpha = 1;
@@ -1048,7 +1182,8 @@
         depthGradient.addColorStop(0, 'rgba(8,18,42,0)');
         depthGradient.addColorStop(.38, 'rgba(8,18,42,.04)');
         depthGradient.addColorStop(.72, 'rgba(5,13,34,.18)');
-        depthGradient.addColorStop(1, `rgba(3,9,27,${night ? .46 : sunset ? .38 : .32})`);
+        const depthPower = night ? .46 : sunset ? .38 : mix(.32, .22, day);
+        depthGradient.addColorStop(1, `rgba(3,9,27,${depthPower})`);
         waterDepthCtx.fillStyle = depthGradient;
         waterDepthCtx.fillRect(0, 0, W, WATER_H);
         waterDepthCtx.globalCompositeOperation = 'destination-in';
@@ -1124,15 +1259,14 @@
     }
 
     function waterPalette(hour) {
-      const sunset = hour >= 17.5 && hour <= 21.1
-        ? Math.sin(clamp((hour - 17.5) / 3.6) * Math.PI)
-        : 0;
-      const night = hour >= 20.75 || hour < 6
-        ? 1
-        : hour < 8 ? 1 - smoothRange(6, 8, hour)
-        : hour > 18.5 ? smoothRange(18.5, 20.75, hour)
-        : 0;
-      return { sunset, night };
+      const { current, next, easedT } = getVisualBlend(hour);
+      const stateWeight = stateName =>
+        (current.mountFrames === stateName ? 1 - easedT : 0)
+        + (next.mountFrames === stateName ? easedT : 0);
+      const day = stateWeight('day');
+      const sunset = stateWeight('sunset');
+      const night = stateWeight('night');
+      return { day, sunset, night };
     }
 
     function hoursSince(startHour, hour) {
@@ -1155,6 +1289,30 @@
         }
       }
       return { current: states[3], next: states[3], easedT: 0 };
+    }
+
+    function getTemporalLightingState(hour) {
+      const blend = getVisualBlend(hour);
+      const { current, next, easedT } = blend;
+      return {
+        ...blend,
+        accent: mixColor(current.accent, next.accent, easedT),
+        ambientSky: mixColor(current.ambientSky, next.ambientSky, easedT),
+        ambientMid: mixColor(current.ambientMid, next.ambientMid, easedT),
+        ambientGround: mixColor(current.ambientGround, next.ambientGround, easedT),
+        lightColor: mixColor(current.light, next.light, easedT),
+        lightPower: mix(current.lightPower, next.lightPower, easedT),
+        shadowColor: mixColor(current.shadow, next.shadow, easedT),
+        shadowPower: mix(current.shadowPower, next.shadowPower, easedT),
+        cloudOpacity: mix(current.cloudOpacity, next.cloudOpacity, easedT),
+        cloudColor: mixColor(current.cloudColor, next.cloudColor, easedT),
+        cloudColorPower: mix(current.cloudColorPower, next.cloudColorPower, easedT),
+        cloudContrast: mix(current.cloudContrast, next.cloudContrast, easedT),
+        cloudBrightness: mix(current.cloudBrightness, next.cloudBrightness, easedT),
+        cloudSaturation: mix(current.cloudSaturation, next.cloudSaturation, easedT),
+        cloudTexturePower: mix(current.cloudTexturePower, next.cloudTexturePower, easedT),
+        cloudHighlightPower: mix(current.cloudHighlightPower, next.cloudHighlightPower, easedT)
+      };
     }
 
     function orbit(t, startX, endX, horizonY, apexY) {
@@ -1186,14 +1344,13 @@
     function getCelestials(hour) {
       const celestials = [];
 
-      // La course déborde légèrement des deux côtés du cadre. Son arc plus
-      // bas et plus large évite l'effet de cloche tout en gardant le coucher
-      // pleinement visible sur la gauche.
+      // La course va de gauche à droite et déborde légèrement des deux côtés
+      // du cadre. Son arc bas et large évite l'effet de cloche.
       const sunElapsed = hoursSince(daylightSchedule.sunRise, hour);
       const sunDuration = daylightSchedule.sunSet - daylightSchedule.sunRise;
       if (sunElapsed <= sunDuration) {
         const t = sunElapsed / sunDuration;
-        const point = orbit(t, 1.08, -.08, .305, .085);
+        const point = orbit(t, -.08, 1.08, .305, .085);
         const fadeIn = smoothRange(0, .08, t);
         const fadeOut = 1 - smoothRange(.88, .98, t);
         const horizonFactor = Math.pow(Math.abs(t - .5) * 2, 1.4);
@@ -1219,7 +1376,7 @@
       const moonDuration = hoursSince(daylightSchedule.moonRise, daylightSchedule.moonSet);
       if (moonElapsed <= moonDuration) {
         const t = moonElapsed / moonDuration;
-        const point = orbit(t, 1.08, -.08, .295, .095);
+        const point = orbit(t, -.08, 1.08, .295, .095);
         const fadeIn = smoothRange(0, .08, t);
         const fadeOut = 1 - smoothRange(.88, .98, t);
         const altitude = Math.sin(Math.PI * t);
@@ -1546,12 +1703,16 @@
     }
 
     function getLocalHour() {
+      const forcedHourParam = new URLSearchParams(window.location.search).get('time');
+      const forcedHour = forcedHourParam === null ? NaN : Number(forcedHourParam);
+      if (Number.isFinite(forcedHour)) return ((forcedHour % 24) + 24) % 24;
       const now = new Date();
       return now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600 + now.getMilliseconds() / 3600000;
     }
 
     function rebuildLitBaseScene(hour) {
-      const { current, next, easedT } = getVisualBlend(hour);
+      const lighting = getTemporalLightingState(hour);
+      const { current, next, easedT } = lighting;
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
       ctx.drawImage(assets[current.file], 0, 0, W, H);
@@ -1559,15 +1720,13 @@
       ctx.drawImage(assets[next.file], 0, 0, W, H);
       ctx.globalAlpha = 1;
 
-      const accent = mixColor(current.accent, next.accent, easedT);
-      const lightColor = mixColor(current.light, next.light, easedT);
-      const lightPower = mix(current.lightPower, next.lightPower, easedT);
-      const shadowPower = mix(current.shadowPower, next.shadowPower, easedT);
-
-      paintMaskedColor(assets.lightMask, lightColor, lightPower, 'screen');
-      paintMaskedColor(assets.shadowMask, '#071027', shadowPower, 'multiply');
+      paintMaskedColor(assets.lightMask, lighting.lightColor, lighting.lightPower, 'screen');
+      paintMaskedColor(assets.shadowMask, lighting.shadowColor, lighting.shadowPower, 'multiply');
       captureLitBaseScene();
-      document.documentElement.style.setProperty('--accent', accent);
+      document.documentElement.style.setProperty('--accent', lighting.accent);
+      document.documentElement.style.setProperty('--ambient-sky', lighting.ambientSky);
+      document.documentElement.style.setProperty('--ambient-mid', lighting.ambientMid);
+      document.documentElement.style.setProperty('--ambient-ground', lighting.ambientGround);
       lastLightingUpdate = animationClock;
       litBaseSceneReady = true;
     }
@@ -1590,12 +1749,17 @@
       drawAnimatedOcean(hour);
       drawWaterDepthGradient(hour);
       drawWaterSparkles(hour);
+      drawAnimatedMount(hour);
       for (const celestial of celestials) paintDirectionalLight(assets.lightMask, celestial);
       for (const celestial of celestials) drawCelestialSystem(celestial);
       restoreForegroundLayers();
     }
 
     function frame(now) {
+      if (document.hidden) {
+        renderLoopActive = false;
+        return;
+      }
       // Le MP4 source contient 24 images par seconde. Dessiner le pipeline
       // complet à 60 i/s recalculait les mêmes frames plus de deux fois et
       // surchargeait inutilement le processeur et le GPU.
@@ -1608,7 +1772,14 @@
           nextFrameAt = now + targetFrameDuration;
         }
       }
-      requestAnimationFrame(frame);
+      renderFrameRequest = requestAnimationFrame(frame);
+    }
+
+    function startRenderLoop() {
+      if (renderLoopActive || document.hidden) return;
+      renderLoopActive = true;
+      nextFrameAt = 0;
+      renderFrameRequest = requestAnimationFrame(frame);
     }
 
     oceanVideo.addEventListener('canplay', () => {
@@ -1617,7 +1788,7 @@
     });
     const syncCloudVideoPlayback = () => {
       if (!cloudVideoReady) return;
-      if (reducedMotionQuery.matches) {
+      if (reducedMotionQuery.matches || document.hidden) {
         cloudVideo.pause();
         return;
       }
@@ -1631,7 +1802,8 @@
     });
     cloudVideo.addEventListener('error', () => {
       cloudVideoReady = false;
-      console.warn('La vidéo transparente des nuages est indisponible.');
+      requestCloudFallback();
+      console.warn('La vidéo transparente des nuages est indisponible ; utilisation du WebP animé.');
     });
     oceanVideoRelay.addEventListener('canplay', () => {
       oceanVideoRelayReady = true;
@@ -1664,9 +1836,19 @@
     oceanVideoRelay.addEventListener('ended', recoverEndedOceanVideo);
     reducedMotionQuery.addEventListener('change', syncOceanVideoPlayback);
     reducedMotionQuery.addEventListener('change', syncCloudVideoPlayback);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        cancelAnimationFrame(renderFrameRequest);
+        renderFrameRequest = 0;
+        renderLoopActive = false;
+      }
+      syncOceanVideoPlayback();
+      syncCloudVideoPlayback();
+      if (!document.hidden) startRenderLoop();
+    });
     window.addEventListener('pointerdown', syncOceanVideoPlayback, { once: true });
     window.addEventListener('pointerdown', syncCloudVideoPlayback, { once: true });
-    cloudVideo.load();
+    if (cloudVideoSupported) cloudVideo.load();
     oceanVideo.load();
     oceanVideoRelay.load();
 
@@ -1677,11 +1859,37 @@
       loadImage('SUN_SOURCE.png'),
       loadImage('MOON_MODEL.png'),
       loadImage('WATER_EFFECT_MASK.png'),
-      loadImage('layers/MONT.png'),
       loadImage('layers/MONTAGNES.png'),
       loadImage('layers/PREMIER_PLAN.png'),
       ...states.map(async state => { assets[state.skyFile] = await loadImage(state.skyFile); }),
-      loadImage('CLOUD_PAINT_TEXTURE_MASK.png').then(image => { assets.cloudPaintTexture = image; })
+      loadImage('CLOUD_PAINT_TEXTURE_MASK.png').then(image => { assets.cloudPaintTexture = image; }),
+      ...['sunrise', 'day', 'sunset', 'night'].map(state =>
+        loadImage(`cascade_frames/original-${state}.webp?v=mount-waterfall-contrast-v17`)
+          .then(image => {
+            assets.originalMountFrames ??= {};
+            assets.originalMountFrames[state] = image;
+          })
+      ),
+      ...['sunrise', 'day', 'sunset', 'night'].map(state =>
+        loadImage(`cascade_frames/base-${state}.webp?v=mount-waterfall-contrast-v17`)
+          .then(image => {
+            assets.animatedMountBases ??= {};
+            assets.animatedMountBases[state] = image;
+          })
+      ),
+      ...['sunrise', 'day', 'sunset', 'night'].flatMap(state =>
+        Array.from({ length: MOUNT_FRAME_COUNT }, (_, frameIndex) =>
+          loadImage(`cascade_frames/${state}-${frameIndex}.webp?v=mount-waterfall-contrast-v17`)
+            .then(image => {
+              assets.animatedMountFrames ??= { sunrise: [], day: [], sunset: [], night: [] };
+              assets.animatedMountFrames[state][frameIndex] = image;
+            })
+        )
+      ),
+      loadImage('cascade_frames/light-mask.webp?v=mount-waterfall-contrast-v17')
+        .then(image => { assets.mountLightMask = image; }),
+      loadImage('cascade_frames/shadow-mask.webp?v=mount-waterfall-contrast-v17')
+        .then(image => { assets.mountShadowMask = image; })
     ]).then(results => {
       // Les pixels d'images locales ne peuvent pas être lus par getImageData
       // depuis file:// (canvas « tainted »). Les masters restent utilisables
@@ -1690,16 +1898,9 @@
       assets.shadowMask = localFileMode ? null : createLuminanceMask(results[5], true);
       assets.sun = results[6];
       assets.moon = results[7];
-      assets.mountLayer = results[9];
-      assets.foregroundLayer = results[11];
-      assets.umbrellaTreeMask = createUmbrellaTreeMask();
-      // Les quatre pins parasols sont retirés du calque fixe. La mer animée
-      // peut ainsi reprendre leur ancienne place avant que leur silhouette
-      // mobile soit redessinée au premier plan.
-      const foregroundWithoutUmbrellaTrees = excludeMaskFromLayer(
-        assets.foregroundLayer,
-        assets.umbrellaTreeMask
-      );
+      assets.mountLayer = createAnimatedMountMask(assets.animatedMountBases.sunrise);
+      assets.foregroundLayer = results[10];
+      const activeForegroundLayer = assets.foregroundLayer;
       // Le masque marin d'origine est volontairement large et mord sur le
       // relief. On retranche l'Olympe AVANT de dessiner la vidéo ou les shaders,
       // de sorte qu'aucun effet d'eau ne soit jamais produit sur ce calque.
@@ -1709,23 +1910,20 @@
       );
       assets.waterMask = excludeMaskFromLayer(
         waterWithoutMount,
-        foregroundWithoutUmbrellaTrees
+        activeForegroundLayer
       );
       assets.waterEffectMask = assets.waterMask;
       const foregroundWithoutWater = excludeMaskFromLayer(
-        foregroundWithoutUmbrellaTrees,
+        activeForegroundLayer,
         assets.waterMask
       );
-      // L'Olympe reste toujours prioritaire : le masque d'eau, volontairement
-      // large pour couvrir l'océan, ne doit jamais retrancher sa silhouette.
-      assets.sceneForegroundOcclusion = combineAlphaLayers(
-        assets.mountLayer,
-        foregroundWithoutWater
-      );
+      // Le mont animé est dessiné séparément. Le premier plan statique ne doit
+      // pas redessiner l'ancien Olympe au-dessus de ses cascades.
+      assets.sceneForegroundOcclusion = foregroundWithoutWater;
       // Le PNG contient quelques pixels alpha isolés hors de la bande du
       // relief. Seule la silhouette réellement visible doit occulter l'astre.
       assets.distantMountainsLayer = clipAlphaLayerToBand(
-        results[10],
+        results[9],
         Math.round(H * 350 / DESIGN_H),
         Math.round(H * 525 / DESIGN_H)
       );
@@ -1740,12 +1938,13 @@
       // L'horloge de composition reste indépendante des callbacks du décodeur.
       // Certains moteurs cessent d'émettre ces callbacks après la relève entre
       // les deux lecteurs, ce qui arrêtait entièrement la mer après un cycle.
-      requestAnimationFrame(frame);
+      startRenderLoop();
     }).catch(error => {
       const message = error instanceof Error ? error.message : String(error);
       loading.textContent = `Impossible de charger les sources visuelles — ${message}`;
       console.error(error);
     });
   </script>
+  <script src="journal-shell.js?v=clean-shell-1"></script>
 </body>
 </html>
