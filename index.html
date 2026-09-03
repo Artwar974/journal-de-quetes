@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07101f">
+  <link rel="icon" href="data:,">
   <title>APP TDAH — Environnement ATHENA</title>
   <style>
     :root {
@@ -178,7 +179,7 @@
       .ambient, .loading { transition: none; }
     }
   </style>
-  <style>
+  <style id="journal-legacy-fallback" media="not all">
     .journal-open {
       position: fixed;
       right: max(14px, env(safe-area-inset-right, 0px));
@@ -336,6 +337,7 @@
       .journal-shell::backdrop { backdrop-filter: none; }
     }
   </style>
+  <link rel="stylesheet" href="journal-theme.css?v=athena-journal-premium-v6">
 </head>
 <body>
   <div class="ambient" aria-hidden="true"></div>
@@ -349,25 +351,43 @@
     </div>
   </main>
 
-  <button class="journal-open" id="journalOpen" type="button" aria-haspopup="dialog">
-    <span aria-hidden="true">📖</span><span>Journal</span>
+  <button class="journal-open" id="journalOpen" type="button" aria-haspopup="dialog" aria-label="Ouvrir le journal de quêtes">
+    <span aria-hidden="true">📖</span>
   </button>
 
-  <dialog class="journal-shell" id="journalDialog" aria-labelledby="journalTitle">
-    <div class="journal-head">
-      <div>
-        <p>ATHENA</p>
-        <h1 id="journalTitle">Journal de quêtes</h1>
-      </div>
-      <button class="journal-close" id="journalClose" type="button" aria-label="Fermer le journal">×</button>
+  <dialog class="journal-shell" id="journalDialog" aria-label="Journal de quêtes">
+    <div class="journal-layout">
+      <header class="journal-profile" aria-label="Progression du personnage">
+        <div class="journal-avatar" aria-hidden="true">🐸</div>
+        <div class="journal-profile-main">
+          <div class="journal-level-line">
+            <strong class="journal-level" id="journalLevel">NIV. 1</strong>
+            <span class="journal-mood" id="journalMood">Prêt</span>
+          </div>
+          <div class="journal-xp-track" aria-label="Progression d’expérience"><div class="journal-xp-fill" id="journalXpFill"></div></div>
+          <div class="journal-profile-foot">
+            <span class="journal-xp-label" id="journalXpLabel">0 / 100 XP</span>
+            <div class="journal-resources" aria-label="Ressources">
+              <span class="journal-resource" id="journalPotion">🧪 0</span>
+              <span class="journal-resource" id="journalCrystal">💎 0</span>
+              <span class="journal-resource" id="journalCoins">🪙 0</span>
+              <span class="journal-resource" id="journalGifts">🎁 0</span>
+            </div>
+          </div>
+        </div>
+        <div class="journal-medal" aria-hidden="true">🏅</div>
+      </header>
+
+      <section class="journal-content" id="journalContent" aria-live="polite"></section>
+
+      <nav class="journal-tabs" aria-label="Sections du journal">
+        <button type="button" class="is-active" data-journal-tab="quests"><b aria-hidden="true">⚔️</b><span>Quêtes</span></button>
+        <button type="button" data-journal-tab="agenda"><b aria-hidden="true">🗓️</b><span>Agenda</span></button>
+        <button type="button" data-journal-tab="history"><b aria-hidden="true">📜</b><span>Historique</span></button>
+        <button type="button" data-journal-tab="diary"><b aria-hidden="true">📔</b><span>Carnet</span></button>
+        <button type="button" id="journalClose" aria-label="Retour au camp"><b aria-hidden="true">🚪</b><span>Camp</span></button>
+      </nav>
     </div>
-    <nav class="journal-tabs" aria-label="Sections du journal">
-      <button type="button" class="is-active" data-journal-tab="quests">⚔️ <span>Quêtes</span></button>
-      <button type="button" data-journal-tab="agenda">📅 <span>Agenda</span></button>
-      <button type="button" data-journal-tab="history">📜 <span>Historique</span></button>
-      <button type="button" data-journal-tab="diary">📔 <span>Carnet</span></button>
-    </nav>
-    <section class="journal-content" id="journalContent" aria-live="polite"></section>
   </dialog>
 
   <script>
@@ -387,6 +407,13 @@
       bottom: Math.round(H * 1011 / DESIGN_H)
     };
     const WATER_H = waterGeometry.bottom - waterGeometry.horizon;
+    // L'alpha animé des nuages occupe les lignes 28 à 195 de la source 640 × 360.
+    // Le masque de matière reste donc à son échelle naturelle dans cette bande,
+    // au lieu d'être écrasé sur toute la hauteur du ciel.
+    const CLOUD_TEXTURE_BAND = {
+      y: Math.floor((28 / 360) * (waterGeometry.horizon + 1)),
+      height: Math.ceil(((195 - 28) / 360) * (waterGeometry.horizon + 1))
+    };
     const canvas = document.querySelector('#scene');
     // Le mode desynchronized autorise une présentation avant la fin du dessin
     // et provoquait du tearing perceptible comme un clignotement rapide.
@@ -1128,7 +1155,7 @@
           const texture = assets.cloudPaintTexture;
           // Étire le masque complet sur les dimensions exactes du ciel : toute
           // sa matière reste visible, sans recadrage vertical ni zone manquante.
-          cloudTextureCtx.drawImage(texture, 0, 0, W, SKY_H);
+          cloudTextureCtx.drawImage(texture, 0, CLOUD_TEXTURE_BAND.y, W, CLOUD_TEXTURE_BAND.height);
           // Le masque fourni est strictement découpé par les nuages. Le mode
           // multiply révèle surtout ses coups de brosse sur leurs valeurs
           // blanches et devient naturellement discret dans les ombres.
@@ -2007,7 +2034,7 @@
       loadImage('layers/MONTAGNES.png'),
       loadImage('layers/PREMIER_PLAN.png'),
       ...states.map(async state => { assets[state.skyFile] = await loadImage(state.skyFile); }),
-      loadImage('CLOUD_PAINT_TEXTURE_MASK.png').then(image => { assets.cloudPaintTexture = image; }),
+      loadImage('CLOUD_PAINT_TEXTURE_BAND.png').then(image => { assets.cloudPaintTexture = image; }),
       ...['sunrise', 'day', 'sunset', 'night'].map(state =>
         loadImage(`geometry_locked/cascade_frames/original-${state}.webp?v=water-integrity-v6`)
           .then(image => {
@@ -2090,6 +2117,6 @@
       console.error(error);
     });
   </script>
-  <script src="journal-shell.js?v=clean-shell-1"></script>
+  <script src="journal-shell.js?v=athena-journal-premium-v6"></script>
 </body>
 </html>
