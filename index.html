@@ -91,6 +91,81 @@
     }
     .loading.done { opacity: 0; pointer-events: none; }
 
+    .temporal-preview {
+      position: absolute;
+      top: max(12px, env(safe-area-inset-top, 0px));
+      left: 50%;
+      z-index: 9;
+      transform: translateX(-50%);
+      padding: 7px 11px;
+      border: 1px solid rgba(255, 239, 205, .36);
+      border-radius: 999px;
+      color: #fff8e8;
+      background: rgba(5, 10, 24, .58);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .24);
+      backdrop-filter: blur(8px);
+      font: 750 11px/1 system-ui, sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .temporal-preview[hidden] { display: none; }
+
+    .temporal-controls {
+      position: absolute;
+      left: 50%;
+      bottom: 72px;
+      z-index: 9;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      width: min(520px, calc(100% - 28px));
+      min-height: 52px;
+      padding: 7px 12px 7px 7px;
+      transform: translateX(-50%);
+      border: 1px solid rgba(255, 239, 205, .34);
+      border-radius: 18px;
+      background: rgba(5, 10, 24, .66);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .28);
+      backdrop-filter: blur(10px);
+    }
+
+    .temporal-controls[hidden] { display: none; }
+
+    .temporal-toggle {
+      display: inline-grid;
+      place-items: center;
+      min-width: 82px;
+      min-height: 38px;
+      padding: 0 11px;
+      border: 1px solid rgba(255, 239, 205, .3);
+      border-radius: 12px;
+      color: #fff8e8;
+      background: rgba(255, 255, 255, .08);
+      font: 750 12px/1 system-ui, sans-serif;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .temporal-toggle:focus-visible,
+    .temporal-timeline:focus-visible {
+      outline: 3px solid rgba(255, 216, 152, .86);
+      outline-offset: 3px;
+    }
+
+    .temporal-timeline {
+      width: 100%;
+      height: 38px;
+      margin: 0;
+      accent-color: #ffd898;
+      cursor: ew-resize;
+      touch-action: none;
+    }
+
     @media (min-width: 840px) {
       .stage-shell { border-radius: 22px; }
     }
@@ -267,6 +342,11 @@
   <main class="stage-shell" aria-label="Environnement ATHENA synchronisé avec l’heure locale">
     <canvas id="scene" width="720" height="1280"></canvas>
     <div class="loading" id="loading">Préparation des états lumineux…</div>
+    <div class="temporal-preview" id="temporalPreview" hidden></div>
+    <div class="temporal-controls" id="temporalControls" hidden>
+      <button class="temporal-toggle" id="temporalToggle" type="button" aria-pressed="false">⏸ Pause</button>
+      <input class="temporal-timeline" id="temporalTimeline" type="range" min="0" max="1439" step="1" value="330" aria-label="Heure simulée, de minuit à vingt-trois heures cinquante-neuf">
+    </div>
   </main>
 
   <button class="journal-open" id="journalOpen" type="button" aria-haspopup="dialog">
@@ -377,9 +457,59 @@
     skyBackdropCanvas.height = SKY_H;
     const skyBackdropCtx = skyBackdropCanvas.getContext('2d');
     const loading = document.querySelector('#loading');
+    const temporalPreview = document.querySelector('#temporalPreview');
+    const temporalControls = document.querySelector('#temporalControls');
+    const temporalToggle = document.querySelector('#temporalToggle');
+    const temporalTimeline = document.querySelector('#temporalTimeline');
 
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const localFileMode = window.location.protocol === 'file:';
+    const pageParameters = new URLSearchParams(window.location.search);
+    const temporalPreviewEnabled = pageParameters.get('timelapse') === '1';
+    const requestedPreviewDuration = Number(pageParameters.get('cycleSeconds'));
+    const temporalPreviewDuration = Number.isFinite(requestedPreviewDuration)
+      ? Math.min(180, Math.max(12, requestedPreviewDuration))
+      : 36;
+    const temporalPreviewStartHour = 5.5;
+    let temporalPreviewAnchorRealTime = performance.now();
+    let temporalPreviewAnchorHour = temporalPreviewStartHour;
+    let temporalPreviewPaused = false;
+    let temporalTimelineInteracting = false;
+
+    function getTemporalPreviewHour(now = performance.now()) {
+      if (temporalPreviewPaused) return temporalPreviewAnchorHour;
+      const elapsedSeconds = (now - temporalPreviewAnchorRealTime) / 1000;
+      return (temporalPreviewAnchorHour + elapsedSeconds * 24 / temporalPreviewDuration) % 24;
+    }
+
+    function syncTemporalToggle() {
+      temporalToggle.setAttribute('aria-pressed', String(temporalPreviewPaused));
+      temporalToggle.textContent = temporalPreviewPaused ? '▶ Reprendre' : '⏸ Pause';
+    }
+
+    if (temporalPreviewEnabled) {
+      temporalControls.hidden = false;
+      syncTemporalToggle();
+      temporalToggle.addEventListener('click', () => {
+        if (temporalPreviewPaused) {
+          temporalPreviewAnchorRealTime = performance.now();
+          temporalPreviewPaused = false;
+        } else {
+          temporalPreviewAnchorHour = getTemporalPreviewHour();
+          temporalPreviewPaused = true;
+        }
+        syncTemporalToggle();
+      });
+      temporalTimeline.addEventListener('pointerdown', () => { temporalTimelineInteracting = true; });
+      temporalTimeline.addEventListener('pointerup', () => { temporalTimelineInteracting = false; });
+      temporalTimeline.addEventListener('pointercancel', () => { temporalTimelineInteracting = false; });
+      temporalTimeline.addEventListener('change', () => { temporalTimelineInteracting = false; });
+      window.addEventListener('pointerup', () => { temporalTimelineInteracting = false; });
+      temporalTimeline.addEventListener('input', () => {
+        temporalPreviewAnchorHour = (Number(temporalTimeline.value) / 60) % 24;
+        temporalPreviewAnchorRealTime = performance.now();
+      });
+    }
     const cloudVideo = document.createElement('video');
     const cloudVideoSupported = cloudVideo.canPlayType('video/webm; codecs="vp9"') !== '';
     if (cloudVideoSupported) {
@@ -473,10 +603,10 @@
     };
 
     const states = [
-      { name: 'Lever', mountFrames: 'sunrise', file: 'MASTER_SUNRISE_LOCKED.png', skyFile: 'SKY_SUNRISE_CLEAN.png', hour: 6, accent: '#ffd59f', ambientSky: '#74688f', ambientMid: '#514b69', ambientGround: '#111927', light: '#ffd3aa', lightPower: .055, shadow: '#4d4668', shadowPower: .025, cloudOpacity: .98, cloudColor: '#fbd6be', cloudColorPower: .56, cloudContrast: 1.64, cloudBrightness: 1.44, cloudSaturation: .7, cloudTexturePower: .58, cloudHighlightPower: .24 },
-      { name: 'Jour', mountFrames: 'day', file: 'MASTER_DAYLIGHT_LOCKED.png', skyFile: 'SKY_DAYLIGHT_CLEAN.png', hour: 12, accent: '#fff4ce', ambientSky: '#5c91b7', ambientMid: '#365f7b', ambientGround: '#071c28', light: '#fff4dc', lightPower: .025, shadow: '#445468', shadowPower: .012, cloudOpacity: 1, cloudColor: '#e5e6e8', cloudColorPower: .44, cloudContrast: 1.6, cloudBrightness: 1.44, cloudSaturation: .58, cloudTexturePower: .5, cloudHighlightPower: .28 },
-      { name: 'Coucher', mountFrames: 'sunset', file: 'MASTER_SUNSET_LOCKED.png', skyFile: 'SKY_SUNSET_CLEAN.png', hour: 18, accent: '#ff9b6f', ambientSky: '#695977', ambientMid: '#4c405a', ambientGround: '#101a27', light: '#ffad7c', lightPower: .065, shadow: '#533a5d', shadowPower: .042, cloudOpacity: 1, cloudColor: '#fec29e', cloudColorPower: .64, cloudContrast: 1.68, cloudBrightness: 1.42, cloudSaturation: .76, cloudTexturePower: .56, cloudHighlightPower: .25 },
-      { name: 'Nuit', mountFrames: 'night', file: 'MASTER_NIGHT_LOCKED.png', skyFile: 'SKY_NIGHT_CLEAN.png', hour: 0, accent: '#9eb7ff', ambientSky: '#0b1947', ambientMid: '#071437', ambientGround: '#020715', light: '#8498e1', lightPower: .024, shadow: '#07152f', shadowPower: .07, cloudOpacity: .82, cloudColor: '#616cb8', cloudColorPower: .82, cloudContrast: 1.54, cloudBrightness: 1.24, cloudSaturation: .58, cloudTexturePower: .62, cloudHighlightPower: .18 }
+      { name: 'Lever', mountFrames: 'sunrise', file: 'geometry_locked/MASTER_SUNRISE_FIXED.png', skyFile: 'geometry_locked/SKY_SUNRISE_FIXED.png', hour: 6, accent: '#ffd59f', ambientSky: '#74688f', ambientMid: '#514b69', ambientGround: '#111927', light: '#ffd3aa', lightPower: .055, shadow: '#4d4668', shadowPower: .025, cloudOpacity: .98, cloudColor: '#fbd6be', cloudColorPower: .56, cloudContrast: 1.64, cloudBrightness: 1.44, cloudSaturation: .7, cloudTexturePower: .58, cloudHighlightPower: .24 },
+      { name: 'Jour', mountFrames: 'day', file: 'geometry_locked/MASTER_DAY_FIXED.png', skyFile: 'geometry_locked/SKY_DAY_FIXED.png', hour: 12, accent: '#fff4ce', ambientSky: '#5c91b7', ambientMid: '#365f7b', ambientGround: '#071c28', light: '#fff4dc', lightPower: .025, shadow: '#445468', shadowPower: .012, cloudOpacity: 1, cloudColor: '#e5e6e8', cloudColorPower: .44, cloudContrast: 1.6, cloudBrightness: 1.44, cloudSaturation: .58, cloudTexturePower: .5, cloudHighlightPower: .28 },
+      { name: 'Coucher', mountFrames: 'sunset', file: 'geometry_locked/MASTER_SUNSET_FIXED.png', skyFile: 'geometry_locked/SKY_SUNSET_FIXED.png', hour: 18, accent: '#ff9b6f', ambientSky: '#695977', ambientMid: '#4c405a', ambientGround: '#101a27', light: '#ffad7c', lightPower: .065, shadow: '#533a5d', shadowPower: .042, cloudOpacity: 1, cloudColor: '#fec29e', cloudColorPower: .64, cloudContrast: 1.68, cloudBrightness: 1.42, cloudSaturation: .76, cloudTexturePower: .56, cloudHighlightPower: .25 },
+      { name: 'Nuit', mountFrames: 'night', file: 'geometry_locked/MASTER_NIGHT_FIXED.png', skyFile: 'geometry_locked/SKY_NIGHT_FIXED.png', hour: 0, accent: '#9eb7ff', ambientSky: '#0b1947', ambientMid: '#071437', ambientGround: '#020715', light: '#8498e1', lightPower: .024, shadow: '#07152f', shadowPower: .07, cloudOpacity: .82, cloudColor: '#616cb8', cloudColorPower: .82, cloudContrast: 1.54, cloudBrightness: 1.24, cloudSaturation: .58, cloudTexturePower: .62, cloudHighlightPower: .18 }
     ];
 
     // Horaires par défaut du prototype. Cette configuration est volontairement
@@ -521,6 +651,9 @@
     let renderLoopActive = false;
     let renderFrameRequest = 0;
     const targetFrameDuration = 1000 / 24;
+    // En simulation accélérée, les caches colorimétriques suivent la cadence
+    // d'affichage afin que le passage entre les quatre états reste parfaitement fluide.
+    const lightingRefreshInterval = temporalPreviewEnabled ? targetFrameDuration : 1000;
     const stabilizedCelestialPositions = { sun: null, moon: null };
     const skyStars = Array.from({ length: 300 }, (_, index) => ({
       x: .008 + seededNoise(index, 401) * .984,
@@ -794,12 +927,13 @@
         animatedMountCtx.drawImage(frames[nextFrameIndex], 0, 0);
       };
 
-      // Le MONT d'origine reste en dessous du nouveau flanc. Le rocher du GIF
-      // est ensuite dessiné depuis une image fixe : seuls les pixels de l'eau
-      // changent de frame, ce qui élimine le scintillement de toute la montagne.
-      drawStaticState(assets.originalMountFrames, current, 1 - easedT);
+      // Le premier état est toujours posé à pleine opacité, puis le suivant est
+      // interpolé au-dessus. Dessiner les deux à (1-t) et t produisait une alpha
+      // combinée de seulement 75 % au milieu du fondu : l'ancien mont traversait
+      // alors le flanc animé et sa route décalée devenait « fantomatique ».
+      drawStaticState(assets.originalMountFrames, current, 1);
       drawStaticState(assets.originalMountFrames, next, easedT);
-      drawStaticState(assets.animatedMountBases, current, 1 - easedT);
+      drawStaticState(assets.animatedMountBases, current, 1);
       drawStaticState(assets.animatedMountBases, next, easedT);
 
       // Les cinq images d'eau sont pilotées par l'horloge de la scène. Le fond
@@ -957,7 +1091,7 @@
     }
 
     function drawAnimatedSky(hour) {
-      if (!skyBackdropReady || animationClock - lastSkyBackdropUpdate >= 1000) {
+      if (!skyBackdropReady || animationClock - lastSkyBackdropUpdate >= lightingRefreshInterval) {
         rebuildSkyBackdrop(hour);
       }
       const lighting = getTemporalLightingState(hour);
@@ -1173,7 +1307,7 @@
 
     function drawWaterDepthGradient(hour) {
       const { day, sunset, night } = waterPalette(hour);
-      if (!waterDepthReady || animationClock - lastWaterDepthUpdate >= 1000) {
+      if (!waterDepthReady || animationClock - lastWaterDepthUpdate >= lightingRefreshInterval) {
         waterDepthCtx.globalCompositeOperation = 'source-over';
         waterDepthCtx.globalAlpha = 1;
         waterDepthCtx.clearRect(0, 0, W, WATER_H);
@@ -1670,16 +1804,15 @@
       drawGlowGrain(celestial, intensity);
       occultAuraLayer();
 
-      // La lune appartient au plan du ciel : les nuages passent devant son
-      // disque et son halo. Le soleil conserve son rayonnement au premier plan.
-      if (celestial.kind === 'moon') {
-        auraCtx.save();
-        auraCtx.globalAlpha = 1;
-        auraCtx.globalCompositeOperation = 'destination-out';
-        auraCtx.filter = 'none';
-        auraCtx.drawImage(cloudCanvas, 0, 0);
-        auraCtx.restore();
-      }
+      // Les deux astres appartiennent au plan du ciel. L'alpha réel du calque
+      // nuage retire proportionnellement leur halo : une zone légère les voile,
+      // tandis qu'une masse opaque les masque davantage.
+      auraCtx.save();
+      auraCtx.globalAlpha = 1;
+      auraCtx.globalCompositeOperation = 'destination-out';
+      auraCtx.filter = 'none';
+      auraCtx.drawImage(cloudCanvas, 0, 0);
+      auraCtx.restore();
 
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
@@ -1690,11 +1823,12 @@
       celestialCtx.clearRect(0, 0, W, H);
       drawCelestialDisc(celestial);
 
-      // Le mont reste au premier plan : l’astre disparaît réellement derrière sa silhouette.
+      // Le mont et les nuages restent au premier plan : le disque subit leur
+      // alpha exact au lieu de traverser visuellement les masses nuageuses.
       celestialCtx.globalAlpha = 1;
       celestialCtx.globalCompositeOperation = 'destination-out';
       celestialCtx.drawImage(assets.mountainOcclusion, 0, 0, W, H);
-      if (celestial.kind === 'moon') celestialCtx.drawImage(cloudCanvas, 0, 0);
+      celestialCtx.drawImage(cloudCanvas, 0, 0);
 
       ctx.save();
       ctx.globalCompositeOperation = 'source-over';
@@ -1703,11 +1837,21 @@
     }
 
     function getLocalHour() {
-      const forcedHourParam = new URLSearchParams(window.location.search).get('time');
+      const forcedHourParam = pageParameters.get('time');
       const forcedHour = forcedHourParam === null ? NaN : Number(forcedHourParam);
       if (Number.isFinite(forcedHour)) return ((forcedHour % 24) + 24) % 24;
+      if (temporalPreviewEnabled) return getTemporalPreviewHour();
       const now = new Date();
       return now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600 + now.getMilliseconds() / 3600000;
+    }
+
+    function updateTemporalPreview(hour) {
+      if (!temporalPreviewEnabled) return;
+      const wholeHours = Math.floor(hour);
+      const minutes = Math.floor((hour - wholeHours) * 60);
+      temporalPreview.hidden = false;
+      temporalPreview.textContent = `Simulation · ${String(wholeHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      if (!temporalTimelineInteracting) temporalTimeline.value = String(Math.round(hour * 60) % 1440);
     }
 
     function rebuildLitBaseScene(hour) {
@@ -1736,7 +1880,7 @@
       // Les grands masters, les masques de lumière et les ombres évoluent à
       // l'échelle de l'heure. Une mise à jour par seconde est visuellement
       // continue et évite plusieurs compositions plein écran à chaque frame.
-      if (!litBaseSceneReady || animationClock - lastLightingUpdate >= 1000) {
+      if (!litBaseSceneReady || animationClock - lastLightingUpdate >= lightingRefreshInterval) {
         rebuildLitBaseScene(hour);
       } else {
         ctx.globalCompositeOperation = 'source-over';
@@ -1753,6 +1897,7 @@
       for (const celestial of celestials) paintDirectionalLight(assets.lightMask, celestial);
       for (const celestial of celestials) drawCelestialSystem(celestial);
       restoreForegroundLayers();
+      updateTemporalPreview(hour);
     }
 
     function frame(now) {
@@ -1864,14 +2009,14 @@
       ...states.map(async state => { assets[state.skyFile] = await loadImage(state.skyFile); }),
       loadImage('CLOUD_PAINT_TEXTURE_MASK.png').then(image => { assets.cloudPaintTexture = image; }),
       ...['sunrise', 'day', 'sunset', 'night'].map(state =>
-        loadImage(`cascade_frames/original-${state}.webp?v=mount-waterfall-contrast-v17`)
+        loadImage(`geometry_locked/cascade_frames/original-${state}.webp?v=water-integrity-v6`)
           .then(image => {
             assets.originalMountFrames ??= {};
             assets.originalMountFrames[state] = image;
           })
       ),
       ...['sunrise', 'day', 'sunset', 'night'].map(state =>
-        loadImage(`cascade_frames/base-${state}.webp?v=mount-waterfall-contrast-v17`)
+        loadImage(`geometry_locked/cascade_frames/base-${state}.webp?v=water-integrity-v6`)
           .then(image => {
             assets.animatedMountBases ??= {};
             assets.animatedMountBases[state] = image;
@@ -1879,7 +2024,7 @@
       ),
       ...['sunrise', 'day', 'sunset', 'night'].flatMap(state =>
         Array.from({ length: MOUNT_FRAME_COUNT }, (_, frameIndex) =>
-          loadImage(`cascade_frames/${state}-${frameIndex}.webp?v=mount-waterfall-contrast-v17`)
+          loadImage(`geometry_locked/cascade_frames/${state}-${frameIndex}.webp?v=water-integrity-v6`)
             .then(image => {
               assets.animatedMountFrames ??= { sunrise: [], day: [], sunset: [], night: [] };
               assets.animatedMountFrames[state][frameIndex] = image;
