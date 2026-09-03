@@ -150,20 +150,67 @@
     foregroundSceneCanvas.width = W;
     foregroundSceneCanvas.height = H;
     const foregroundSceneCtx = foregroundSceneCanvas.getContext('2d');
+    const treeMotionCanvas = document.createElement('canvas');
+    treeMotionCanvas.width = W;
+    treeMotionCanvas.height = H;
+    const treeMotionCtx = treeMotionCanvas.getContext('2d');
+    const treeSourceCanvas = document.createElement('canvas');
+    treeSourceCanvas.width = W;
+    treeSourceCanvas.height = H;
+    const treeSourceCtx = treeSourceCanvas.getContext('2d');
+    const waterfallCanvas = document.createElement('canvas');
+    waterfallCanvas.width = W;
+    waterfallCanvas.height = H;
+    const waterfallCtx = waterfallCanvas.getContext('2d');
     const waterDepthCanvas = document.createElement('canvas');
     waterDepthCanvas.width = W;
     waterDepthCanvas.height = WATER_H;
     const waterDepthCtx = waterDepthCanvas.getContext('2d');
-    const reflectionCanvas = document.createElement('canvas');
-    reflectionCanvas.width = W;
-    reflectionCanvas.height = WATER_H;
-    const reflectionCtx = reflectionCanvas.getContext('2d');
+    const waterSparkleCanvas = document.createElement('canvas');
+    waterSparkleCanvas.width = W;
+    waterSparkleCanvas.height = WATER_H;
+    const waterSparkleCtx = waterSparkleCanvas.getContext('2d');
+    const SKY_H = waterGeometry.horizon + 1;
+    const skyCanvas = document.createElement('canvas');
+    skyCanvas.width = W;
+    skyCanvas.height = SKY_H;
+    const skyCtx = skyCanvas.getContext('2d');
+    const cloudCanvas = document.createElement('canvas');
+    cloudCanvas.width = W;
+    cloudCanvas.height = SKY_H;
+    const cloudCtx = cloudCanvas.getContext('2d');
+    const cloudTextureCanvas = document.createElement('canvas');
+    cloudTextureCanvas.width = W;
+    cloudTextureCanvas.height = SKY_H;
+    const cloudTextureCtx = cloudTextureCanvas.getContext('2d');
+    const cloudAlphaCanvas = document.createElement('canvas');
+    cloudAlphaCanvas.width = W;
+    cloudAlphaCanvas.height = SKY_H;
+    const cloudAlphaCtx = cloudAlphaCanvas.getContext('2d');
+    const skyBackdropCanvas = document.createElement('canvas');
+    skyBackdropCanvas.width = W;
+    skyBackdropCanvas.height = SKY_H;
+    const skyBackdropCtx = skyBackdropCanvas.getContext('2d');
     const loading = document.querySelector('#loading');
 
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const localFileMode = window.location.protocol === 'file:';
+    const cloudVideo = document.createElement('video');
+    cloudVideo.src = 'assets/CLOUDS_KEYED_FLIPPED_SMOOTH.webm?v=painted-smooth-60fps-20260902';
+    cloudVideo.loop = true;
+    cloudVideo.muted = true;
+    cloudVideo.playsInline = true;
+    cloudVideo.preload = 'auto';
+    cloudVideo.autoplay = true;
+    // Déplacement deux fois plus lent, sans modifier la cadence de rendu.
+    cloudVideo.defaultPlaybackRate = .1;
+    cloudVideo.playbackRate = .1;
+    cloudVideo.hidden = true;
+    cloudVideo.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(cloudVideo);
+    let cloudVideoReady = false;
     const oceanVideo = document.createElement('video');
-    oceanVideo.src = 'assets/LOOP_EAU.mp4?v=original-cycle-restored-20260902';
+    oceanVideo.src = 'assets/LOOP_EAU.mp4?v=continuous-clock-whites-20260902';
     oceanVideo.loop = false;
     oceanVideo.muted = true;
     oceanVideo.playsInline = true;
@@ -223,10 +270,10 @@
     };
 
     const states = [
-      { name: 'Lever', file: 'MASTER_SUNRISE_LOCKED.png', hour: 6, accent: '#ffd59f', light: '#ffc991', lightPower: .055, shadowPower: .025 },
-      { name: 'Jour', file: 'MASTER_DAYLIGHT_LOCKED.png', hour: 12, accent: '#fff4ce', light: '#fff2cf', lightPower: .025, shadowPower: .012 },
-      { name: 'Coucher', file: 'MASTER_SUNSET_LOCKED.png', hour: 18, accent: '#ff9b6f', light: '#ff9b70', lightPower: .065, shadowPower: .042 },
-      { name: 'Nuit', file: 'MASTER_NIGHT_LOCKED.png', hour: 0, accent: '#9eb7ff', light: '#9eb8ff', lightPower: .024, shadowPower: .07 }
+      { name: 'Lever', file: 'MASTER_SUNRISE_LOCKED.png', skyFile: 'SKY_SUNRISE_CLEAN.png', hour: 6, accent: '#ffd59f', light: '#ffc991', lightPower: .055, shadowPower: .025, cloudOpacity: .98, cloudColor: '#e9acb0', cloudColorPower: .5 },
+      { name: 'Jour', file: 'MASTER_DAYLIGHT_LOCKED.png', skyFile: 'SKY_DAYLIGHT_CLEAN.png', hour: 12, accent: '#fff4ce', light: '#fff2cf', lightPower: .025, shadowPower: .012, cloudOpacity: 1, cloudColor: '#d9dfe8', cloudColorPower: .3 },
+      { name: 'Coucher', file: 'MASTER_SUNSET_LOCKED.png', skyFile: 'SKY_SUNSET_CLEAN.png', hour: 18, accent: '#ff9b6f', light: '#ff9b70', lightPower: .065, shadowPower: .042, cloudOpacity: 1, cloudColor: '#df9588', cloudColorPower: .54 },
+      { name: 'Nuit', file: 'MASTER_NIGHT_LOCKED.png', skyFile: 'SKY_NIGHT_CLEAN.png', hour: 0, accent: '#9eb7ff', light: '#9eb8ff', lightPower: .024, shadowPower: .07, cloudOpacity: .72, cloudColor: '#46519a', cloudColorPower: .76 }
     ];
 
     // Horaires par défaut du prototype. Cette configuration est volontairement
@@ -266,8 +313,62 @@
     let litBaseSceneReady = false;
     let lastWaterDepthUpdate = -Infinity;
     let waterDepthReady = false;
+    let lastSkyBackdropUpdate = -Infinity;
+    let skyBackdropReady = false;
     const targetFrameDuration = 1000 / 24;
     const stabilizedCelestialPositions = { sun: null, moon: null };
+    const skyStars = Array.from({ length: 300 }, (_, index) => ({
+      x: .008 + seededNoise(index, 401) * .984,
+      // Distribution sur toute la zone du ciel, jusqu'à la ligne d'horizon.
+      y: .015 + Math.pow(seededNoise(index, 409), .94) * .965,
+      power: mix(.22, 1, seededNoise(index, 419)),
+      phase: seededNoise(index, 421) * Math.PI * 2,
+      speed: mix(.55, 1.65, seededNoise(index, 431)),
+      twinkleDepth: mix(.22, .62, seededNoise(index, 437)),
+      twinkles: seededNoise(index, 433) > .08,
+      warm: seededNoise(index, 439) > .84
+    }));
+    const waterSparkles = Array.from({ length: 76 }, (_, index) => ({
+      x: .015 + seededNoise(index, 601) * .97,
+      y: .02 + Math.pow(seededNoise(index, 607), .88) * .95,
+      phase: seededNoise(index, 613) * Math.PI * 2,
+      speed: mix(.52, 1.08, seededNoise(index, 617)),
+      power: mix(.42, 1, seededNoise(index, 619)),
+      width: mix(.65, 1.25, seededNoise(index, 631))
+    }));
+
+    // Zones très resserrées autour des arbres déjà peints dans les calques.
+    // Le décor n'est jamais effacé : seuls les pixels intérieurs à ces formes
+    // sont ré-échantillonnés. Les contours, le sol et le pied des troncs restent
+    // donc parfaitement fixes, sans révéler l'image située derrière.
+    const animatedTreeRegions = [
+      // Pins parasols du premier plan et des falaises latérales.
+      { kind: 'umbrella', cx: 94,  cy: 562, rx: 24, ry: 12, bottom: 606, amp: 1.65, speed: .54, phase: .3 },
+      { kind: 'umbrella', cx: 192, cy: 649, rx: 18, ry: 10, bottom: 687, amp: 1.35, speed: .61, phase: 2.1 },
+      { kind: 'umbrella', cx: 675, cy: 428, rx: 22, ry: 12, bottom: 472, amp: 1.45, speed: .49, phase: 4.0 },
+      { kind: 'umbrella', cx: 577, cy: 557, rx: 20, ry: 11, bottom: 599, amp: 1.55, speed: .57, phase: 5.3 },
+
+      // Cyprès du calque PREMIER_PLAN uniquement. Aucun masque n'est conservé
+      // sur l'Olympe : les coordonnées ci-dessous ciblent les arbres latéraux,
+      // ceux du rivage et les grandes silhouettes qui encadrent le bas.
+      { kind: 'cypress', cx: 42,  top: 505, bottom: 612, halfWidth: 12, amp: 2.8, speed: .42, phase: .7 },
+      { kind: 'cypress', cx: 22,  top: 552, bottom: 612, halfWidth: 9,  amp: 2.2, speed: .49, phase: 2.4 },
+      { kind: 'cypress', cx: 716, top: 430, bottom: 482, halfWidth: 7,  amp: 1.8, speed: .52, phase: 3.7 },
+      { kind: 'cypress', cx: 651, top: 552, bottom: 688, halfWidth: 15, amp: 3.0, speed: .45, phase: 4.1 },
+      { kind: 'cypress', cx: 706, top: 539, bottom: 705, halfWidth: 15, amp: 3.2, speed: .40, phase: 1.6 },
+      { kind: 'cypress', cx: 45,  top: 683, bottom: 776, halfWidth: 11, amp: 2.5, speed: .46, phase: 5.5 },
+      { kind: 'cypress', cx: 470, top: 716, bottom: 786, halfWidth: 8,  amp: 2.0, speed: .51, phase: 3.3 },
+      { kind: 'cypress', cx: 528, top: 727, bottom: 795, halfWidth: 8,  amp: 2.1, speed: .47, phase: 5.0 },
+      { kind: 'cypress', cx: 622, top: 738, bottom: 804, halfWidth: 9,  amp: 2.2, speed: .44, phase: 2.1 },
+      { kind: 'cypress', cx: 23,  top: 915, bottom: 1279, halfWidth: 48, amp: 4.8, speed: .31, phase: .4 },
+      { kind: 'cypress', cx: 61,  top: 984, bottom: 1279, halfWidth: 40, amp: 4.3, speed: .35, phase: 2.8 },
+      { kind: 'cypress', cx: 96,  top: 1170, bottom: 1279, halfWidth: 17, amp: 2.8, speed: .41, phase: 5.7 },
+      { kind: 'cypress', cx: 698, top: 1040, bottom: 1279, halfWidth: 43, amp: 4.3, speed: .33, phase: 4.6 },
+      { kind: 'cypress', cx: 661, top: 1097, bottom: 1279, halfWidth: 35, amp: 3.8, speed: .37, phase: 1.3 },
+      { kind: 'cypress', cx: 632, top: 1200, bottom: 1279, halfWidth: 18, amp: 2.6, speed: .43, phase: 3.9 }
+    ];
+    const umbrellaTreeRegions = animatedTreeRegions.filter(region => region.kind === 'umbrella');
+    const cypressTreeRegions = animatedTreeRegions.filter(region => region.kind === 'cypress');
 
     function loadImage(src) {
       return new Promise((resolve, reject) => {
@@ -400,6 +501,175 @@
       ctx.restore();
     }
 
+    function traceUmbrellaTreeShape(target, region) {
+      target.beginPath();
+      target.moveTo(region.cx + region.rx + 2, region.cy);
+      target.ellipse(region.cx, region.cy, region.rx + 2, region.ry * .82 + 2, 0, 0, Math.PI * 2);
+      target.moveTo(region.cx + 1, region.cy + region.ry * .1);
+      target.ellipse(
+        region.cx - region.rx * .5,
+        region.cy + region.ry * .12,
+        region.rx * .52 + 1,
+        region.ry * .68 + 1,
+        0, 0, Math.PI * 2
+      );
+      target.moveTo(region.cx + region.rx + 1, region.cy + region.ry * .12);
+      target.ellipse(
+        region.cx + region.rx * .5,
+        region.cy + region.ry * .12,
+        region.rx * .52 + 1,
+        region.ry * .68 + 1,
+        0, 0, Math.PI * 2
+      );
+      // Tronc et départ des branches, avec une base étroite pour ne pas
+      // découper le sol de la falaise autour de l'arbre.
+      target.moveTo(region.cx - 2.2, region.cy + region.ry * .22);
+      target.lineTo(region.cx + 2.2, region.cy + region.ry * .22);
+      target.lineTo(region.cx + 2.8, region.bottom - 2);
+      target.lineTo(region.cx - 2.8, region.bottom - 2);
+      target.closePath();
+    }
+
+    function createUmbrellaTreeMask() {
+      const mask = document.createElement('canvas');
+      mask.width = W;
+      mask.height = H;
+      const maskCtx = mask.getContext('2d');
+      maskCtx.fillStyle = '#fff';
+      for (const region of umbrellaTreeRegions) {
+        traceUmbrellaTreeShape(maskCtx, region);
+        maskCtx.fill();
+      }
+      return mask;
+    }
+
+    function traceTreeInterior(region) {
+      treeMotionCtx.beginPath();
+      if (region.kind === 'umbrella') {
+        // Plusieurs volumes réunis en une seule masse, volontairement plus
+        // petite que le houppier peint : aucun pixel voisin n'est inclus.
+        treeMotionCtx.moveTo(region.cx + region.rx, region.cy);
+        treeMotionCtx.ellipse(region.cx, region.cy, region.rx, region.ry * .72, 0, 0, Math.PI * 2);
+        treeMotionCtx.moveTo(region.cx, region.cy + region.ry * .08);
+        treeMotionCtx.ellipse(
+          region.cx - region.rx * .48,
+          region.cy + region.ry * .08,
+          region.rx * .48,
+          region.ry * .58,
+          0, 0, Math.PI * 2
+        );
+        treeMotionCtx.moveTo(region.cx + region.rx * .96, region.cy + region.ry * .08);
+        treeMotionCtx.ellipse(
+          region.cx + region.rx * .48,
+          region.cy + region.ry * .08,
+          region.rx * .48,
+          region.ry * .58,
+          0, 0, Math.PI * 2
+        );
+      } else {
+        const innerWidth = region.halfWidth * .72;
+        treeMotionCtx.moveTo(region.cx, region.top + 3);
+        treeMotionCtx.lineTo(region.cx + innerWidth, region.bottom - 7);
+        treeMotionCtx.lineTo(region.cx + innerWidth * .34, region.bottom - 3);
+        treeMotionCtx.lineTo(region.cx - innerWidth * .34, region.bottom - 3);
+        treeMotionCtx.lineTo(region.cx - innerWidth, region.bottom - 7);
+        treeMotionCtx.closePath();
+      }
+    }
+
+    function redrawTreeInterior(region, seconds) {
+      const top = region.kind === 'umbrella'
+        ? Math.floor(region.cy - region.ry * .68)
+        : region.top + 3;
+      const bottom = region.kind === 'umbrella'
+        ? Math.ceil(region.cy + region.ry * .56)
+        : region.bottom - 3;
+      const left = region.kind === 'umbrella'
+        ? Math.floor(region.cx - region.rx - 3)
+        : Math.floor(region.cx - region.halfWidth - 3);
+      const width = region.kind === 'umbrella'
+        ? Math.ceil(region.rx * 2 + 6)
+        : Math.ceil(region.halfWidth * 2 + 6);
+      const height = Math.max(1, bottom - top);
+
+      treeMotionCtx.save();
+      traceTreeInterior(region);
+      treeMotionCtx.clip();
+      // Les pixels déplacés remplacent ceux de l'arbre fixe dans cette zone.
+      // Avec source-over, les deux positions restaient visibles aux endroits
+      // semi-transparents et donnaient l'impression d'un arbre dédoublé.
+      treeMotionCtx.globalCompositeOperation = 'copy';
+
+      // Plusieurs ondes voyagent simultanément dans la hauteur de l'arbre.
+      // Elles sont déphasées et ne s'immobilisent jamais toutes ensemble : le
+      // mouvement reste continu, sans pause perceptible en bout de balancement.
+      const stripHeight = 3;
+      for (let y = top; y < bottom; y += stripHeight) {
+        const heightT = clamp((bottom - y) / height);
+        const anchored = smootherStep(heightT);
+        const mainWave = Math.sin(seconds * region.speed * 1.55 + region.phase + y * .105) * .58;
+        const crossWave = Math.sin(seconds * region.speed * 2.27 + region.phase * 1.73 - y * .071) * .29;
+        const leafWave = Math.sin(seconds * region.speed * 3.41 + region.phase * .63 + y * .163) * .13;
+        const motionWave = mainWave + crossWave + leafWave;
+        const shift = motionWave * region.amp * 2.8 * anchored;
+        treeMotionCtx.drawImage(
+          foregroundSceneCanvas,
+          left, y, width, stripHeight,
+          left + shift, y, width, stripHeight
+        );
+
+        // Une variation de valeur accompagne la déformation. Elle révèle le
+        // passage du vent dans les aplats très sombres sans modifier leur
+        // couleur générale ni sortir de la silhouette protégée.
+        const valueWave = Math.sin(seconds * region.speed * 2.05 + region.phase * 1.31 + y * .145);
+        treeMotionCtx.globalCompositeOperation = 'soft-light';
+        treeMotionCtx.fillStyle = valueWave >= 0
+          ? `rgba(214, 226, 211, ${valueWave * .16 * anchored})`
+          : `rgba(10, 18, 28, ${-valueWave * .13 * anchored})`;
+        treeMotionCtx.fillRect(left, y, width, stripHeight);
+        treeMotionCtx.globalCompositeOperation = 'copy';
+      }
+      treeMotionCtx.restore();
+    }
+
+    function buildTreeMotionLayer() {
+      treeMotionCtx.globalCompositeOperation = 'source-over';
+      treeMotionCtx.globalAlpha = 1;
+      treeMotionCtx.clearRect(0, 0, W, H);
+      treeMotionCtx.drawImage(foregroundSceneCanvas, 0, 0);
+
+      const seconds = animationClock / 1000;
+      for (const region of cypressTreeRegions) redrawTreeInterior(region, seconds);
+    }
+
+    function drawAnimatedUmbrellaTrees() {
+      const seconds = animationClock / 1000;
+      for (const region of umbrellaTreeRegions) {
+        const left = Math.floor(region.cx - region.rx - 5);
+        const top = Math.floor(region.cy - region.ry - 4);
+        const width = Math.ceil(region.rx * 2 + 10);
+        const height = Math.ceil(region.bottom - top + 2);
+        const primary = Math.sin(seconds * region.speed * 1.72 + region.phase) * .09;
+        const secondary = Math.sin(seconds * region.speed * 2.63 + region.phase * 1.47) * .035;
+        const angle = primary + secondary;
+        const breathe = 1 + Math.sin(seconds * region.speed * 2.18 + region.phase * .81) * .04;
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        ctx.translate(region.cx, region.bottom - 2);
+        ctx.rotate(angle);
+        ctx.scale(breathe, 1);
+        ctx.translate(-region.cx, -(region.bottom - 2));
+        ctx.drawImage(
+          treeSourceCanvas,
+          left, top, width, height,
+          left, top, width, height
+        );
+        ctx.restore();
+      }
+    }
+
     function captureLitBaseScene() {
       baseSceneCtx.globalCompositeOperation = 'source-over';
       baseSceneCtx.globalAlpha = 1;
@@ -415,13 +685,26 @@
       foregroundSceneCtx.globalCompositeOperation = 'destination-in';
       foregroundSceneCtx.drawImage(assets.sceneForegroundOcclusion, 0, 0, W, H);
       foregroundSceneCtx.globalCompositeOperation = 'source-over';
+
+      // Source colorisée des arbres séparés. Le masque alpha du premier plan
+      // élimine tout pixel de mer éventuellement compris dans les ellipses.
+      treeSourceCtx.globalCompositeOperation = 'source-over';
+      treeSourceCtx.globalAlpha = 1;
+      treeSourceCtx.clearRect(0, 0, W, H);
+      treeSourceCtx.drawImage(baseSceneCanvas, 0, 0);
+      treeSourceCtx.globalCompositeOperation = 'destination-in';
+      treeSourceCtx.drawImage(assets.foregroundLayer, 0, 0, W, H);
+      treeSourceCtx.drawImage(assets.umbrellaTreeMask, 0, 0, W, H);
+      treeSourceCtx.globalCompositeOperation = 'source-over';
     }
 
     function restoreForegroundLayers() {
+      buildTreeMotionLayer();
       ctx.save();
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
-      ctx.drawImage(foregroundSceneCanvas, 0, 0);
+      ctx.drawImage(treeMotionCanvas, 0, 0);
+      drawAnimatedUmbrellaTrees();
       ctx.restore();
     }
 
@@ -495,8 +778,193 @@
       return blend;
     }
 
+    function rebuildSkyBackdrop(hour) {
+      const { current, next, easedT } = getVisualBlend(hour);
+      const { night } = waterPalette(hour);
+
+      skyBackdropCtx.globalCompositeOperation = 'source-over';
+      skyBackdropCtx.globalAlpha = 1;
+      skyBackdropCtx.clearRect(0, 0, W, SKY_H);
+      skyBackdropCtx.drawImage(assets[current.skyFile], 0, 0, W, SKY_H);
+      skyBackdropCtx.globalAlpha = easedT;
+      skyBackdropCtx.drawImage(assets[next.skyFile], 0, 0, W, SKY_H);
+      skyBackdropCtx.globalAlpha = 1;
+
+      lastSkyBackdropUpdate = animationClock;
+      skyBackdropReady = true;
+    }
+
+    function drawNightStars(night) {
+      if (night <= .015) return;
+      skyCtx.save();
+      skyCtx.globalCompositeOperation = 'screen';
+      for (const star of skyStars) {
+        // Chaque étoile possède son propre rythme et sa propre phase : le
+        // scintillement reste continu, irrégulier et jamais synchronisé.
+        const primaryWave = star.twinkles
+          ? Math.sin(animationClock * .001 * star.speed + star.phase)
+          : 0;
+        const secondaryWave = star.twinkles
+          ? Math.sin(animationClock * .00037 * star.speed + star.phase * 1.73) * .22
+          : 0;
+        const twinkleWave = primaryWave + secondaryWave;
+        const pulse = 1 + twinkleWave * star.twinkleDepth;
+        const alpha = clamp(night * mix(.08, .9, star.power) * pulse);
+        const radius = mix(.22, 1.12, star.power) * (1 + twinkleWave * star.twinkleDepth * .36) * SCALE;
+        const x = star.x * W;
+        const y = star.y * SKY_H;
+        skyCtx.globalAlpha = alpha;
+        skyCtx.fillStyle = star.warm ? '#fff2d5' : '#eef5ff';
+
+        if (star.twinkles && star.power > .62) {
+          skyCtx.globalAlpha = alpha * (.12 + Math.max(0, twinkleWave) * .12);
+          skyCtx.beginPath();
+          skyCtx.arc(x, y, radius * 2.25, 0, Math.PI * 2);
+          skyCtx.fill();
+          skyCtx.globalAlpha = alpha;
+        }
+
+        if (star.power > .72) {
+          skyCtx.beginPath();
+          skyCtx.moveTo(x, y - radius * 1.75);
+          skyCtx.lineTo(x + radius * .72, y);
+          skyCtx.lineTo(x, y + radius * 1.75);
+          skyCtx.lineTo(x - radius * .72, y);
+          skyCtx.closePath();
+          skyCtx.fill();
+        } else {
+          skyCtx.beginPath();
+          skyCtx.arc(x, y, radius * .58, 0, Math.PI * 2);
+          skyCtx.fill();
+        }
+      }
+      skyCtx.restore();
+    }
+
+    function drawAnimatedSky(hour) {
+      if (!skyBackdropReady || animationClock - lastSkyBackdropUpdate >= 1000) {
+        rebuildSkyBackdrop(hour);
+      }
+      const { current, next, easedT } = getVisualBlend(hour);
+      const cloudOpacity = mix(current.cloudOpacity, next.cloudOpacity, easedT);
+      const cloudColor = mixColor(current.cloudColor, next.cloudColor, easedT);
+      const cloudColorPower = mix(current.cloudColorPower, next.cloudColorPower, easedT);
+      const { night } = waterPalette(hour);
+
+      skyCtx.globalCompositeOperation = 'source-over';
+      skyCtx.globalAlpha = 1;
+      skyCtx.clearRect(0, 0, W, SKY_H);
+      skyCtx.drawImage(skyBackdropCanvas, 0, 0);
+      drawNightStars(night);
+      cloudCtx.globalCompositeOperation = 'source-over';
+      cloudCtx.globalAlpha = 1;
+      cloudCtx.filter = 'none';
+      cloudCtx.clearRect(0, 0, W, SKY_H);
+
+      if (cloudVideoReady && cloudVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        cloudCtx.save();
+        cloudCtx.globalAlpha = .8 * cloudOpacity;
+        cloudCtx.filter = `contrast(${mix(1.68, 1.56, night)}) brightness(${mix(1.48, 1.28, night)}) saturate(${mix(.68, .54, night)})`;
+        cloudCtx.drawImage(cloudVideo, 0, 0, W, SKY_H);
+        cloudCtx.restore();
+
+        if (assets.cloudPaintTexture) {
+          cloudTextureCtx.globalCompositeOperation = 'source-over';
+          cloudTextureCtx.globalAlpha = 1;
+          // Davantage d'écart dans les valeurs basses du masque pour rendre
+          // visibles les creux et coups de pinceau sombres dans les nuages.
+          cloudTextureCtx.filter = 'grayscale(1) contrast(2.75) brightness(.91)';
+          cloudTextureCtx.clearRect(0, 0, W, SKY_H);
+          const texture = assets.cloudPaintTexture;
+          // Étire le masque complet sur les dimensions exactes du ciel : toute
+          // sa matière reste visible, sans recadrage vertical ni zone manquante.
+          cloudTextureCtx.drawImage(texture, 0, 0, W, SKY_H);
+          // Le masque fourni est strictement découpé par les nuages. Le mode
+          // multiply révèle surtout ses coups de brosse sur leurs valeurs
+          // blanches et devient naturellement discret dans les ombres.
+          cloudTextureCtx.filter = 'none';
+          cloudTextureCtx.globalCompositeOperation = 'destination-in';
+          cloudTextureCtx.drawImage(cloudCanvas, 0, 0);
+          cloudTextureCtx.globalCompositeOperation = 'source-over';
+
+          cloudCtx.save();
+          cloudCtx.globalCompositeOperation = 'multiply';
+          cloudCtx.globalAlpha = mix(.76, .7, night);
+          cloudCtx.drawImage(cloudTextureCanvas, 0, 0);
+          cloudCtx.restore();
+
+          // Une passe lumineuse rétablit les vrais blancs après le multiply,
+          // sans effacer les creux et les traces sombres du masque pictural.
+          cloudCtx.save();
+          cloudCtx.globalCompositeOperation = 'screen';
+          cloudCtx.globalAlpha = mix(.18, .14, night) * cloudOpacity;
+          cloudCtx.filter = `grayscale(1) contrast(${mix(1.5, 1.4, night)}) brightness(${mix(1.42, 1.26, night)})`;
+          cloudCtx.drawImage(cloudVideo, 0, 0, W, SKY_H);
+          cloudCtx.restore();
+        }
+
+        // On mémorise l'alpha exact avant d'appliquer la couleur : le mode color
+        // peut alors remplacer teinte et saturation sans aplatir la luminance
+        // du masque pictural, puis être redécoupé sur les nuages seuls.
+        cloudAlphaCtx.globalCompositeOperation = 'source-over';
+        cloudAlphaCtx.globalAlpha = 1;
+        cloudAlphaCtx.clearRect(0, 0, W, SKY_H);
+        cloudAlphaCtx.drawImage(cloudCanvas, 0, 0);
+
+        cloudCtx.save();
+        cloudCtx.globalCompositeOperation = 'color';
+        cloudCtx.globalAlpha = 1;
+        cloudCtx.fillStyle = cloudColor;
+        cloudCtx.fillRect(0, 0, W, SKY_H);
+        cloudCtx.globalCompositeOperation = 'destination-in';
+        cloudCtx.drawImage(cloudAlphaCanvas, 0, 0);
+        // Une faible contribution normale rapproche aussi la luminosité de la
+        // référence, sans masquer les traces sombres désormais renforcées.
+        cloudCtx.globalCompositeOperation = 'source-atop';
+        cloudCtx.globalAlpha = cloudColorPower * .3;
+        cloudCtx.fillStyle = cloudColor;
+        cloudCtx.fillRect(0, 0, W, SKY_H);
+        cloudCtx.restore();
+
+        // Le calque vidéo se fond graduellement dans l'horizon : les nuages
+        // hauts restent lisibles tandis que les plus bas deviennent diffus.
+        cloudCtx.globalCompositeOperation = 'destination-in';
+        const cloudDepth = cloudCtx.createLinearGradient(0, 0, 0, SKY_H);
+        cloudDepth.addColorStop(0, 'rgba(255,255,255,1)');
+        cloudDepth.addColorStop(.34, 'rgba(255,255,255,.95)');
+        cloudDepth.addColorStop(.68, 'rgba(255,255,255,.62)');
+        cloudDepth.addColorStop(1, 'rgba(255,255,255,.32)');
+        cloudCtx.fillStyle = cloudDepth;
+        cloudCtx.fillRect(0, 0, W, SKY_H);
+
+        // Atténuation uniforme du résultat final : texture, blancs et alpha
+        // des nuages diminuent ensemble, sans modifier leurs proportions.
+        cloudCtx.fillStyle = 'rgba(255,255,255,.85)';
+        cloudCtx.fillRect(0, 0, W, SKY_H);
+        cloudCtx.globalCompositeOperation = 'source-over';
+      }
+      cloudCtx.filter = 'none';
+
+      // Le ciel et les nuages restent derrière les deux plans montagneux.
+      skyCtx.globalCompositeOperation = 'destination-out';
+      skyCtx.globalAlpha = 1;
+      skyCtx.drawImage(assets.mountainOcclusion, 0, 0, W, SKY_H, 0, 0, W, SKY_H);
+      skyCtx.globalCompositeOperation = 'source-over';
+      cloudCtx.globalCompositeOperation = 'destination-out';
+      cloudCtx.globalAlpha = 1;
+      cloudCtx.drawImage(assets.mountainOcclusion, 0, 0, W, SKY_H, 0, 0, W, SKY_H);
+      cloudCtx.globalCompositeOperation = 'source-over';
+      skyCtx.drawImage(cloudCanvas, 0, 0);
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.drawImage(skyCanvas, 0, 0);
+      ctx.restore();
+    }
+
     function drawAnimatedOcean(hour) {
-      const { sunset, night } = waterPalette(hour);
+      const { night } = waterPalette(hour);
 
       // Au raccord de boucle, le lecteur peut perdre son état « prêt » pendant
       // une ou deux images. On conserve alors la dernière frame valide au lieu
@@ -512,6 +980,9 @@
         const relayBlend = relayDrawable ? requestedRelayBlend : 0;
         oceanVideoCtx.globalCompositeOperation = 'source-over';
         oceanVideoCtx.clearRect(0, 0, W, WATER_H);
+        // La nuit réduit progressivement la luminance de la vidéo sans toucher
+        // à ses images, sa cadence ni son raccord de boucle.
+        oceanVideoCtx.filter = `brightness(${mix(.78, .36, night)}) contrast(${mix(.88, .96, night)}) saturate(${mix(1.08, 1.25, night)})`;
         oceanVideoCtx.globalAlpha = 1 - relayBlend;
         oceanVideoCtx.drawImage(
           activeOceanVideo,
@@ -530,6 +1001,21 @@
           );
         }
         oceanVideoCtx.globalAlpha = 1;
+        oceanVideoCtx.filter = 'none';
+        // Palette directement relevée dans LAND_NIGHT : le mode color conserve
+        // la luminance animée des vagues tout en remplaçant leur teinte de jour.
+        if (night > .001) {
+          const nightWaterGrade = oceanVideoCtx.createLinearGradient(0, 0, 0, WATER_H);
+          nightWaterGrade.addColorStop(0, '#263586');
+          nightWaterGrade.addColorStop(.3, '#112469');
+          nightWaterGrade.addColorStop(.62, '#061b55');
+          nightWaterGrade.addColorStop(1, '#001547');
+          oceanVideoCtx.globalCompositeOperation = 'color';
+          oceanVideoCtx.globalAlpha = night * .96;
+          oceanVideoCtx.fillStyle = nightWaterGrade;
+          oceanVideoCtx.fillRect(0, 0, W, WATER_H);
+          oceanVideoCtx.globalAlpha = 1;
+        }
         oceanVideoCtx.globalCompositeOperation = 'source-over';
         oceanVideoCtx.globalCompositeOperation = 'destination-in';
         oceanVideoCtx.drawImage(
@@ -541,14 +1027,12 @@
       }
       if (!oceanFrameCached) return;
 
-      // La vidéo fournit le mouvement et les valeurs lumineuses, tandis que
-      // les masters conservent la colorimétrie propre à l'heure courante.
+      // La vidéo remplace entièrement l'ancien dessin statique dans le masque
+      // marin. Les effets horaires (colorimétrie, profondeur et lumière) sont ajoutés
+      // ensuite, sans laisser réapparaître les motifs du calque situé dessous.
       ctx.save();
-      ctx.globalCompositeOperation = 'luminosity';
-      ctx.globalAlpha = night ? .3 : sunset ? .56 : .7;
-      ctx.drawImage(oceanVideoCanvas, 0, waterGeometry.horizon);
-      ctx.globalCompositeOperation = 'soft-light';
-      ctx.globalAlpha = night ? .18 : sunset ? .28 : .34;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
       ctx.drawImage(oceanVideoCanvas, 0, waterGeometry.horizon);
       ctx.restore();
     }
@@ -582,6 +1066,60 @@
       ctx.globalCompositeOperation = 'multiply';
       ctx.globalAlpha = 1;
       ctx.drawImage(waterDepthCanvas, 0, waterGeometry.horizon);
+      ctx.restore();
+    }
+
+    function drawWaterSparkles(hour) {
+      const { sunset, night } = waterPalette(hour);
+      const sparkleColor = mixColor(
+        mixColor('#e7f7ff', '#ffd0b0', sunset * .55),
+        '#aabaff',
+        night
+      );
+
+      waterSparkleCtx.globalCompositeOperation = 'source-over';
+      waterSparkleCtx.globalAlpha = 1;
+      waterSparkleCtx.clearRect(0, 0, W, WATER_H);
+      waterSparkleCtx.strokeStyle = sparkleColor;
+      waterSparkleCtx.lineCap = 'round';
+
+      for (const sparkle of waterSparkles) {
+        const wave = (Math.sin(animationClock * .001 * sparkle.speed + sparkle.phase) + 1) * .5;
+        // Les vaguelettes proches du premier plan ont une fenêtre encore plus
+        // courte : elles brillent brièvement au lieu de rester allumées.
+        const threshold = mix(.9, .96, sparkle.y);
+        const appearance = Math.pow(
+          smootherStep(clamp((wave - threshold) / (1 - threshold))),
+          1.3
+        );
+        if (appearance <= .003) continue;
+
+        const x = sparkle.x * W + Math.sin(animationClock * .00019 + sparkle.phase) * 2.2 * SCALE;
+        const y = sparkle.y * WATER_H + Math.sin(animationClock * .00031 * sparkle.speed + sparkle.phase) * 1.15 * SCALE;
+        const width = (2.2 + sparkle.y * 8.4) * sparkle.width * SCALE;
+        const curve = (.45 + sparkle.y * 1.15) * SCALE;
+        const timeVisibility = mix(.34, .62, night) + sunset * .08;
+
+        waterSparkleCtx.globalAlpha = appearance * sparkle.power * timeVisibility;
+        waterSparkleCtx.lineWidth = mix(.72, 1.24, sparkle.y) * SCALE;
+        waterSparkleCtx.beginPath();
+        waterSparkleCtx.moveTo(x - width * .5, y);
+        waterSparkleCtx.quadraticCurveTo(x, y - curve, x + width * .5, y);
+        waterSparkleCtx.stroke();
+      }
+
+      waterSparkleCtx.globalAlpha = 1;
+      waterSparkleCtx.globalCompositeOperation = 'destination-in';
+      waterSparkleCtx.drawImage(
+        assets.waterMask,
+        0, waterGeometry.horizon, W, WATER_H,
+        0, 0, W, WATER_H
+      );
+      waterSparkleCtx.globalCompositeOperation = 'source-over';
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.drawImage(waterSparkleCanvas, 0, waterGeometry.horizon);
       ctx.restore();
     }
 
@@ -673,9 +1211,7 @@
           image: assets.sun,
           size: mix(104, 132, horizonFactor) * SCALE,
           lightColor: sunsetBias > .1 ? 'rgba(255,132,69,.96)' : 'rgba(255,239,197,.86)',
-          lightPower: .018 + .066 * horizonFactor * (.35 + .65 * sunsetBias),
-          reflectionColor: sunsetBias > .1 ? 'rgba(255,177,104,.92)' : 'rgba(255,244,208,.72)',
-          reflectionPower: .10 + .31 * horizonFactor * sunsetBias
+          lightPower: .018 + .066 * horizonFactor * (.35 + .65 * sunsetBias)
         });
       }
 
@@ -700,9 +1236,7 @@
           image: assets.moon,
           size: mix(102, 116, altitude) * SCALE,
           lightColor: 'rgba(151,183,255,.88)',
-          lightPower: .022 + .026 * altitude,
-          reflectionColor: 'rgba(174,201,255,.9)',
-          reflectionPower: .22 + .16 * altitude
+          lightPower: .022 + .026 * altitude
         });
       }
 
@@ -727,57 +1261,6 @@
       }
 
       return celestials;
-    }
-
-    function drawWaterReflection(celestial) {
-      if (!celestial || celestial.visibility <= .01) return;
-      reflectionCtx.globalCompositeOperation = 'source-over';
-      reflectionCtx.clearRect(0, 0, W, WATER_H);
-      reflectionCtx.fillStyle = celestial.reflectionColor;
-
-      const xOrigin = celestial.x;
-      const reflectionDepths = [.01, .055, .12, .21, .32, .45, .61, .79, .98];
-      for (let index = 0; index < reflectionDepths.length; index++) {
-        const depth = reflectionDepths[index];
-        const y = depth * (438 * SCALE) + Math.sin(animationClock * .0012 + index * 1.7) * ((1 + depth * 3) * SCALE);
-        const spread = (10 + depth * 104) * SCALE;
-        const drift = Math.sin(index * 2.13 + animationClock * .00065) * spread * .29;
-        const width = spread * (.38 + .62 * Math.sin(index * 2.8 + 1.2) ** 2);
-        const height = (1.7 + depth * 3.5) * SCALE;
-        reflectionCtx.globalAlpha = (1 - depth * .48) * (.32 + .38 * Math.sin(index * 1.91) ** 2);
-        reflectionCtx.beginPath();
-        reflectionCtx.ellipse(xOrigin + drift, y, width, height, 0, 0, Math.PI * 2);
-        reflectionCtx.fill();
-      }
-
-      reflectionCtx.globalAlpha = 1;
-      reflectionCtx.globalCompositeOperation = 'destination-in';
-      reflectionCtx.drawImage(
-        assets.waterMask,
-        0, waterGeometry.horizon, W, WATER_H,
-        0, 0, W, WATER_H
-      );
-
-      // Le reflet reste pleinement présent près de l'horizon, puis se fond
-      // progressivement dans la matière de l'eau en allant vers le premier plan.
-      const reflectionFade = reflectionCtx.createLinearGradient(
-        0,
-        0,
-        0,
-        WATER_H
-      );
-      reflectionFade.addColorStop(0, 'rgba(255,255,255,1)');
-      reflectionFade.addColorStop(.28, 'rgba(255,255,255,.88)');
-      reflectionFade.addColorStop(.68, 'rgba(255,255,255,.38)');
-      reflectionFade.addColorStop(1, 'rgba(255,255,255,.05)');
-      reflectionCtx.fillStyle = reflectionFade;
-      reflectionCtx.fillRect(0, 0, W, WATER_H);
-
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      ctx.globalAlpha = celestial.reflectionPower * celestial.directVisibility;
-      ctx.drawImage(reflectionCanvas, 0, waterGeometry.horizon);
-      ctx.restore();
     }
 
     function seededNoise(index, seed = 0) {
@@ -1030,6 +1513,17 @@
       drawGlowGrain(celestial, intensity);
       occultAuraLayer();
 
+      // La lune appartient au plan du ciel : les nuages passent devant son
+      // disque et son halo. Le soleil conserve son rayonnement au premier plan.
+      if (celestial.kind === 'moon') {
+        auraCtx.save();
+        auraCtx.globalAlpha = 1;
+        auraCtx.globalCompositeOperation = 'destination-out';
+        auraCtx.filter = 'none';
+        auraCtx.drawImage(cloudCanvas, 0, 0);
+        auraCtx.restore();
+      }
+
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
       ctx.drawImage(auraCanvas, 0, 0);
@@ -1043,6 +1537,7 @@
       celestialCtx.globalAlpha = 1;
       celestialCtx.globalCompositeOperation = 'destination-out';
       celestialCtx.drawImage(assets.mountainOcclusion, 0, 0, W, H);
+      if (celestial.kind === 'moon') celestialCtx.drawImage(cloudCanvas, 0, 0);
 
       ctx.save();
       ctx.globalCompositeOperation = 'source-over';
@@ -1090,11 +1585,12 @@
         ctx.drawImage(baseSceneCanvas, 0, 0);
       }
 
+      drawAnimatedSky(hour);
       const celestials = getCelestials(hour);
       drawAnimatedOcean(hour);
       drawWaterDepthGradient(hour);
+      drawWaterSparkles(hour);
       for (const celestial of celestials) paintDirectionalLight(assets.lightMask, celestial);
-      for (const celestial of celestials) drawWaterReflection(celestial);
       for (const celestial of celestials) drawCelestialSystem(celestial);
       restoreForegroundLayers();
     }
@@ -1118,6 +1614,24 @@
     oceanVideo.addEventListener('canplay', () => {
       oceanVideoReady = true;
       syncOceanVideoPlayback();
+    });
+    const syncCloudVideoPlayback = () => {
+      if (!cloudVideoReady) return;
+      if (reducedMotionQuery.matches) {
+        cloudVideo.pause();
+        return;
+      }
+      cloudVideo.play().catch(() => {});
+    };
+    cloudVideo.addEventListener('canplay', () => {
+      cloudVideoReady = true;
+      cloudVideo.defaultPlaybackRate = .1;
+      cloudVideo.playbackRate = .1;
+      syncCloudVideoPlayback();
+    });
+    cloudVideo.addEventListener('error', () => {
+      cloudVideoReady = false;
+      console.warn('La vidéo transparente des nuages est indisponible.');
     });
     oceanVideoRelay.addEventListener('canplay', () => {
       oceanVideoRelayReady = true;
@@ -1149,7 +1663,10 @@
     oceanVideo.addEventListener('ended', recoverEndedOceanVideo);
     oceanVideoRelay.addEventListener('ended', recoverEndedOceanVideo);
     reducedMotionQuery.addEventListener('change', syncOceanVideoPlayback);
+    reducedMotionQuery.addEventListener('change', syncCloudVideoPlayback);
     window.addEventListener('pointerdown', syncOceanVideoPlayback, { once: true });
+    window.addEventListener('pointerdown', syncCloudVideoPlayback, { once: true });
+    cloudVideo.load();
     oceanVideo.load();
     oceanVideoRelay.load();
 
@@ -1162,7 +1679,9 @@
       loadImage('WATER_EFFECT_MASK.png'),
       loadImage('layers/MONT.png'),
       loadImage('layers/MONTAGNES.png'),
-      loadImage('layers/PREMIER_PLAN.png')
+      loadImage('layers/PREMIER_PLAN.png'),
+      ...states.map(async state => { assets[state.skyFile] = await loadImage(state.skyFile); }),
+      loadImage('CLOUD_PAINT_TEXTURE_MASK.png').then(image => { assets.cloudPaintTexture = image; })
     ]).then(results => {
       // Les pixels d'images locales ne peuvent pas être lus par getImageData
       // depuis file:// (canvas « tainted »). Les masters restent utilisables
@@ -1173,6 +1692,14 @@
       assets.moon = results[7];
       assets.mountLayer = results[9];
       assets.foregroundLayer = results[11];
+      assets.umbrellaTreeMask = createUmbrellaTreeMask();
+      // Les quatre pins parasols sont retirés du calque fixe. La mer animée
+      // peut ainsi reprendre leur ancienne place avant que leur silhouette
+      // mobile soit redessinée au premier plan.
+      const foregroundWithoutUmbrellaTrees = excludeMaskFromLayer(
+        assets.foregroundLayer,
+        assets.umbrellaTreeMask
+      );
       // Le masque marin d'origine est volontairement large et mord sur le
       // relief. On retranche l'Olympe AVANT de dessiner la vidéo ou les shaders,
       // de sorte qu'aucun effet d'eau ne soit jamais produit sur ce calque.
@@ -1182,11 +1709,11 @@
       );
       assets.waterMask = excludeMaskFromLayer(
         waterWithoutMount,
-        assets.foregroundLayer
+        foregroundWithoutUmbrellaTrees
       );
       assets.waterEffectMask = assets.waterMask;
       const foregroundWithoutWater = excludeMaskFromLayer(
-        assets.foregroundLayer,
+        foregroundWithoutUmbrellaTrees,
         assets.waterMask
       );
       // L'Olympe reste toujours prioritaire : le masque d'eau, volontairement
@@ -1208,6 +1735,11 @@
       );
       assets.mountainSampler = localFileMode ? null : createAlphaSampler(assets.mountainOcclusion);
       loading.classList.add('done');
+      animationClock = performance.now();
+      render();
+      // L'horloge de composition reste indépendante des callbacks du décodeur.
+      // Certains moteurs cessent d'émettre ces callbacks après la relève entre
+      // les deux lecteurs, ce qui arrêtait entièrement la mer après un cycle.
       requestAnimationFrame(frame);
     }).catch(error => {
       const message = error instanceof Error ? error.message : String(error);
