@@ -1,3 +1,11 @@
+# ARCHIVE — développement déplacé vers APP TDAH
+
+> **Ce dépôt n’est plus la source active du projet.** Le développement, la documentation et les ressources actuellement exécutées sont désormais centralisés dans [`Artwar974/app-tdah`](https://github.com/Artwar974/app-tdah). Ne créez plus de nouvelles branches ou fonctionnalités depuis ce dépôt.
+
+Les fichiers et l’historique ci-dessous sont conservés sans suppression à des fins d’archive et de traçabilité.
+
+---
+
 # APP TDAH — environnement ATHENA
 
 Ce dossier contient uniquement la simulation actuellement active après la refonte.
