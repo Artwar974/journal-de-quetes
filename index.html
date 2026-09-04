@@ -337,7 +337,7 @@
       .journal-shell::backdrop { backdrop-filter: none; }
     }
   </style>
-  <link rel="stylesheet" href="journal-theme.css?v=athena-journal-premium-v6">
+  <link rel="stylesheet" href="journal-theme.css?v=athena-today-drawer-v9">
 </head>
 <body>
   <div class="ambient" aria-hidden="true"></div>
@@ -351,8 +351,25 @@
     </div>
   </main>
 
+  <aside class="today-drawer is-open" id="todayDrawer" aria-label="Quêtes du jour">
+    <div class="today-drawer-sheet">
+      <header class="today-drawer-head">
+        <span class="today-drawer-mark" aria-hidden="true">Ψ</span>
+        <h1>Quêtes du jour</h1>
+        <p id="todayDrawerDate"></p>
+      </header>
+      <div class="today-quest-list" id="todayQuestList"></div>
+      <button class="today-drawer-add" id="todayQuestAdd" type="button" aria-label="Créer une quête">+</button>
+    </div>
+    <button class="today-drawer-grip" id="todayDrawerGrip" type="button" aria-expanded="true" aria-controls="todayQuestList">
+      <span class="today-drawer-open-label">Glisser vers le haut pour masquer</span>
+      <span class="today-drawer-closed-label">Quêtes du jour</span>
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg>
+    </button>
+  </aside>
+
   <button class="journal-open" id="journalOpen" type="button" aria-haspopup="dialog" aria-label="Ouvrir le journal de quêtes">
-    <span aria-hidden="true">📖</span>
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Zm16 0A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"/></svg>
   </button>
 
   <dialog class="journal-shell" id="journalDialog" aria-label="Journal de quêtes">
@@ -367,25 +384,23 @@
           <div class="journal-xp-track" aria-label="Progression d’expérience"><div class="journal-xp-fill" id="journalXpFill"></div></div>
           <div class="journal-profile-foot">
             <span class="journal-xp-label" id="journalXpLabel">0 / 100 XP</span>
-            <div class="journal-resources" aria-label="Ressources">
-              <span class="journal-resource" id="journalPotion">🧪 0</span>
-              <span class="journal-resource" id="journalCrystal">💎 0</span>
-              <span class="journal-resource" id="journalCoins">🪙 0</span>
-              <span class="journal-resource" id="journalGifts">🎁 0</span>
+            <div class="journal-resources" aria-label="Progression réelle">
+              <span class="journal-resource"><small>Aujourd’hui</small><strong id="journalToday">0</strong></span>
+              <span class="journal-resource"><small>Terminées</small><strong id="journalTotal">0</strong></span>
+              <span class="journal-resource"><small>Or</small><strong id="journalCoins">0</strong></span>
             </div>
           </div>
         </div>
-        <div class="journal-medal" aria-hidden="true">🏅</div>
       </header>
 
       <section class="journal-content" id="journalContent" aria-live="polite"></section>
 
       <nav class="journal-tabs" aria-label="Sections du journal">
-        <button type="button" class="is-active" data-journal-tab="quests"><b aria-hidden="true">⚔️</b><span>Quêtes</span></button>
-        <button type="button" data-journal-tab="agenda"><b aria-hidden="true">🗓️</b><span>Agenda</span></button>
-        <button type="button" data-journal-tab="history"><b aria-hidden="true">📜</b><span>Historique</span></button>
-        <button type="button" data-journal-tab="diary"><b aria-hidden="true">📔</b><span>Carnet</span></button>
-        <button type="button" id="journalClose" aria-label="Retour au camp"><b aria-hidden="true">🚪</b><span>Camp</span></button>
+        <button type="button" class="is-active" data-journal-tab="quests"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 4 13 13m-3-13L4 17m0 0v3h3m10-16h3v3M8.5 14.5l-4 4m11-4 4 4"/></svg><span>Quêtes</span></button>
+        <button type="button" data-journal-tab="agenda"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4m8-4v4M3.5 9.5h17M8 13h.01m4 0h.01m4 0h.01M8 17h.01m4 0h.01"/></svg><span>Agenda</span></button>
+        <button type="button" data-journal-tab="history"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6m-6 4h6m-6 4h4"/><path d="M6 4 4.5 6 6 8m12-4 1.5 2L18 8"/></svg><span>Historique</span></button>
+        <button type="button" data-journal-tab="diary"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v18H7.5A2.5 2.5 0 0 0 5 22.5v-18Z"/><path d="M5 18h14M9 6h6m-6 4h6"/></svg><span>Carnet</span></button>
+        <button type="button" id="journalClose" aria-label="Retour au camp"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 21V4l11-2v19M5 21h14M9 11h.01"/></svg><span>Camp</span></button>
       </nav>
     </div>
   </dialog>
@@ -630,10 +645,10 @@
     };
 
     const states = [
-      { name: 'Lever', mountFrames: 'sunrise', file: 'geometry_locked/MASTER_SUNRISE_FIXED.png', skyFile: 'geometry_locked/SKY_SUNRISE_FIXED.png', hour: 6, accent: '#ffd59f', ambientSky: '#74688f', ambientMid: '#514b69', ambientGround: '#111927', light: '#ffd3aa', lightPower: .055, shadow: '#4d4668', shadowPower: .025, cloudOpacity: .98, cloudColor: '#fbd6be', cloudColorPower: .56, cloudContrast: 1.64, cloudBrightness: 1.44, cloudSaturation: .7, cloudTexturePower: .58, cloudHighlightPower: .24 },
-      { name: 'Jour', mountFrames: 'day', file: 'geometry_locked/MASTER_DAY_FIXED.png', skyFile: 'geometry_locked/SKY_DAY_FIXED.png', hour: 12, accent: '#fff4ce', ambientSky: '#5c91b7', ambientMid: '#365f7b', ambientGround: '#071c28', light: '#fff4dc', lightPower: .025, shadow: '#445468', shadowPower: .012, cloudOpacity: 1, cloudColor: '#e5e6e8', cloudColorPower: .44, cloudContrast: 1.6, cloudBrightness: 1.44, cloudSaturation: .58, cloudTexturePower: .5, cloudHighlightPower: .28 },
-      { name: 'Coucher', mountFrames: 'sunset', file: 'geometry_locked/MASTER_SUNSET_FIXED.png', skyFile: 'geometry_locked/SKY_SUNSET_FIXED.png', hour: 18, accent: '#ff9b6f', ambientSky: '#695977', ambientMid: '#4c405a', ambientGround: '#101a27', light: '#ffad7c', lightPower: .065, shadow: '#533a5d', shadowPower: .042, cloudOpacity: 1, cloudColor: '#fec29e', cloudColorPower: .64, cloudContrast: 1.68, cloudBrightness: 1.42, cloudSaturation: .76, cloudTexturePower: .56, cloudHighlightPower: .25 },
-      { name: 'Nuit', mountFrames: 'night', file: 'geometry_locked/MASTER_NIGHT_FIXED.png', skyFile: 'geometry_locked/SKY_NIGHT_FIXED.png', hour: 0, accent: '#9eb7ff', ambientSky: '#0b1947', ambientMid: '#071437', ambientGround: '#020715', light: '#8498e1', lightPower: .024, shadow: '#07152f', shadowPower: .07, cloudOpacity: .82, cloudColor: '#616cb8', cloudColorPower: .82, cloudContrast: 1.54, cloudBrightness: 1.24, cloudSaturation: .58, cloudTexturePower: .62, cloudHighlightPower: .18 }
+      { name: 'Lever', mountFrames: 'sunrise', file: 'geometry_locked/MASTER_SUNRISE_FIXED.png', skyFile: 'geometry_locked/SKY_SUNRISE_FIXED.png', hour: 6, accent: '#ffd59f', ambientSky: '#74688f', ambientMid: '#514b69', ambientGround: '#111927', light: '#ffd3aa', lightPower: .055, shadow: '#4d4668', shadowPower: .025, cloudOpacity: .98, cloudColor: '#fbd6be', cloudColorPower: .56, cloudContrast: 1.64, cloudBrightness: 1.44, cloudSaturation: .7, cloudTexturePower: .58, cloudHighlightPower: .24, waterfallBrightness: .82, waterfallContrast: 1.06, waterfallSaturation: .9, waterfallSepia: .1 },
+      { name: 'Jour', mountFrames: 'day', file: 'geometry_locked/MASTER_DAY_FIXED.png', skyFile: 'geometry_locked/SKY_DAY_FIXED.png', hour: 12, accent: '#fff4ce', ambientSky: '#5c91b7', ambientMid: '#365f7b', ambientGround: '#071c28', light: '#fff4dc', lightPower: .025, shadow: '#445468', shadowPower: .012, cloudOpacity: 1, cloudColor: '#e5e6e8', cloudColorPower: .44, cloudContrast: 1.6, cloudBrightness: 1.44, cloudSaturation: .58, cloudTexturePower: .5, cloudHighlightPower: .28, waterfallBrightness: .83, waterfallContrast: 1.06, waterfallSaturation: .9, waterfallSepia: .035 },
+      { name: 'Coucher', mountFrames: 'sunset', file: 'geometry_locked/MASTER_SUNSET_FIXED.png', skyFile: 'geometry_locked/SKY_SUNSET_FIXED.png', hour: 18, accent: '#ff9b6f', ambientSky: '#695977', ambientMid: '#4c405a', ambientGround: '#101a27', light: '#ffad7c', lightPower: .065, shadow: '#533a5d', shadowPower: .042, cloudOpacity: 1, cloudColor: '#fec29e', cloudColorPower: .64, cloudContrast: 1.68, cloudBrightness: 1.42, cloudSaturation: .76, cloudTexturePower: .56, cloudHighlightPower: .25, waterfallBrightness: .74, waterfallContrast: 1.08, waterfallSaturation: .94, waterfallSepia: .11 },
+      { name: 'Nuit', mountFrames: 'night', file: 'geometry_locked/MASTER_NIGHT_FIXED.png', skyFile: 'geometry_locked/SKY_NIGHT_FIXED.png', hour: 0, accent: '#9eb7ff', ambientSky: '#0b1947', ambientMid: '#071437', ambientGround: '#020715', light: '#8498e1', lightPower: .024, shadow: '#07152f', shadowPower: .07, cloudOpacity: .82, cloudColor: '#616cb8', cloudColorPower: .82, cloudContrast: 1.54, cloudBrightness: 1.24, cloudSaturation: .58, cloudTexturePower: .62, cloudHighlightPower: .18, waterfallBrightness: .38, waterfallContrast: 1.12, waterfallSaturation: 1.24, waterfallSepia: 0 }
     ];
 
     // Horaires par défaut du prototype. Cette configuration est volontairement
@@ -948,10 +963,16 @@
       const drawWaterfallState = (state, stateOpacity) => {
         const frames = assets.animatedMountFrames[state.mountFrames];
         if (!frames || stateOpacity <= .001) return;
+        // Les images animées ne contiennent que les pixels d'eau. Leur courbe
+        // est donc étalonnée ici sur l'écume et les vagues du même état, sans
+        // modifier la roche. Le fondu des états interpole naturellement ces
+        // quatre traitements avec la temporalité lumière/couleur de la scène.
+        animatedMountCtx.filter = `brightness(${state.waterfallBrightness}) contrast(${state.waterfallContrast}) saturate(${state.waterfallSaturation}) sepia(${state.waterfallSepia})`;
         animatedMountCtx.globalAlpha = stateOpacity * (1 - frameBlend);
         animatedMountCtx.drawImage(frames[frameIndex], 0, 0);
         animatedMountCtx.globalAlpha = stateOpacity * frameBlend;
         animatedMountCtx.drawImage(frames[nextFrameIndex], 0, 0);
+        animatedMountCtx.filter = 'none';
       };
 
       // Le premier état est toujours posé à pleine opacité, puis le suivant est
@@ -2117,6 +2138,6 @@
       console.error(error);
     });
   </script>
-  <script src="journal-shell.js?v=athena-journal-premium-v6"></script>
+  <script src="journal-shell.js?v=athena-today-drawer-v9"></script>
 </body>
 </html>
