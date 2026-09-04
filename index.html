@@ -14,13 +14,12 @@
       --ambient-sky: #5c91b7;
       --ambient-mid: #263f5a;
       --ambient-ground: #07111d;
-      --safe-width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
-      --safe-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      --viewport-height: 100vh;
     }
 
     @supports (height: 100dvh) {
       :root {
-        --safe-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        --viewport-height: 100dvh;
       }
     }
 
@@ -32,21 +31,13 @@
       min-height: 100%;
       margin: 0;
       overflow: hidden;
+      overscroll-behavior: none;
       background: #050914;
       color: var(--ink);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    body {
-      display: grid;
-      place-items: center;
-      isolation: isolate;
-      padding:
-        env(safe-area-inset-top, 0px)
-        env(safe-area-inset-right, 0px)
-        env(safe-area-inset-bottom, 0px)
-        env(safe-area-inset-left, 0px);
-    }
+    body { isolation: isolate; }
 
     .ambient {
       position: fixed;
@@ -60,14 +51,15 @@
     }
 
     .stage-shell {
-      position: relative;
-      width: min(var(--safe-width), calc(var(--safe-height) * 9 / 16));
-      height: min(var(--safe-height), calc(var(--safe-width) * 16 / 9));
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: var(--viewport-height);
       overflow: hidden;
       background: #11182c;
-      box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 32px 90px rgba(0,0,0,.72);
       contain: layout paint size;
       transform: translateZ(0);
+      touch-action: none;
       z-index: 1;
     }
 
@@ -75,7 +67,7 @@
       display: block;
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: fill;
     }
 
     .loading {
@@ -165,14 +157,6 @@
       accent-color: #ffd898;
       cursor: ew-resize;
       touch-action: none;
-    }
-
-    @media (min-width: 840px) {
-      .stage-shell { border-radius: 22px; }
-    }
-
-    @media (max-width: 839px) {
-      .stage-shell { box-shadow: none; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -337,7 +321,7 @@
       .journal-shell::backdrop { backdrop-filter: none; }
     }
   </style>
-  <link rel="stylesheet" href="journal-theme.css?v=athena-today-drawer-v9">
+  <link rel="stylesheet" href="journal-theme.css?v=athena-proportional-handle-v15">
 </head>
 <body>
   <div class="ambient" aria-hidden="true"></div>
@@ -645,10 +629,10 @@
     };
 
     const states = [
-      { name: 'Lever', mountFrames: 'sunrise', file: 'geometry_locked/MASTER_SUNRISE_FIXED.png', skyFile: 'geometry_locked/SKY_SUNRISE_FIXED.png', hour: 6, accent: '#ffd59f', ambientSky: '#74688f', ambientMid: '#514b69', ambientGround: '#111927', light: '#ffd3aa', lightPower: .055, shadow: '#4d4668', shadowPower: .025, cloudOpacity: .98, cloudColor: '#fbd6be', cloudColorPower: .56, cloudContrast: 1.64, cloudBrightness: 1.44, cloudSaturation: .7, cloudTexturePower: .58, cloudHighlightPower: .24, waterfallBrightness: .82, waterfallContrast: 1.06, waterfallSaturation: .9, waterfallSepia: .1 },
-      { name: 'Jour', mountFrames: 'day', file: 'geometry_locked/MASTER_DAY_FIXED.png', skyFile: 'geometry_locked/SKY_DAY_FIXED.png', hour: 12, accent: '#fff4ce', ambientSky: '#5c91b7', ambientMid: '#365f7b', ambientGround: '#071c28', light: '#fff4dc', lightPower: .025, shadow: '#445468', shadowPower: .012, cloudOpacity: 1, cloudColor: '#e5e6e8', cloudColorPower: .44, cloudContrast: 1.6, cloudBrightness: 1.44, cloudSaturation: .58, cloudTexturePower: .5, cloudHighlightPower: .28, waterfallBrightness: .83, waterfallContrast: 1.06, waterfallSaturation: .9, waterfallSepia: .035 },
-      { name: 'Coucher', mountFrames: 'sunset', file: 'geometry_locked/MASTER_SUNSET_FIXED.png', skyFile: 'geometry_locked/SKY_SUNSET_FIXED.png', hour: 18, accent: '#ff9b6f', ambientSky: '#695977', ambientMid: '#4c405a', ambientGround: '#101a27', light: '#ffad7c', lightPower: .065, shadow: '#533a5d', shadowPower: .042, cloudOpacity: 1, cloudColor: '#fec29e', cloudColorPower: .64, cloudContrast: 1.68, cloudBrightness: 1.42, cloudSaturation: .76, cloudTexturePower: .56, cloudHighlightPower: .25, waterfallBrightness: .74, waterfallContrast: 1.08, waterfallSaturation: .94, waterfallSepia: .11 },
-      { name: 'Nuit', mountFrames: 'night', file: 'geometry_locked/MASTER_NIGHT_FIXED.png', skyFile: 'geometry_locked/SKY_NIGHT_FIXED.png', hour: 0, accent: '#9eb7ff', ambientSky: '#0b1947', ambientMid: '#071437', ambientGround: '#020715', light: '#8498e1', lightPower: .024, shadow: '#07152f', shadowPower: .07, cloudOpacity: .82, cloudColor: '#616cb8', cloudColorPower: .82, cloudContrast: 1.54, cloudBrightness: 1.24, cloudSaturation: .58, cloudTexturePower: .62, cloudHighlightPower: .18, waterfallBrightness: .38, waterfallContrast: 1.12, waterfallSaturation: 1.24, waterfallSepia: 0 }
+      { name: 'Lever', mountFrames: 'sunrise', file: 'geometry_locked/MASTER_SUNRISE_FIXED.png', skyFile: 'geometry_locked/SKY_SUNRISE_FIXED.png', hour: 6, accent: '#ffd59f', ambientSky: '#74688f', ambientMid: '#514b69', ambientGround: '#111927', light: '#ffd3aa', lightPower: .055, shadow: '#4d4668', shadowPower: .025, cloudOpacity: .98, cloudColor: '#fbd6be', cloudColorPower: .56, cloudContrast: 1.64, cloudBrightness: 1.44, cloudSaturation: .7, cloudTexturePower: .58, cloudHighlightPower: .24 },
+      { name: 'Jour', mountFrames: 'day', file: 'geometry_locked/MASTER_DAY_FIXED.png', skyFile: 'geometry_locked/SKY_DAY_FIXED.png', hour: 12, accent: '#fff4ce', ambientSky: '#5c91b7', ambientMid: '#365f7b', ambientGround: '#071c28', light: '#fff4dc', lightPower: .025, shadow: '#445468', shadowPower: .012, cloudOpacity: 1, cloudColor: '#e5e6e8', cloudColorPower: .44, cloudContrast: 1.6, cloudBrightness: 1.44, cloudSaturation: .58, cloudTexturePower: .5, cloudHighlightPower: .28 },
+      { name: 'Coucher', mountFrames: 'sunset', file: 'geometry_locked/MASTER_SUNSET_FIXED.png', skyFile: 'geometry_locked/SKY_SUNSET_FIXED.png', hour: 18, accent: '#ff9b6f', ambientSky: '#695977', ambientMid: '#4c405a', ambientGround: '#101a27', light: '#ffad7c', lightPower: .065, shadow: '#533a5d', shadowPower: .042, cloudOpacity: 1, cloudColor: '#fec29e', cloudColorPower: .64, cloudContrast: 1.68, cloudBrightness: 1.42, cloudSaturation: .76, cloudTexturePower: .56, cloudHighlightPower: .25 },
+      { name: 'Nuit', mountFrames: 'night', file: 'geometry_locked/MASTER_NIGHT_FIXED.png', skyFile: 'geometry_locked/SKY_NIGHT_FIXED.png', hour: 0, accent: '#9eb7ff', ambientSky: '#0b1947', ambientMid: '#071437', ambientGround: '#020715', light: '#8498e1', lightPower: .024, shadow: '#07152f', shadowPower: .07, cloudOpacity: .82, cloudColor: '#616cb8', cloudColorPower: .82, cloudContrast: 1.54, cloudBrightness: 1.24, cloudSaturation: .58, cloudTexturePower: .62, cloudHighlightPower: .18 }
     ];
 
     // Horaires par défaut du prototype. Cette configuration est volontairement
@@ -963,16 +947,12 @@
       const drawWaterfallState = (state, stateOpacity) => {
         const frames = assets.animatedMountFrames[state.mountFrames];
         if (!frames || stateOpacity <= .001) return;
-        // Les images animées ne contiennent que les pixels d'eau. Leur courbe
-        // est donc étalonnée ici sur l'écume et les vagues du même état, sans
-        // modifier la roche. Le fondu des états interpole naturellement ces
-        // quatre traitements avec la temporalité lumière/couleur de la scène.
-        animatedMountCtx.filter = `brightness(${state.waterfallBrightness}) contrast(${state.waterfallContrast}) saturate(${state.waterfallSaturation}) sepia(${state.waterfallSepia})`;
+        // Les fichiers water-grade-v12 utilisent un masque d'eau strict, sans
+        // dilatation : aucun pixel de roche voisin ne reçoit l'étalonnage.
         animatedMountCtx.globalAlpha = stateOpacity * (1 - frameBlend);
         animatedMountCtx.drawImage(frames[frameIndex], 0, 0);
         animatedMountCtx.globalAlpha = stateOpacity * frameBlend;
         animatedMountCtx.drawImage(frames[nextFrameIndex], 0, 0);
-        animatedMountCtx.filter = 'none';
       };
 
       // Le premier état est toujours posé à pleine opacité, puis le suivant est
@@ -2072,7 +2052,7 @@
       ),
       ...['sunrise', 'day', 'sunset', 'night'].flatMap(state =>
         Array.from({ length: MOUNT_FRAME_COUNT }, (_, frameIndex) =>
-          loadImage(`geometry_locked/cascade_frames/${state}-${frameIndex}.webp?v=water-integrity-v6`)
+loadImage(`geometry_locked/cascade_frames/water-grade-v12/${state}-${frameIndex}.webp?v=water-pixels-only-v12`)
             .then(image => {
               assets.animatedMountFrames ??= { sunrise: [], day: [], sunset: [], night: [] };
               assets.animatedMountFrames[state][frameIndex] = image;
@@ -2138,6 +2118,6 @@
       console.error(error);
     });
   </script>
-  <script src="journal-shell.js?v=athena-today-drawer-v9"></script>
+  <script src="journal-shell.js?v=athena-proportional-handle-v15"></script>
 </body>
 </html>
